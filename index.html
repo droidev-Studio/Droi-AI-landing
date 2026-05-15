@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MINI-AI | AI Mini-Game Platform</title>
     <link rel="icon" href="favicon.ico.png" type="image/png">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1.7">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
+
 <body>
     <!-- 探照灯效果层 -->
     <div class="spotlight-overlay"></div>
@@ -18,18 +20,27 @@
     <div class="bg-layer bg-mid"></div>
     <div class="bg-layer bg-near"></div>
     <div class="bg-layer bg-left"></div>
-    <div class="starlight-container" id="starlightContainer"></div>
     <div class="scanline"></div>
+    <div class="starlight-container" id="starlightContainer"></div>
+
 
     <!-- History Sidebar -->
     <div class="history-sidebar" id="historySidebar">
         <button class="sidebar-toggle" id="sidebarToggle">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="9 18 15 12 9 6"></polyline>
             </svg>
         </button>
         <div class="sidebar-header">
             <h3>History</h3>
+            <button class="sidebar-close-btn" id="sidebarCloseBtn" aria-label="Close history">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
         </div>
         <div class="history-list" id="historyList">
             <!-- Items injected by JS -->
@@ -38,53 +49,71 @@
 
     <header class="header">
         <div class="logo">Droi AI</div>
-        <a href="https://discord.com/channels/1493509760866193552/1493509761814102058" class="header-link" target="_blank" rel="noopener noreferrer">
+        <a href="https://discord.com/channels/1493509760866193552/1493509761814102058" class="header-link"
+            target="_blank" rel="noopener noreferrer">
             DISCORD
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <polyline points="15 3 21 3 21 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <line x1="10" y1="14" x2="21" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <polyline points="15 3 21 3 21 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" />
+                <line x1="10" y1="14" x2="21" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" />
             </svg>
         </a>
     </header>
 
     <main class="hero">
         <div class="badge">NOW IN PRIVATE BETA</div>
-        
+
         <h1 class="title">
             <span class="gradient-text">Droi AI</span> Mini-Game<br>
             Platform
         </h1>
-        
+
         <p class="subtitle">
-            Anyone can build a game in 10 minutes. No code, just imagination.
+            Anyone can build a game in 5 min. No code, just imagination.
         </p>
-        
+
+        <!-- Inspire Me Section -->
+        <div class="inspire-section">
+            <span class="inspire-text">No idea? Just</span>
+            <button type="button" class="inspire-entry-btn" id="inspireEntryBtn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" class="sparkle-icon">
+                    <path d="M12 3v18M3 12h18M6.3 6.3l11.4 11.4M6.3 17.7l11.4-11.4" opacity="0.3"></path>
+                    <path d="M12 1v22M1 12h22M4.2 4.2l15.6 15.6M4.2 19.8l15.6-15.6" stroke="currentColor"></path>
+                </svg>
+                Inspire Me
+            </button>
+        </div>
+
         <form class="waitlist-form prompt-mode" id="waitlistForm">
-            <textarea id="mainInput" class="email-input" placeholder="Enter your creative prompt~" autocomplete="off" rows="1"></textarea>
+            <textarea id="mainInput" class="email-input" placeholder="Enter your creative prompt~" autocomplete="off"
+                rows="1" maxlength="2000"></textarea>
+            <div id="charCountWarning" class="char-count-warning"></div>
             <button type="submit" id="mainSubmitBtn" class="submit-btn">Create</button>
         </form>
 
-        <!-- Quick Tags -->
-        <div class="quick-tags-container" id="quickTagsContainer">
-            <div class="quick-tip">Try these templates:</div>
-            <div class="quick-tags">
-                <div class="quick-tag" data-prompt="A cyberpunk detective RPG where you solve crimes by hacking into memories">🎮 RPG</div>
-                <div class="quick-tag" data-prompt="A relaxing puzzle game about connecting constellations in a magical night sky">🧩 Puzzle</div>
-                <div class="quick-tag" data-prompt="A fast-paced neon platformer where you can only move to the rhythm of the beat">⚔️ Action</div>
-            </div>
-        </div>
-        
+
+
         <button type="button" id="backToPromptBtn" class="back-btn" style="display: none;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
                 <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
             Wait, I want to edit my prompt
         </button>
-        
+
         <!-- Progress & Generation Steps Container -->
         <div class="progress-container" id="progressContainer" style="display: none;">
+            <div class="progress-text" id="progressText">0%</div>
+
+            <div class="progress-bar-bg" id="progressBarBg">
+                <div class="progress-bar-fill" id="progressBarFill"></div>
+            </div>
+
             <div class="generation-steps" id="generationSteps">
                 <div class="step" id="step1">
                     <div class="step-icon"></div>
@@ -98,33 +127,34 @@
                     <div class="step-icon"></div>
                     <div class="step-text">Building your game...</div>
                 </div>
-                <div class="step" id="step4" style="display: none;">
-                    <div class="step-icon"></div>
-                    <div class="step-text">Sending to your email...</div>
-                </div>
             </div>
 
-            <div class="progress-bar-bg" id="progressBarBg">
-                <div class="progress-bar-fill" id="progressBarFill"></div>
+            <div class="progress-logo">
+                <div class="logo-sparkle"></div>
+                <span>DROI AI</span>
             </div>
-            <div class="progress-text" id="progressText">0%</div>
-            
-            <div class="progress-message" id="progressMessage" style="display: none; margin-top: 1rem; color: var(--accent-yellow); font-size: 0.9rem;">
-                ⚠️ Due to high demand, rendering is queued. We will bring your creation to life and send it to your email within a week.
+
+            <div class="progress-message" id="progressMessage"
+                style="display: none; margin-top: 1rem; color: var(--accent-yellow); font-size: 0.9rem;">
+                ⚠️ Due to high demand, rendering is queued. We will bring your creation to life and send it to your
+                email within a week.
             </div>
+
         </div>
 
         <!-- Success State Container -->
         <div class="success-state-container" id="successStateContainer" style="display: none;">
-            <div class="success-message-large">Your inspiration is in safe hands. We'll reply within 15 business days.</div>
+            <div class="success-message-large">Your inspiration is in safe hands. We'll reply within 15 business days.
+            </div>
             <button class="submit-btn new-idea-btn" id="newIdeaBtn">I got a new idea, let's create it!</button>
         </div>
-        
+
         <div class="stats" id="statsContainer">
             <div class="joined-count">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="#facc15" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M8 12.5L11 15.5L16 9" stroke="#110f17" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M8 12.5L11 15.5L16 9" stroke="#110f17" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
                 </svg>
                 <span><strong id="joinedCount">842 people</strong> have joined the early access.</span>
             </div>
@@ -132,25 +162,122 @@
         </div>
     </main>
 
+    <!-- Inspire Conversational View (Hidden by default) -->
+    <div class="inspire-view" id="inspireView" style="display: none;">
+        <div class="chat-header">
+            <button type="button" class="chat-close-btn" id="chatCloseBtn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <span>Droi AI Assistant</span>
+        </div>
+
+        <div class="chat-history" id="chatHistory">
+            <!-- Chat messages will be injected here -->
+        </div>
+
+        <div class="chat-options-container" id="chatOptionsContainer" style="display: none;">
+            <div class="chat-options-list" id="chatOptionsList">
+                <!-- Option capsules injected here -->
+            </div>
+            <div class="chat-options-footer">
+                <button class="quick-more-btn" id="chatMoreBtn" type="button">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="1 4 1 10 7 10"></polyline>
+                        <polyline points="23 20 23 14 17 14"></polyline>
+                        <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+                    </svg>
+                    More options
+                </button>
+            </div>
+        </div>
+
+        <div class="chat-input-wrapper">
+            <div class="chat-input-bar unified-pill">
+                <button type="button" class="icon-btn plus-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
+                <div id="chatCharCount" class="chat-char-count">0/1000</div>
+                <input type="text" id="chatInputField" class="chat-real-input" placeholder="Ask anything"
+                    autocomplete="off" maxlength="1000">
+                <div class="right-actions">
+                    <div class="thinking-text">
+                        Thinking
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <button type="button" class="icon-btn mic-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <line x1="12" y1="19" x2="12" y2="23"></line>
+                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                        </svg>
+                    </button>
+                    <button type="button" id="chatSendBtn" class="chat-send-btn black-circle">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="6" y1="10" x2="6" y2="14"></line>
+                            <line x1="10" y1="6" x2="10" y2="18"></line>
+                            <line x1="14" y1="8" x2="14" y2="16"></line>
+                            <line x1="18" y1="11" x2="18" y2="13"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <footer class="footer">
         <div class="copyright">© 2024 Droi AI. Cinematic Noir Edition.</div>
         <div class="footer-links">
             <a href="#">PRIVACY POLICY</a>
             <a href="#">TWITTER</a>
-            <a href="https://discord.com/channels/1493509760866193552/1493509761814102058" target="_blank" rel="noopener noreferrer">DISCORD</a>
+            <a href="https://discord.com/channels/1493509760866193552/1493509761814102058" target="_blank"
+                rel="noopener noreferrer">DISCORD</a>
         </div>
     </footer>
+
+    <!-- Email Collection Modal -->
+    <div class="modal-overlay" id="emailModal">
+        <div class="modal-content">
+            <h2 class="modal-title">Apologies for the delay</h2>
+            <p class="modal-text">Please provide your personal email, and we will send the generated game to your inbox~
+            </p>
+            <form id="emailSubmitForm" class="email-modal-form">
+                <input type="email" id="modalEmailInput" class="modal-email-input"
+                    placeholder="Enter your email address..." required autocomplete="email">
+                <button type="submit" id="modalEmailSubmitBtn" class="submit-btn modal-submit-btn">Send</button>
+            </form>
+            <button class="modal-close-btn" id="closeEmailModalBtn"
+                style="margin-top: 1rem; background: transparent; border: 1px solid rgba(255,255,255,0.2); width: 100%;">Skip
+                for now</button>
+        </div>
+    </div>
 
     <!-- Success Modal -->
     <div class="modal-overlay" id="successModal">
         <div class="modal-content">
             <div class="modal-icon">✨</div>
             <h2 class="modal-title">Inspiration Received!</h2>
-            <p class="modal-text">We've got your creative spark. We will bring your idea to life and send it to your provided email within 15 days~</p>
+            <p class="modal-text">We've got your creative spark. We will bring your idea to life and send it to your
+                provided email within 15 days~</p>
             <button class="modal-close-btn" id="closeModalBtn">Got it!</button>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js?v=1.7"></script>
 </body>
+
 </html>
