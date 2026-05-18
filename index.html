@@ -11,11 +11,11 @@
 </head>
 
 <body>
-    <!-- 探照灯效果层 -->
+    <!-- 鎺㈢収鐏晥鏋滃眰 -->
     <div class="spotlight-overlay"></div>
     <div class="spotlight-glow"></div>
 
-    <!-- 电影级背景层次 -->
+    <!-- 鐢靛奖绾ц儗鏅眰娆?-->
     <div class="bg-layer bg-far"></div>
     <div class="bg-layer bg-mid"></div>
     <div class="bg-layer bg-near"></div>
@@ -49,18 +49,31 @@
 
     <header class="header">
         <div class="logo">Droi AI</div>
-        <a href="https://discord.com/channels/1493509760866193552/1493509761814102058" class="header-link"
-            target="_blank" rel="noopener noreferrer">
-            DISCORD
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                <polyline points="15 3 21 3 21 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                    stroke-linejoin="round" />
-                <line x1="10" y1="14" x2="21" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                    stroke-linejoin="round" />
-            </svg>
-        </a>
+        <div class="header-actions">
+            <button type="button" class="admin-login-btn" id="adminLoginBtn">Google Login</button>
+            <button type="button" class="settings-btn admin-only" id="settingsBtn" aria-label="Admin AI Config"
+                style="display: none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path
+                        d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42">
+                    </path>
+                </svg>
+            </button>
+            <a href="https://discord.com/channels/1493509760866193552/1493509761814102058" class="header-link"
+                target="_blank" rel="noopener noreferrer">
+                DISCORD
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <polyline points="15 3 21 3 21 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <line x1="10" y1="14" x2="21" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+            </a>
+        </div>
     </header>
 
     <main class="hero">
@@ -103,7 +116,7 @@
                 <line x1="19" y1="12" x2="5" y2="12"></line>
                 <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
-            Wait, I want to edit my prompt
+            Edit Prompt
         </button>
 
         <!-- Progress & Generation Steps Container -->
@@ -136,7 +149,7 @@
 
             <div class="progress-message" id="progressMessage"
                 style="display: none; margin-top: 1rem; color: var(--accent-yellow); font-size: 0.9rem;">
-                ⚠️ Due to high demand, rendering is queued. We will bring your creation to life and send it to your
+                Queued: Due to high demand, rendering is queued. We will bring your creation to life and send it to your
                 email within a week.
             </div>
 
@@ -196,51 +209,69 @@
             </div>
         </div>
 
+        <div class="model-switch-notice" id="modelSwitchNotice" aria-live="polite" style="display: none;"></div>
+
         <div class="chat-input-wrapper">
             <div class="chat-input-bar unified-pill">
-                <button type="button" class="icon-btn plus-btn">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                </button>
-                <div id="chatCharCount" class="chat-char-count">0/1000</div>
-                <input type="text" id="chatInputField" class="chat-real-input" placeholder="Ask anything"
-                    autocomplete="off" maxlength="1000">
-                <div class="right-actions">
-                    <div class="thinking-text">
-                        Thinking
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </div>
-                    <button type="button" class="icon-btn mic-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                <div class="chat-attachment-tray" id="chatAttachmentTray" aria-live="polite" style="display: none;">
+                </div>
+                <div class="chat-composer-row">
+                    <button type="button" class="icon-btn plus-btn" id="chatAttachBtn" aria-label="Add files or images">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                            <line x1="12" y1="19" x2="12" y2="23"></line>
-                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
                     </button>
-                    <button type="button" id="chatSendBtn" class="chat-send-btn black-circle">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="6" y1="10" x2="6" y2="14"></line>
-                            <line x1="10" y1="6" x2="10" y2="18"></line>
-                            <line x1="14" y1="8" x2="14" y2="16"></line>
-                            <line x1="18" y1="11" x2="18" y2="13"></line>
-                        </svg>
-                    </button>
+                    <input type="file" id="chatFileInput" class="chat-file-input" multiple
+                        accept="image/*,.pdf,.txt,.md,.json,.csv,.doc,.docx,.ppt,.pptx,.xls,.xlsx">
+                    <div id="chatCharCount" class="chat-char-count">0/3000</div>
+                    <textarea id="chatInputField" class="chat-real-input" placeholder="Ask anything"
+                        autocomplete="off" maxlength="3000" rows="1"></textarea>
+                    <div class="right-actions">
+                        <div class="model-selector-wrap input-model-selector">
+                            <button type="button" class="model-selector" id="modelSelector" aria-haspopup="listbox"
+                                aria-expanded="false">
+                                <span class="model-icon" id="activeModelIcon" aria-hidden="true"></span>
+                                <span class="model-name" id="activeModelName">GPT 5.5 &#x9ad8;</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
+                            <div class="model-dropdown" id="modelDropdown" role="listbox" style="display: none;">
+                                <div class="model-dropdown-list" id="modelDropdownList"></div>
+                                <button type="button" class="model-config-link admin-only" id="modelConfigLink"
+                                    style="display: none;">Admin config...</button>
+                            </div>
+                        </div>
+                        <button type="button" class="icon-btn mic-btn" id="chatMicBtn" aria-label="Voice input"
+                            aria-pressed="false" title="Voice input">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                            </svg>
+                        </button>
+                        <button type="button" id="chatSendBtn" class="chat-send-btn black-circle" aria-label="Send"
+                            title="Send message">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 2 11 13"></path>
+                                <path d="m22 2-7 20-4-9-9-4 20-7z"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <footer class="footer">
-        <div class="copyright">© 2024 Droi AI. Cinematic Noir Edition.</div>
+        <div class="copyright">漏 2024 Droi AI. Cinematic Noir Edition.</div>
         <div class="footer-links">
             <a href="#">PRIVACY POLICY</a>
             <a href="#">TWITTER</a>
@@ -260,8 +291,7 @@
                     placeholder="Enter your email address..." required autocomplete="email">
                 <button type="submit" id="modalEmailSubmitBtn" class="submit-btn modal-submit-btn">Send</button>
             </form>
-            <button class="modal-close-btn" id="closeEmailModalBtn"
-                style="margin-top: 1rem; background: transparent; border: 1px solid rgba(255,255,255,0.2); width: 100%;">Skip
+            <button class="modal-close-btn" id="closeEmailModalBtn">Skip
                 for now</button>
         </div>
     </div>
@@ -269,7 +299,7 @@
     <!-- Success Modal -->
     <div class="modal-overlay" id="successModal">
         <div class="modal-content">
-            <div class="modal-icon">✨</div>
+            <div class="modal-icon">OK</div>
             <h2 class="modal-title">Inspiration Received!</h2>
             <p class="modal-text">We've got your creative spark. We will bring your idea to life and send it to your
                 provided email within 15 days~</p>
@@ -277,7 +307,107 @@
         </div>
     </div>
 
-    <script src="script.js?v=1.7"></script>
+    <!-- Admin AI Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-content settings-panel">
+            <div class="settings-header">
+                <div>
+                    <h2 class="modal-title">Admin AI Config</h2>
+                    <p class="settings-subtitle">Platform API routing for enabled models. This panel is only visible to
+                        admins.</p>
+                </div>
+                <button type="button" class="settings-close-btn" id="closeSettingsBtn" aria-label="Close settings">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="settings-status" id="settingsStatus">Manage platform providers and enabled models.</div>
+
+            <div class="settings-layout">
+                <div class="provider-list" id="providerList"></div>
+
+                <div class="provider-editor">
+                    <div class="field-row">
+                        <label for="providerEnabled">Provider</label>
+                        <label class="toggle-row">
+                            <input type="checkbox" id="providerEnabled">
+                            <span>Enabled</span>
+                        </label>
+                    </div>
+
+                    <label class="settings-field">
+                        <span>API Key</span>
+                        <input type="password" id="providerApiKey" placeholder="sk-..." autocomplete="off">
+                    </label>
+
+                    <label class="settings-field">
+                        <span>Endpoint</span>
+                        <input type="url" id="providerBaseUrl" placeholder="https://api.openai.com/v1">
+                    </label>
+
+                    <div class="settings-grid">
+                        <label class="settings-field">
+                            <span>Model</span>
+                            <select id="providerModel"></select>
+                        </label>
+                        <label class="settings-field">
+                            <span>Reasoning</span>
+                            <select id="providerReasoning">
+                                <option value="none">None</option>
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <label class="settings-field" id="customModelField" style="display: none;">
+                        <span>Custom model name</span>
+                        <input type="text" id="customModelName" placeholder="llama3.1:70b">
+                    </label>
+
+                    <div class="usage-panel">
+                        <div>
+                            <span class="usage-label">Total tokens</span>
+                            <strong id="usageTotalTokens">0</strong>
+                        </div>
+                        <div>
+                            <span class="usage-label">Estimated cost</span>
+                            <strong id="usageEstimatedCost">$0.00</strong>
+                        </div>
+                    </div>
+                    <div class="usage-model-list" id="usageByModelList"></div>
+
+                    <div class="settings-actions">
+                        <button type="button" class="submit-btn" id="saveSettingsBtn">Save config</button>
+                        <button type="button" class="modal-close-btn secondary-action" id="testConnectionBtn">Test
+                            connection</button>
+                        <button type="button" class="modal-close-btn secondary-action" id="clearProviderBtn">Clear
+                            key</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Auth Notice Modal -->
+    <div class="modal-overlay" id="adminAuthModal">
+        <div class="modal-content admin-auth-panel">
+            <div class="modal-icon">AI</div>
+            <h2 class="modal-title">Admin Login Unavailable</h2>
+            <p class="modal-text" id="adminAuthMessage">Google admin login needs the platform auth backend.</p>
+            <div class="admin-auth-actions">
+                <button type="button" class="submit-btn" id="retryAdminAuthBtn">Try Again</button>
+                <button type="button" class="modal-close-btn secondary-action" id="closeAdminAuthBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js?v=2.4"></script>
 </body>
 
 </html>
