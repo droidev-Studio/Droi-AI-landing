@@ -223,13 +223,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ]
         }
     };
-    const REASONING_LABELS = {
-        none: '',
-        low: '\u4f4e',
-        medium: '\u4e2d',
-        high: '\u9ad8'
-    };
-
     function createDefaultAIConfig() {
         return {
             version: 1,
@@ -242,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     baseUrl: meta.defaultBaseUrl,
                     currentModel: meta.models[0].id,
                     customModel: '',
-                    reasoningEffort: ['openai', 'groq'].includes(id) ? 'low' : 'none'
+                    reasoningEffort: ['openai', 'groq'].includes(id) ? 'high' : 'none'
                 };
                 return acc;
             }, {}),
@@ -410,7 +403,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const meta = PROVIDER_META[providerId] || PROVIDER_META.openai;
         const modelId = getProviderModelId(providerId);
         const reasoning = provider.reasoningEffort || 'none';
-        const reasoningLabel = REASONING_LABELS[reasoning];
         const modelLabel = getModelLabel(providerId, modelId);
         return {
             providerId,
@@ -420,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
             modelId,
             modelLabel,
             reasoning,
-            label: reasoningLabel ? `${modelLabel} ${reasoningLabel}` : modelLabel
+            label: modelLabel
         };
     }
 
@@ -1628,10 +1620,9 @@ Prompt: ${prompt}`
                 btn.type = 'button';
                 btn.className = 'model-option';
                 btn.style.setProperty('--model-color', meta.color);
-                const label = formatModelLabel(modelConfig.providerId, modelConfig.modelId, modelConfig.reasoningEffort);
                 const active = aiConfig.activeProvider === modelConfig.providerId && getProviderModelId(modelConfig.providerId) === modelConfig.modelId;
                 btn.innerHTML = `
-                    <span>${escapeHtml(modelConfig.label || label)}</span>
+                    <span>${escapeHtml(modelConfig.label || getModelLabel(modelConfig.providerId, modelConfig.modelId))}</span>
                     ${active ? '<small>Active</small>' : ''}
                 `;
                 btn.addEventListener('click', () => switchActiveModel(modelConfig.providerId, modelConfig.modelId, modelConfig.reasoningEffort));
@@ -1652,7 +1643,7 @@ Prompt: ${prompt}`
                 btn.type = 'button';
                 btn.className = 'model-option';
                 btn.style.setProperty('--model-color', meta.color);
-                const label = formatModelLabel(providerId, modelId);
+                const label = getModelLabel(providerId, modelId);
                 const active = aiConfig.activeProvider === providerId && getProviderModelId(providerId) === modelId;
                 btn.innerHTML = `
                     <span>${escapeHtml(label)}</span>
@@ -1671,14 +1662,6 @@ Prompt: ${prompt}`
         if (modelConfigLink) {
             modelConfigLink.style.display = adminSession.isAdmin ? 'flex' : 'none';
         }
-    }
-
-    function formatModelLabel(providerId, modelId, reasoningOverride) {
-        const provider = aiConfig.providers[providerId];
-        const reasoning = reasoningOverride || (provider && provider.reasoningEffort) || 'none';
-        const suffix = REASONING_LABELS[reasoning];
-        const modelLabel = getModelLabel(providerId, modelId);
-        return suffix ? `${modelLabel} ${suffix}` : modelLabel;
     }
 
     function switchActiveModel(providerId, modelId, reasoningEffort) {
