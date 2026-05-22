@@ -1,0 +1,33 @@
+{
+  "name": "droi-ai-landing-temp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev:backend": "node backend/server.js",
+    "check": "node --check script.js && node --check backend/server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1"
+  },
+  "description": "> **Build Playable Games With Just Words. No Coding. Just Imagination.**",
+  "main": "script.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/droidev-Studio/Droi-AI-landing.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/droidev-Studio/Droi-AI-landing/issues"
+  },
+  "homepage": "https://github.com/droidev-Studio/Droi-AI-landing#readme"
+}
