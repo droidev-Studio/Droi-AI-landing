@@ -1675,6 +1675,7 @@ Use this shape:
   }
 }
 Treat genre conventions as suggested, not confirmed, unless the user explicitly stated them.
+Readable alias note: \u98de\u884c\u5c04\u51fb, \u98de\u673a\u5927\u6218, \u592a\u7a7a\u5c04\u51fb, \u7eb5\u7248\u5c04\u51fb, \u7ad6\u7248\u6253\u98de\u673a, \u5f39\u5e55\u5c04\u51fb map to bullet_hell; \u8089\u9e3d, \u5272\u8349, \u751f\u5b58, \u5438\u8840\u9b3c\u5e78\u5b58\u8005, \u81ea\u52a8\u653b\u51fb, \u5347\u7ea7\u4e09\u9009\u4e00 map to roguelike_survival.
 Template mapping:
 - Flying shooter, plane shooter, space shooter, vertical shooter, shmup, bullet hell, 飞行射击, 飞机大战, 太空射击, 纵版射击, 竖版打飞机, 弹幕射击 => bullet_hell.
 - Roguelike survival, Vampire Survivors-like, arena survival, auto-attack survival, horde survival, 肉鸽, 割草, 幸存者, 自动攻击, 升级三选一 => roguelike_survival.
@@ -1682,15 +1683,22 @@ Unsupported P0 capability includes 3D, multiplayer/networked, MMO, open world, n
                 },
                 {
                     role: 'user',
-                    content: `Game types: ${GAME_TYPES.map(item => item.value).join(', ')}
-Art styles: ${ART_STYLES.map(item => item.value).join(', ')}
-Settings: ${SETTINGS.map(item => item.value).join(', ')}
-Core gameplay options: ${CORE_GAMEPLAY_OPTIONS.map(item => item.value).join(', ')}
-Player goal options: ${PLAYER_GOAL_OPTIONS.map(item => item.value).join(', ')}
-Main challenge options: ${MAIN_CHALLENGE_OPTIONS.map(item => item.value).join(', ')}
-Progression options: ${PROGRESSION_OPTIONS.map(item => item.value).join(', ')}
-Difficulty options: ${DIFFICULTY_OPTIONS.map(item => item.value).join(', ')}
-Prompt: ${prompt}`
+                    content: JSON.stringify({
+                        selectedModel: getActiveModelMeta(),
+                        prompt,
+                        currentGameSpec: getCurrentGameSpec(),
+                        chatTranscript: getRecentChatTranscript(),
+                        optionCatalog: {
+                            gameTypes: GAME_TYPES.map(item => item.value),
+                            artStyles: ART_STYLES.map(item => item.value),
+                            settings: SETTINGS.map(item => item.value),
+                            coreGameplay: CORE_GAMEPLAY_OPTIONS.map(item => item.value),
+                            playerGoals: PLAYER_GOAL_OPTIONS.map(item => item.value),
+                            mainChallenges: MAIN_CHALLENGE_OPTIONS.map(item => item.value),
+                            progression: PROGRESSION_OPTIONS.map(item => item.value),
+                            difficulty: DIFFICULTY_OPTIONS.map(item => item.value)
+                        }
+                    }, null, 2)
                 }
             ]);
 
@@ -1924,6 +1932,17 @@ Prompt: ${prompt}`
         if (!attachments.length) return '';
         const names = attachments.map(item => `${item.file.name} (${getFileTypeLabel(item.file)}, ${formatFileSize(item.file.size)})`);
         return `Attached files: ${names.join(', ')}`;
+    }
+
+    function getRecentChatTranscript(limit = 12) {
+        if (!chatHistory) return [];
+        return Array.from(chatHistory.querySelectorAll('.chat-message'))
+            .slice(-limit)
+            .map(item => ({
+                role: item.classList.contains('user-message') ? 'user' : 'assistant',
+                text: item.textContent.trim().replace(/\s+/g, ' ').slice(0, 800)
+            }))
+            .filter(item => item.text);
     }
 
     function handleChatFiles(files) {
@@ -3117,6 +3136,9 @@ Keep every value under 54 words.`
                         selectedModel: responseModelMeta,
                         gameSpec: spec,
                         templateDecision: decision,
+                        capability: analysisState.capability,
+                        missingFields: analysisState.missingFields,
+                        chatTranscript: getRecentChatTranscript(),
                         templateCapability,
                         expectedGeneratedFiles: templateCapability.outputFiles
                     }, null, 2)
@@ -3238,6 +3260,7 @@ Use templateCapability.outputFiles as the compile target, but do not emit a file
                     gameSpec: spec,
                     templateDecision: decision,
                     templateCapability,
+                    chatTranscript: getRecentChatTranscript(),
                     aiGamePlan: latestGamePlanJson || latestGamePlanDraft
                 }, null, 2)
             }
