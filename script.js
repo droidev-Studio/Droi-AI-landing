@@ -296,6 +296,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return template;
     });
 
+    const AUTO_GENERATION_TEMPLATE_IDS = new Set(['bullet_hell', 'roguelike_survival']);
+
     const THEME_PRESETS = {
         animal_island: {
             label: 'Animal Island',
@@ -3227,15 +3229,19 @@ Use templateCapability.outputFiles as the compile target, but do not emit a file
         if (aiDecision) {
             const aiTemplate = TEMPLATE_CATALOG.find(template => template.id === aiDecision.templateId);
             const aiBlocked = capability.blocked || (aiCapability && aiCapability.supported === false);
+            const aiTemplateAllowed = Boolean(aiTemplate && AUTO_GENERATION_TEMPLATE_IDS.has(aiTemplate.id));
             const canAutoGenerate = Boolean(
                 !aiBlocked &&
                 aiTemplate &&
+                aiTemplateAllowed &&
                 aiDecision.supported !== false &&
                 aiDecision.confidence >= 0.65
             );
             const reason = aiBlocked
                 ? (capability.reason || (aiCapability && aiCapability.reason) || 'Capability exceeded.')
-                : (aiDecision.reason || `AI selected ${aiDecision.templateLabel}.`);
+                : (!aiTemplateAllowed && aiTemplate
+                    ? `${aiTemplate.label} is not in the current P0 automatic generation whitelist.`
+                    : (aiDecision.reason || `AI selected ${aiDecision.templateLabel}.`));
             return {
                 canAutoGenerate,
                 templateId: aiTemplate ? aiTemplate.id : aiDecision.templateId,
@@ -3246,7 +3252,9 @@ Use templateCapability.outputFiles as the compile target, but do not emit a file
                     ? ''
                     : (aiBlocked
                         ? 'This request includes features outside the current P0 HTML5 template whitelist. Please leave an email and we will route it to the manual queue.'
-                        : 'The selected AI model did not map this request to a supported P0 template. Please revise the prompt or leave an email for manual handling.'),
+                        : (aiTemplate && !aiTemplateAllowed
+                            ? 'This template is not wired into the current P0 automatic compiler. Please revise the request to Flying Shooter or Roguelike Survival, or leave an email for manual handling.'
+                            : 'The selected AI model did not map this request to a supported P0 template. Please revise the prompt or leave an email for manual handling.')),
                 candidates: scored.slice(0, 3),
                 source: 'ai',
                 capability: aiCapability || capability
@@ -3254,7 +3262,8 @@ Use templateCapability.outputFiles as the compile target, but do not emit a file
         }
 
         const best = scored[0];
-        const canAutoGenerate = Boolean(!capability.blocked && best && best.confidence >= 0.7);
+        const bestAllowed = Boolean(best && AUTO_GENERATION_TEMPLATE_IDS.has(best.id));
+        const canAutoGenerate = Boolean(!capability.blocked && bestAllowed && best && best.confidence >= 0.7);
         return {
             canAutoGenerate,
             templateId: best ? best.id : null,
@@ -3262,14 +3271,18 @@ Use templateCapability.outputFiles as the compile target, but do not emit a file
             confidence: best ? best.confidence : 0,
             reason: capability.blocked
                 ? capability.reason
-                : (canAutoGenerate
+                : (!bestAllowed && best && best.confidence >= 0.7
+                    ? `${best.label} is recognized but not wired into the current P0 automatic compiler.`
+                    : (canAutoGenerate
                 ? `Matched ${best.label} from ${best.hits.slice(0, 4).join(', ')}.`
-                : 'No P0 template reached the 70% confidence threshold.'),
+                : 'No P0 template reached the 70% confidence threshold.')),
             fallbackMessage: canAutoGenerate
                 ? ''
                 : (capability.blocked
                     ? 'This request includes features outside the current P0 HTML5 template whitelist. Please leave an email and we will route it to the manual queue.'
-                    : 'This idea is outside the current automatic template coverage. Please leave an email and we will route it to the manual queue.'),
+                    : (!bestAllowed && best && best.confidence >= 0.7
+                        ? 'This template is recognized but not available in the current P0 automatic compiler. Please revise the request to Flying Shooter or Roguelike Survival, or leave an email for manual handling.'
+                        : 'This idea is outside the current automatic template coverage. Please leave an email and we will route it to the manual queue.')),
             candidates: scored.slice(0, 3),
             source: 'local_safety'
         };

@@ -324,6 +324,9 @@ function testNoClientSecrets() {
   assert.ok(clientScript.includes('spec/waves.json'));
   assert.ok(clientScript.includes('spec/enemies.json'));
   assert.ok(clientScript.includes('spec/weapons.json'));
+  assert.ok(clientScript.includes("const AUTO_GENERATION_TEMPLATE_IDS = new Set(['bullet_hell', 'roguelike_survival'])"));
+  assert.ok(clientScript.includes('not in the current P0 automatic generation whitelist'));
+  assert.ok(clientScript.includes('not wired into the current P0 automatic compiler'));
   assert.ok(!clientScript.includes('check_config'));
   assert.ok(!clientScript.includes('manual_queue'));
   assert.ok(envExample.includes('WEB3FORMS_ACCESS_KEY='));
@@ -356,8 +359,8 @@ async function testGeneratedStaticServing() {
     templatePatchPlan: makePatchPlan()
   });
   const server = createServer();
-  await new Promise(resolve => server.listen(0, resolve));
-  const base = `http://127.0.0.1:${server.address().port}`;
+  const port = await listenOnSafeTestPort(server);
+  const base = `http://127.0.0.1:${port}`;
   try {
     const previewResponse = await fetch(`${base}${project.previewUrl}`);
     assert.strictEqual(previewResponse.status, 200);
@@ -371,6 +374,34 @@ async function testGeneratedStaticServing() {
   } finally {
     await new Promise(resolve => server.close(resolve));
   }
+}
+
+function listenOnSafeTestPort(server) {
+  const startPort = 43100;
+  const maxAttempts = 25;
+  return new Promise((resolve, reject) => {
+    let nextPort = startPort;
+    const tryListen = () => {
+      const port = nextPort;
+      const handleError = error => {
+        server.off('listening', handleListening);
+        if (error && error.code === 'EADDRINUSE' && nextPort < startPort + maxAttempts) {
+          nextPort += 1;
+          tryListen();
+          return;
+        }
+        reject(error);
+      };
+      const handleListening = () => {
+        server.off('error', handleError);
+        resolve(port);
+      };
+      server.once('error', handleError);
+      server.once('listening', handleListening);
+      server.listen(port, '127.0.0.1');
+    };
+    tryListen();
+  });
 }
 
 async function run() {
