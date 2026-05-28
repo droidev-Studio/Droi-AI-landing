@@ -594,6 +594,7 @@ function compileTemplateProject(payload) {
     selectedModel: payload.selectedModel || {},
     templatePatchPlan,
     aiPlanDraft: payload.aiPlanDraft,
+    aiPlanJson: payload.aiPlanJson,
     validationReport
   });
   projectFiles['generation-report.json'] = JSON.stringify(generationReport, null, 2);
@@ -899,8 +900,17 @@ function buildGenerationReport({
   selectedModel,
   templatePatchPlan,
   aiPlanDraft,
+  aiPlanJson,
   validationReport
 }) {
+  const structuredGamePlan = aiPlanJson && typeof aiPlanJson === 'object' && !Array.isArray(aiPlanJson)
+    ? {
+        structured: true,
+        title: String(aiPlanJson.title || ''),
+        templateUsage: String(aiPlanJson.templateUsage || ''),
+        patchTargets: Array.isArray(aiPlanJson.patchTargets) ? aiPlanJson.patchTargets.map(item => String(item)) : []
+      }
+    : { structured: false };
   return {
     projectId,
     generatedAt: new Date().toISOString(),
@@ -916,7 +926,12 @@ function buildGenerationReport({
     },
     stages: {
       analysis: { required: true, modelRequired: true },
-      gamePlan: { required: true, modelRequired: true, draftLength: String(aiPlanDraft || '').length },
+      gamePlan: {
+        required: true,
+        modelRequired: true,
+        draftLength: String(aiPlanDraft || '').length,
+        ...structuredGamePlan
+      },
       templatePatch: {
         required: true,
         modelRequired: true,

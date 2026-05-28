@@ -101,6 +101,11 @@ function testCompilerOutput() {
     templateDecision: { templateId: 'bullet_hell', templateLabel: 'Bullet Hell / Flying Shooter' },
     selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
     aiPlanDraft: 'AI generated plan',
+    aiPlanJson: {
+      title: 'AI Patched Skybreak',
+      templateUsage: 'Use bullet_hell for a vertical flying shooter loop.',
+      patchTargets: ['waves', 'enemyTypes', 'bosses', 'projectilePatterns']
+    },
     templatePatchPlan: makePatchPlan()
   });
   assert.strictEqual(project.templateId, 'bullet_hell');
@@ -119,6 +124,9 @@ function testCompilerOutput() {
   assert.strictEqual(project.generationReport.aiFirst, true);
   assert.strictEqual(project.generationReport.aiGenerated, true);
   assert.strictEqual(project.generationReport.selectedModel.label, 'GPT 5.5 High');
+  assert.strictEqual(project.generationReport.stages.gamePlan.structured, true);
+  assert.strictEqual(project.generationReport.stages.gamePlan.title, 'AI Patched Skybreak');
+  assert.deepStrictEqual(project.generationReport.stages.gamePlan.patchTargets, ['waves', 'enemyTypes', 'bosses', 'projectilePatterns']);
   assert.strictEqual(project.generationReport.stages.templatePatch.aiGenerated, true);
   const generatedSpecPath = path.join(__dirname, 'data', 'generated', project.id, 'spec', 'game.json');
   const generatedSpec = JSON.parse(fs.readFileSync(generatedSpecPath, 'utf8'));
@@ -131,6 +139,7 @@ function testCompilerOutput() {
   assert.strictEqual(generatedSpec.meta.gameName, 'AI Patched Skybreak');
   assert.strictEqual(generationReport.projectId, project.id);
   assert.strictEqual(generationReport.outputs.preview, project.previewUrl);
+  assert.strictEqual(generationReport.stages.gamePlan.structured, true);
   assert.strictEqual(generatedSpec.content.bosses[0].id, 'patched_boss');
   assert.strictEqual(wavesSpec[0].enemy, 'patched_drone');
   assert.strictEqual(enemiesSpec[0].id, 'patched_drone');
@@ -379,6 +388,8 @@ function testNoClientSecrets() {
   assert.ok(clientScript.includes('Backend is connected, but no provider API key is configured.'));
   assert.ok(clientScript.includes('getTemplateCapabilitySummary'));
   assert.ok(clientScript.includes('templateCapability'));
+  assert.ok(clientScript.includes('latestGamePlanJson'));
+  assert.ok(clientScript.includes('aiPlanJson: latestGamePlanJson'));
   assert.ok(clientScript.includes('expectedGeneratedFiles'));
   assert.ok(clientScript.includes('templateUsage'));
   assert.ok(clientScript.includes('patchTargets'));
