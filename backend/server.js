@@ -575,12 +575,33 @@ function validateTemplatePatchContentForTemplate(templateId, plan) {
   }
 }
 
+function validateAIPlanJson(plan) {
+  if (!plan || typeof plan !== 'object' || Array.isArray(plan)) {
+    const error = new Error('Template compile requires structured AI game plan JSON.');
+    error.code = 'MODEL_SCHEMA_INVALID';
+    throw error;
+  }
+  const required = ['title', 'hook', 'coreLoop', 'prototypeScope', 'templateUsage', 'patchTargets'];
+  const missing = required.filter(key => {
+    const value = plan[key];
+    if (Array.isArray(value)) return value.length === 0;
+    return !value;
+  });
+  if (missing.length) {
+    const error = new Error(`AI game plan JSON missing required field(s): ${missing.join(', ')}.`);
+    error.code = 'MODEL_SCHEMA_INVALID';
+    throw error;
+  }
+  return plan;
+}
+
 function compileTemplateProject(payload) {
   if (!payload.aiPlanDraft || typeof payload.aiPlanDraft !== 'string') {
     const error = new Error('Template compile requires an AI-generated game plan draft.');
     error.code = 'TEMPLATE_COMPILE_FAILED';
     throw error;
   }
+  const aiPlanJson = validateAIPlanJson(payload.aiPlanJson);
   const templatePatchPlan = validateTemplatePatchPlan(payload.templatePatchPlan);
   validatePatchModelMatchesSelectedModel(templatePatchPlan, payload.selectedModel);
 
@@ -614,7 +635,7 @@ function compileTemplateProject(payload) {
     selectedModel: payload.selectedModel || {},
     templatePatchPlan,
     aiPlanDraft: payload.aiPlanDraft,
-    aiPlanJson: payload.aiPlanJson,
+    aiPlanJson,
     analysisModelMeta: payload.analysisModelMeta,
     gamePlanModelMeta: payload.gamePlanModelMeta,
     validationReport
