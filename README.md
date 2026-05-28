@@ -86,6 +86,12 @@ Generated preview projects are written under `backend/data/generated/` and serve
 
 Deploy the backend as a Node service with `npm start` or build the included Dockerfile. Set provider API keys as environment variables on the hosting platform, then point the static frontend to the service with `droi-config.json`.
 
+For cross-origin static hosting, set `FRONTEND_ORIGIN` to the deployed frontend origin, for example:
+
+```text
+FRONTEND_ORIGIN=https://droidev-studio.github.io
+```
+
 Readiness checks:
 
 - `/api/health` always returns service status without secrets.

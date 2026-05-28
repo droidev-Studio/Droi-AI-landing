@@ -7,6 +7,8 @@ const {
   detectTemplateId,
   buildCompiledGameSpec,
   getRuntimeStatus,
+  getFrontendOrigins,
+  isAllowedCorsOrigin,
   listPublicModels
 } = require('./server');
 
@@ -164,6 +166,15 @@ function testRuntimeStatus() {
   assert.ok(!serialized.includes('sk-'));
 }
 
+function testCorsOriginRules() {
+  const origins = getFrontendOrigins();
+  assert.ok(origins.includes('https://droidev-studio.github.io'));
+  assert.strictEqual(isAllowedCorsOrigin('https://droidev-studio.github.io'), true);
+  assert.strictEqual(isAllowedCorsOrigin('http://127.0.0.1:4173'), true);
+  assert.strictEqual(isAllowedCorsOrigin('http://localhost:5500'), true);
+  assert.strictEqual(isAllowedCorsOrigin('https://example.com'), false);
+}
+
 function testManualQueue() {
   const submission = saveManualQueueSubmission({
     email: 'player@example.com',
@@ -209,6 +220,7 @@ testCompiledSpec();
 testCompilerOutput();
 testPublicModels();
 testRuntimeStatus();
+testCorsOriginRules();
 testManualQueue();
 testNoClientSecrets();
 

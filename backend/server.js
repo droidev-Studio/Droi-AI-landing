@@ -79,6 +79,19 @@ function loadEnvFile() {
 
 loadEnvFile();
 
+const LOCAL_FRONTEND_PORTS = new Set(['3000', '4173', '5173', '5500']);
+const DEFAULT_FRONTEND_ORIGINS = [
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:4173',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5500',
+  'http://localhost:3000',
+  'http://localhost:4173',
+  'http://localhost:5173',
+  'http://localhost:5500',
+  'https://droidev-studio.github.io'
+];
+
 function getPort() {
   return Number(process.env.PORT || 3000) || 3000;
 }
@@ -87,13 +100,44 @@ function getModelRequestTimeoutMs() {
   return Number(process.env.MODEL_REQUEST_TIMEOUT_MS || 60000) || 60000;
 }
 
+function getFrontendOrigins() {
+  return [
+    ...DEFAULT_FRONTEND_ORIGINS,
+    ...(process.env.FRONTEND_ORIGIN || '')
+      .split(',')
+      .map(value => value.trim())
+      .filter(Boolean)
+  ];
+}
+
+function isAllowedCorsOrigin(origin) {
+  if (!origin) return false;
+  if (getFrontendOrigins().includes(origin)) return true;
+  try {
+    const url = new URL(origin);
+    return ['127.0.0.1', 'localhost'].includes(url.hostname) && LOCAL_FRONTEND_PORTS.has(url.port);
+  } catch (error) {
+    return false;
+  }
+}
+
+function applyCorsHeaders(req, res) {
+  const origin = req.headers.origin || '';
+  if (origin && isAllowedCorsOrigin(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Vary', 'Origin');
+  } else if (!origin) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+}
+
 function sendJson(res, status, payload) {
   const body = JSON.stringify(payload, null, 2);
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
     'Content-Length': Buffer.byteLength(body)
   });
   res.end(body);
@@ -861,6 +905,7 @@ function serveStatic(req, res, pathname) {
     '.png': 'image/png',
     '.jpg': 'image/jpeg',
     '.jpeg': 'image/jpeg',
+    '.webp': 'image/webp',
     '.svg': 'image/svg+xml'
   };
   res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream' });
@@ -868,6 +913,7 @@ function serveStatic(req, res, pathname) {
 }
 
 async function handleApi(req, res, pathname) {
+  applyCorsHeaders(req, res);
   if (req.method === 'OPTIONS') {
     sendJson(res, 200, { ok: true });
     return;
@@ -1009,5 +1055,7 @@ module.exports = {
   buildCompiledGameSpec,
   detectTemplateId,
   getRuntimeStatus,
+  getFrontendOrigins,
+  isAllowedCorsOrigin,
   listPublicModels
 };

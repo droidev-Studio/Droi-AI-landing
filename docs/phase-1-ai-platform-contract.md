@@ -38,6 +38,8 @@ The backend listens on `http://127.0.0.1:3000` by default. When the frontend is 
 
 For static hosting such as GitHub Pages, copy `droi-config.example.json` to `droi-config.json` and set `apiBaseUrl` to the deployed backend. The frontend loads this file at runtime before fetching `/api/models`.
 
+The deployed backend must allow the frontend origin in CORS because the browser uses credentialed requests. Configure `FRONTEND_ORIGIN=https://droidev-studio.github.io` or another comma-separated allowlist on the backend host.
+
 ## User Flow
 
 - Public users see Google Login, Discord, the chat UI, and the model dropdown.
