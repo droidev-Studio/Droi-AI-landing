@@ -8,9 +8,27 @@ const PUBLIC_DIR = ROOT_DIR;
 const DATA_DIR = path.join(__dirname, 'data');
 const GENERATED_DIR = path.join(DATA_DIR, 'generated');
 const AI_STAGE_PROMPTS = {
-  'analyze-game-request': 'Analyze the user request into structured GameSpec JSON, including templateDecision, capability, missingFields, and confidence.',
-  'generate-game-plan': 'Generate a complete P0 HTML5 Canvas game plan from the structured GameSpec and selected template. Return strict JSON.',
-  'generate-template-patch': 'Generate a safe TemplatePatchPlan JSON for the selected template. Do not include runtime source code patches.'
+  'analyze-game-request': `Analyze the user request into structured GameSpec JSON. Return strict JSON only.
+Required top-level keys: modules, background, missingFields, templateDecision, capability.
+modules must include gameType, artStyle, gameSetting, coreGameplay, playerGoal, mainChallenge, progressionSystem, difficultyLevel.
+Each module value must use { status: "confirmed|suggested|missing", value: string|null, confidence: number }.
+templateDecision must use { templateId, templateLabel, genre, confidence, supported, reason }.
+Map flying shooter, plane shooter, space shooter, vertical shooter, shmup, bullet hell, \u98de\u884c\u5c04\u51fb, \u98de\u673a\u5927\u6218, \u592a\u7a7a\u5c04\u51fb, \u7eb5\u7248\u5c04\u51fb, \u7ad6\u7248\u6253\u98de\u673a, \u5f39\u5e55\u5c04\u51fb to bullet_hell.
+Map roguelike survival, Vampire Survivors-like, arena survival, auto-attack survival, horde survival, \u8089\u9e3d, \u5272\u8349, \u751f\u5b58, \u5438\u8840\u9b3c\u5e78\u5b58\u8005, \u81ea\u52a8\u653b\u51fb, \u5347\u7ea7\u4e09\u9009\u4e00 to roguelike_survival.
+Mark capability.supported false for 3D, multiplayer/networked, MMO, open world, native app, blockchain, complex backend runtime, or templates outside bullet_hell/roguelike_survival.`,
+  'generate-game-plan': `Generate a complete P0 HTML5 Canvas game plan from structured GameSpec and selected template. Return strict JSON only.
+Required keys: title, hook, storyPremise, coreLoop, momentToMoment, visualDirection, enemyDesign, progressionPlan, playerFantasy, prototypeScope, risk, templateUsage, patchTargets.
+Use the selected template capability as a hard constraint. Do not switch templates.
+For bullet_hell, describe enemy waves, boss phases, projectile pattern language, pickups, weapon growth, win/fail conditions, and readable art direction.
+For roguelike_survival, describe survival timeline, enemy swarms/elites/boss node, auto weapons, XP pickups, upgrade choices, balance, win/fail conditions, and readable art direction.
+Keep the plan concrete enough for TemplatePatchPlan generation. Do not emit code or file patches.`,
+  'generate-template-patch': `Generate a safe TemplatePatchPlan JSON for the selected P0 template. Return strict JSON only.
+Required keys: gameName, userIntentSummary, settingsPatch, stylePatch, contentPatch, assetPrompts, playabilityChecklist, requiresRuntimeCodePatch.
+requiresRuntimeCodePatch must be false.
+Never include direct file patches, source code patches, runtimePatch, files, filePatches, codePatch, sourcePatch, diff, or patches at any nesting depth.
+For bullet_hell contentPatch must include waves, bosses, enemyTypes or enemies, pickups, and projectilePatterns.
+For roguelike_survival contentPatch must include waves, enemies, weapons, upgrades, pickups, and balance.
+Only patch data that can be compiled into spec/config/manifest-derived output.`
 };
 const SUPPORTED_TEMPLATE_IDS = new Set(['bullet_hell', 'roguelike_survival']);
 const FORBIDDEN_TEMPLATE_PATCH_KEYS = new Set(['files', 'filePatches', 'runtimePatch', 'codePatch', 'sourcePatch', 'diff', 'patches']);
