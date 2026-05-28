@@ -429,6 +429,12 @@ function testNoClientSecrets() {
   assert.ok(!clientScript.includes('function applyLocalPromptAnalysis'));
   assert.ok(!clientScript.includes('function applyP0ClosureDefaults'));
   assert.ok(!clientScript.includes('function matchLocalPool'));
+  assert.ok(!clientScript.includes('function inferThemePreset'));
+  assert.ok(!clientScript.includes('function buildRuntimeProfile'));
+  assert.ok(!clientScript.includes('function buildContentProfile'));
+  assert.ok(!clientScript.includes("version: 'p0-preview'"));
+  assert.ok(clientScript.includes('Local GameSpec generation is disabled'));
+  assert.ok(clientScript.includes('Local generation plans are disabled'));
   assert.ok(clientScript.includes('compiledProject'));
   assert.ok(clientScript.includes('generatedFiles'));
   assert.ok(clientScript.includes('validationReport'));
