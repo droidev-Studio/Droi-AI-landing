@@ -346,6 +346,16 @@ function listPublicModels() {
   });
 }
 
+function getErrorStatus(code, fallbackStatus) {
+  if (fallbackStatus) return fallbackStatus;
+  const normalized = String(code || '');
+  if (normalized === 'MODEL_NOT_CONFIGURED') return 400;
+  if (normalized === 'MODEL_REQUEST_INVALID') return 400;
+  if (normalized === 'TEMPLATE_NOT_SUPPORTED') return 422;
+  if (['MODEL_SCHEMA_INVALID', 'MODEL_JSON_PARSE_FAILED', 'PATCH_FILE_NOT_ALLOWED', 'PATCH_REQUIRES_RUNTIME_CODE', 'TEMPLATE_COMPILE_FAILED', 'PREVIEW_BOOT_FAILED'].includes(normalized)) return 422;
+  return 500;
+}
+
 function getErrorResponseMeta(code) {
   const normalized = String(code || 'SERVER_ERROR');
   const table = {
@@ -524,6 +534,28 @@ function validatePatchModelMatchesSelectedModel(plan, selectedModel) {
   }
 }
 
+function validateTemplatePatchContentForTemplate(templateId, plan) {
+  const content = plan.contentPatch || {};
+  const requiredByTemplate = {
+    bullet_hell: ['waves', 'bosses', 'projectilePatterns'],
+    roguelike_survival: ['waves', 'enemies', 'weapons', 'upgrades', 'balance']
+  };
+  const required = requiredByTemplate[templateId] || [];
+  const missing = required.filter(key => {
+    const value = content[key];
+    if (Array.isArray(value)) return value.length === 0;
+    return !value || typeof value !== 'object';
+  });
+  if (templateId === 'bullet_hell' && !Array.isArray(content.enemyTypes) && !Array.isArray(content.enemies)) {
+    missing.push('enemyTypes');
+  }
+  if (missing.length) {
+    const error = new Error(`TemplatePatchPlan contentPatch for ${templateId} missing required module(s): ${[...new Set(missing)].join(', ')}.`);
+    error.code = 'MODEL_SCHEMA_INVALID';
+    throw error;
+  }
+}
+
 function compileTemplateProject(payload) {
   if (!payload.aiPlanDraft || typeof payload.aiPlanDraft !== 'string') {
     const error = new Error('Template compile requires an AI-generated game plan draft.');
@@ -536,6 +568,7 @@ function compileTemplateProject(payload) {
   const spec = payload.gameSpec || {};
   const decision = payload.templateDecision || {};
   const templateId = resolveCompileTemplateId(decision);
+  validateTemplatePatchContentForTemplate(templateId, templatePatchPlan);
 
   const projectId = `${templateId}-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
   const projectDir = path.join(GENERATED_DIR, projectId);
@@ -1335,7 +1368,7 @@ async function handleApi(req, res, pathname) {
     sendError(res, 404, 'NOT_FOUND', 'API endpoint not found.');
   } catch (error) {
     const code = error.code || 'SERVER_ERROR';
-    const status = error.status || (code === 'MODEL_NOT_CONFIGURED' ? 400 : code === 'TEMPLATE_NOT_SUPPORTED' ? 422 : 500);
+    const status = getErrorStatus(code, error.status);
     const meta = getErrorResponseMeta(code);
     sendError(res, status, code, error.message || 'Request failed.', {
       ...meta

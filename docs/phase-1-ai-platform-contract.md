@@ -159,6 +159,13 @@ Uses the selected model to produce a safe `TemplatePatchPlan`. The plan must not
 
 Only these three `/api/ai/*` stages are valid. Unknown AI stage paths must return `MODEL_REQUEST_INVALID` before any model call is attempted.
 
+The compiler validates template-specific `contentPatch` modules before emitting files:
+
+- `bullet_hell` requires `waves`, `enemyTypes` or `enemies`, `bosses`, and `projectilePatterns`.
+- `roguelike_survival` requires `waves`, `enemies`, `weapons`, `upgrades`, and `balance`.
+
+Invalid model output or patch schema failures return `422 MODEL_SCHEMA_INVALID` or another typed 4xx error, not a generic server failure.
+
 ### `POST /api/template-project/compile`
 
 Compiles a playable HTML5 Canvas preview from the selected template and AI-generated `TemplatePatchPlan`. The compiler uses `templateDecision.templateId` as the authoritative template selection and rejects anything outside the P0 allowlist (`bullet_hell`, `roguelike_survival`). It validates that the patch was AI-generated and that `TemplatePatchPlan.modelMeta.providerId/modelId` exactly matches the current `selectedModel.providerId/modelId`. It returns generated files, validation checks, and a preview URL.

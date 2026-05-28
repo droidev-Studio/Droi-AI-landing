@@ -24,7 +24,9 @@ function makePatchPlan(overrides = {}) {
     stylePatch: { palette: ['#00e5ff', '#ff4fd8'] },
     contentPatch: {
       waves: [{ t: 0, enemy: 'patched_drone', count: 12 }],
-      bosses: [{ id: 'patched_boss', hp: 1800, phases: ['spiral', 'burst'] }]
+      enemyTypes: [{ id: 'patched_drone', hp: 24, pattern: 'fan' }],
+      bosses: [{ id: 'patched_boss', hp: 1800, phases: ['spiral', 'burst'] }],
+      projectilePatterns: [{ id: 'spiral', color: '#00e5ff', speed: 160 }]
     },
     assetPrompts: { player: 'sleek neon ship', boss: 'giant prism core' },
     playabilityChecklist: ['move', 'shoot', 'dodge', 'boss', 'win'],
@@ -132,7 +134,9 @@ function testCompilerOutput() {
   assert.strictEqual(generatedSpec.content.bosses[0].id, 'patched_boss');
   assert.strictEqual(wavesSpec[0].enemy, 'patched_drone');
   assert.strictEqual(enemiesSpec[0].id, 'patched_drone');
+  const effectsSpec = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'generated', project.id, 'spec', 'effects.json'), 'utf8'));
   assert.strictEqual(balanceSpec.bosses[0].id, 'patched_boss');
+  assert.strictEqual(effectsSpec.projectilePatterns[0].id, 'spiral');
   assert.deepStrictEqual(generatedSpec.artDirection.palette, ['#00e5ff', '#ff4fd8']);
   assert.ok(templateConfig.includes('window.DROI_TEMPLATE_CONFIG'));
   assert.ok(generatedGameJs.includes('const isBullet'));
@@ -186,7 +190,9 @@ function testCompilerOutput() {
       contentPatch: {
         waves: [{ t: 0, enemy: 'ghoul', interval: 0.9 }],
         enemies: [{ id: 'ghoul', hp: 18 }],
-        weapons: [{ id: 'auto_orbit_blade', cadence: 0.6 }]
+        weapons: [{ id: 'auto_orbit_blade', cadence: 0.6 }],
+        upgrades: ['damage'],
+        balance: { survivalSeconds: 600 }
       }
     })
   });
@@ -231,6 +237,41 @@ function testCompilerOutput() {
       templatePatchPlan: makePatchPlan()
     }),
     /does not match the selected model/
+  );
+
+  assert.throws(
+    () => compileTemplateProject({
+      gameSpec: { gameType: 'space shooter' },
+      templateDecision: { templateId: 'bullet_hell' },
+      selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      aiPlanDraft: 'AI generated plan',
+      templatePatchPlan: makePatchPlan({
+        contentPatch: {
+          waves: [{ t: 0, enemy: 'drone' }],
+          bosses: [{ id: 'boss' }],
+          enemyTypes: [{ id: 'drone' }]
+        }
+      })
+    }),
+    /projectilePatterns/
+  );
+
+  assert.throws(
+    () => compileTemplateProject({
+      gameSpec: { gameType: 'Vampire Survivors style' },
+      templateDecision: { templateId: 'roguelike_survival' },
+      selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      aiPlanDraft: 'AI generated plan',
+      templatePatchPlan: makePatchPlan({
+        contentPatch: {
+          waves: [{ t: 0, enemy: 'ghoul' }],
+          enemies: [{ id: 'ghoul' }],
+          upgrades: ['damage'],
+          balance: { survivalSeconds: 600 }
+        }
+      })
+    }),
+    /weapons/
   );
 
   assert.throws(
@@ -445,6 +486,37 @@ async function testAIStageValidation() {
   }
 }
 
+async function testCompileSchemaInvalidStatus() {
+  const server = createServer();
+  const port = await listenOnSafeTestPort(server);
+  const base = `http://127.0.0.1:${port}`;
+  try {
+    const response = await fetch(`${base}/api/template-project/compile`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        gameSpec: { gameType: 'space shooter' },
+        templateDecision: { templateId: 'bullet_hell' },
+        selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+        aiPlanDraft: 'AI generated plan',
+        templatePatchPlan: makePatchPlan({
+          contentPatch: {
+            waves: [{ t: 0, enemy: 'drone' }],
+            bosses: [{ id: 'boss' }],
+            enemyTypes: [{ id: 'drone' }]
+          }
+        })
+      })
+    });
+    assert.strictEqual(response.status, 422);
+    const payload = await response.json();
+    assert.strictEqual(payload.code, 'MODEL_SCHEMA_INVALID');
+    assert.strictEqual(payload.error.category, 'model_output_invalid');
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+}
+
 function listenOnSafeTestPort(server) {
   const startPort = 43100;
   const maxAttempts = 25;
@@ -484,6 +556,7 @@ async function run() {
   testManualQueue();
   testNoClientSecrets();
   await testAIStageValidation();
+  await testCompileSchemaInvalidStatus();
   await testGeneratedStaticServing();
   console.log('backend tests passed');
 }
