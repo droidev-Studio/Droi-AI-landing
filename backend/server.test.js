@@ -123,6 +123,7 @@ function testCompilerOutput() {
   assert.ok(project.files.includes('generation-report.json'));
   assert.ok(!project.files.includes('README.md'));
   assert.strictEqual(project.validationReport.ok, true);
+  assert.ok(project.validationReport.checks.some(check => check.label === 'Preview boot marker emitted'));
   assert.strictEqual(project.generationReport.aiFirst, true);
   assert.strictEqual(project.generationReport.aiGenerated, true);
   assert.strictEqual(project.generationReport.selectedModel.label, 'GPT 5.5 High');
@@ -154,6 +155,8 @@ function testCompilerOutput() {
   assert.deepStrictEqual(generatedSpec.artDirection.palette, ['#00e5ff', '#ff4fd8']);
   assert.ok(templateConfig.includes('window.DROI_TEMPLATE_CONFIG'));
   assert.ok(generatedGameJs.includes('const isBullet'));
+  assert.ok(generatedGameJs.includes('window.DROI_PREVIEW_STATUS'));
+  assert.ok(generatedGameJs.includes('frameCount'));
   assert.ok(generatedGameJs.includes('const content = spec.content'));
   assert.ok(generatedGameJs.includes('const palette = Array.isArray'));
   assert.ok(generatedGameJs.includes('const enemyTypesConfig'));
@@ -540,6 +543,8 @@ async function testGeneratedStaticServing() {
     assert.strictEqual(previewResponse.status, 200);
     const previewHtml = await previewResponse.text();
     assert.ok(previewHtml.includes('AI Patched Skybreak'));
+    assert.ok(previewHtml.includes('window.DROI_PREVIEW_STATUS'));
+    assert.ok(previewHtml.includes('booted:false'));
 
     const wavesResponse = await fetch(`${base}${project.previewUrl.replace('/index.html', '/spec/waves.json')}`);
     assert.strictEqual(wavesResponse.status, 200);

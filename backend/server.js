@@ -584,6 +584,7 @@ function compileTemplateProject(payload) {
       { ok: true, label: 'TemplatePatchPlan validated as AI-generated' },
       { ok: true, label: `AI templateDecision selected ${templateId}` },
       { ok: true, label: 'HTML5 Canvas preview files emitted' },
+      { ok: true, label: 'Preview boot marker emitted' },
       { ok: true, label: 'GameSpec, split spec modules, template config, and manifest emitted' },
       { ok: true, label: 'Generation trace report emitted' }
     ]
@@ -1033,16 +1034,20 @@ function buildPreviewHtml(gameSpec) {
     <p>${escapeHtml(gameSpec.gameplay.coreLoop)}</p>
     <canvas id="game" width="960" height="540"></canvas>
   </main>
-  <script>window.GAME_SPEC=${JSON.stringify(gameSpec)};</script>
+  <script>
+    window.DROI_PREVIEW_STATUS={booted:false,running:false,error:null,startedAt:Date.now(),templateId:${JSON.stringify(gameSpec.meta.templateId)}};
+    window.GAME_SPEC=${JSON.stringify(gameSpec)};
+  </script>
   <script src="./game.js"></script>
 </body>
 </html>`;
 }
 
 function buildPreviewGameJs() {
-  return `(() => {
+  return `(async () => {
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
+  window.DROI_PREVIEW_STATUS = Object.assign({}, window.DROI_PREVIEW_STATUS || {}, { booted: true, running: false, error: null, bootedAt: Date.now() });
   const spec = window.GAME_SPEC || {};
   const isBullet = spec.meta && spec.meta.templateId === 'bullet_hell';
   const content = spec.content || {};
@@ -1343,6 +1348,11 @@ function buildPreviewGameJs() {
   }
 
   function loop(now) {
+    if (window.DROI_PREVIEW_STATUS) {
+      window.DROI_PREVIEW_STATUS.running = true;
+      window.DROI_PREVIEW_STATUS.lastFrameAt = Date.now();
+      window.DROI_PREVIEW_STATUS.frameCount = (window.DROI_PREVIEW_STATUS.frameCount || 0) + 1;
+    }
     const dt = Math.min(0.033, (now - last) / 1000);
     last = now;
     update(dt);
@@ -1350,7 +1360,14 @@ function buildPreviewGameJs() {
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
-})();`;
+})().catch(error => {
+  window.DROI_PREVIEW_STATUS = Object.assign({}, window.DROI_PREVIEW_STATUS || {}, {
+    booted: false,
+    running: false,
+    error: error && error.message ? error.message : String(error)
+  });
+  throw error;
+});`;
 }
 
 function escapeHtml(value) {
