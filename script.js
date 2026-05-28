@@ -1636,6 +1636,56 @@ Unsupported P0 capability includes 3D, multiplayer/networked, MMO, open world, n
         }
     }
 
+    async function refreshAITemplateDecisionForCurrentSpec(stage = 'template_decision') {
+        if (!hasLiveAIProvider()) throw createModelNotConfiguredError(stage);
+        const spec = getCurrentGameSpec();
+        const response = await withTimeout(aiService.stageChat('/api/ai/analyze-game-request', [
+            {
+                role: 'system',
+                content: `You validate the current GameSpec before generation.
+Return strict JSON only. The response must include modules, templateDecision, capability, and missingFields.
+Do not create a full game plan here.
+Template mapping:
+- Flying shooter, plane shooter, space shooter, vertical shooter, shmup, bullet hell, \u98de\u884c\u5c04\u51fb, \u98de\u673a\u5927\u6218, \u592a\u7a7a\u5c04\u51fb, \u7eb5\u7248\u5c04\u51fb, \u7ad6\u7248\u6253\u98de\u673a, \u5f39\u5e55\u5c04\u51fb => bullet_hell.
+- Roguelike survival, Vampire Survivors-like, arena survival, auto-attack survival, horde survival, \u8089\u9e3d, \u5272\u8349, \u751f\u5b58, \u5438\u8840\u9b3c\u5e78\u5b58\u8005, \u81ea\u52a8\u653b\u51fb, \u5347\u7ea7\u4e09\u9009\u4e00 => roguelike_survival.
+Unsupported P0 capability includes 3D, multiplayer/networked, MMO, open world, native app, blockchain, or complex backend runtime.`
+            },
+            {
+                role: 'user',
+                content: JSON.stringify({
+                    selectedModel: getActiveModelMeta(),
+                    currentGameSpec: spec,
+                    chatTranscript: getRecentChatTranscript(),
+                    allowedTemplates: TEMPLATE_CATALOG
+                        .filter(template => AUTO_GENERATION_TEMPLATE_IDS.has(template.id))
+                        .map(template => ({
+                            id: template.id,
+                            label: template.label,
+                            keywords: template.keywords,
+                            gameplayPillars: template.gameplayPillars
+                        }))
+                }, null, 2)
+            }
+        ]), AI_ANALYSIS_TIMEOUT_MS);
+
+        const parsed = validateAnalysisResponse(parseJsonObjectFromText(response.content, 'MODEL_JSON_PARSE_FAILED'));
+        const modules = parsed.modules || parsed;
+        applyExtractedModule('type', modules.gameType || parsed.gameType, GAME_TYPES, 'mechanic');
+        applyExtractedModule('style', modules.artStyle || parsed.artStyle, ART_STYLES);
+        applyExtractedModule('setting', modules.gameSetting || parsed.setting, SETTINGS, 'desc');
+        applyExtractedModule('coreGameplay', modules.coreGameplay, CORE_GAMEPLAY_OPTIONS, 'desc');
+        applyExtractedModule('playerGoal', modules.playerGoal, PLAYER_GOAL_OPTIONS, 'desc');
+        applyExtractedModule('mainChallenge', modules.mainChallenge, MAIN_CHALLENGE_OPTIONS, 'desc');
+        applyExtractedModule('progressionSystem', modules.progressionSystem, PROGRESSION_OPTIONS, 'desc');
+        applyExtractedModule('difficultyLevel', modules.difficultyLevel, DIFFICULTY_OPTIONS, 'desc');
+        analysisState.background = parsed.background || spec.background || analysisState.background;
+        analysisState.templateDecision = normalizeAITemplateDecision(parsed.templateDecision || parsed.template || parsed.decision);
+        analysisState.capability = normalizeAICapability(parsed.capability);
+        analysisState.missingFields = Array.isArray(parsed.missingFields) ? parsed.missingFields : [];
+        analysisState.analysisModelMeta = buildStageModelMeta(response);
+        return analysisState.templateDecision;
+    }
+
     function matchChoice(pool, value, extraKey) {
         if (!value) return null;
         const normalized = String(value).toLowerCase();
@@ -3020,8 +3070,15 @@ Keep the selected template aligned with broad genre intent, not only exact words
 
         try {
             const responseModelMeta = getActiveModelMeta();
-            const spec = getCurrentGameSpec();
+            let spec = getCurrentGameSpec();
+            await refreshAITemplateDecisionForCurrentSpec('template_decision');
+            spec = getCurrentGameSpec();
             const decision = matchTemplate(spec);
+            if (decision.source !== 'ai') {
+                const error = new Error('Template decision must come from the selected AI model before game plan generation.');
+                error.code = 'MODEL_SCHEMA_INVALID';
+                throw error;
+            }
             const templateCapability = getTemplateCapabilitySummary(decision);
             const response = await withTimeout(aiService.stageChat('/api/ai/generate-game-plan', [
                 {
@@ -3991,8 +4048,8 @@ Use templateCapability.outputFiles as the compile target, but do not emit a file
     }
 
     async function composeAndReturn() {
-        const spec = getCurrentGameSpec();
-        const decision = matchTemplate(spec);
+        let spec = getCurrentGameSpec();
+        let decision = matchTemplate(spec);
         savedPrompt = `Your Concept: ${spec.background}
 Game Type: ${spec.gameType}
 Art Style: ${spec.artStyle}
@@ -4010,6 +4067,16 @@ Decision Source: ${decision.source || 'unknown'}`;
         // 鐩存帴杩涘叆鐢熸垚娴佺▼锛屾枃妗堝凡鍦?askFinalConfirmation 涓睍绀鸿繃
         const pendingMessage = addBotMessage('', null, { pending: true });
         try {
+            if (decision.source !== 'ai') {
+                await refreshAITemplateDecisionForCurrentSpec('template_decision');
+                spec = getCurrentGameSpec();
+                decision = matchTemplate(spec);
+            }
+            if (decision.source !== 'ai') {
+                const error = new Error('Template decision must come from the selected AI model before template patch generation.');
+                error.code = 'MODEL_SCHEMA_INVALID';
+                throw error;
+            }
             if (!decision.canAutoGenerate) {
                 const error = new Error(decision.fallbackMessage || 'This request is outside the current automatic template coverage.');
                 error.code = 'TEMPLATE_COMPILE_FAILED';
