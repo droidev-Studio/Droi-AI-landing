@@ -394,18 +394,13 @@ function compileTemplateProject(payload) {
   fs.mkdirSync(projectDir, { recursive: true });
 
   const generatedSpec = buildCompiledGameSpec(spec, decision, templateId, payload.selectedModel || {}, templatePatchPlan);
-  const files = [
-    'index.html',
-    'game.js',
-    'spec/game.json',
-    'assets/manifest.json'
-  ];
-  fs.mkdirSync(path.join(projectDir, 'spec'), { recursive: true });
-  fs.mkdirSync(path.join(projectDir, 'assets'), { recursive: true });
-  fs.writeFileSync(path.join(projectDir, 'index.html'), buildPreviewHtml(generatedSpec), 'utf8');
-  fs.writeFileSync(path.join(projectDir, 'game.js'), buildPreviewGameJs(), 'utf8');
-  fs.writeFileSync(path.join(projectDir, 'spec', 'game.json'), JSON.stringify(generatedSpec, null, 2), 'utf8');
-  fs.writeFileSync(path.join(projectDir, 'assets', 'manifest.json'), JSON.stringify(buildManifest(generatedSpec), null, 2), 'utf8');
+  const projectFiles = buildGeneratedProjectFiles(generatedSpec);
+  const files = Object.keys(projectFiles);
+  for (const [relativePath, contents] of Object.entries(projectFiles)) {
+    const targetPath = path.join(projectDir, relativePath);
+    fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+    fs.writeFileSync(targetPath, contents, 'utf8');
+  }
 
   return {
     id: projectId,
@@ -420,7 +415,7 @@ function compileTemplateProject(payload) {
         { ok: true, label: 'TemplatePatchPlan validated as AI-generated' },
         { ok: true, label: `${templateId} P0 template selected` },
         { ok: true, label: 'HTML5 Canvas preview files emitted' },
-        { ok: true, label: 'GameSpec and manifest emitted' }
+        { ok: true, label: 'GameSpec, split spec modules, template config, and manifest emitted' }
       ]
     }
   };
@@ -611,6 +606,89 @@ function buildManifest(gameSpec) {
   };
 }
 
+function collectEnemySpec(gameSpec) {
+  const content = gameSpec.content || {};
+  if (Array.isArray(content.enemies)) return content.enemies;
+  if (Array.isArray(content.enemyTypes)) return content.enemyTypes;
+  const fromWaves = Array.isArray(content.waves)
+    ? [...new Set(content.waves.map(wave => wave && wave.enemy).filter(Boolean))]
+      .map(id => ({ id, source: 'wave' }))
+    : [];
+  const bosses = Array.isArray(content.bosses)
+    ? content.bosses.map(boss => ({ ...(boss || {}), type: 'boss' }))
+    : [];
+  return [...fromWaves, ...bosses];
+}
+
+function collectWeaponSpec(gameSpec) {
+  const content = gameSpec.content || {};
+  if (Array.isArray(content.weapons)) return content.weapons;
+  const player = content.player || {};
+  const weapons = [];
+  if (player.weapon) weapons.push({ id: player.weapon, source: 'player' });
+  if (Array.isArray(player.weapons)) {
+    player.weapons.forEach(id => weapons.push({ id, source: 'player' }));
+  }
+  if (Array.isArray(content.upgrades)) {
+    content.upgrades.forEach(id => weapons.push({ id, source: 'upgrade_pool' }));
+  }
+  return weapons;
+}
+
+function buildGeneratedProjectFiles(gameSpec) {
+  const content = gameSpec.content || {};
+  const minimalSpec = {
+    meta: gameSpec.meta,
+    runtime: gameSpec.runtime,
+    gameplay: gameSpec.gameplay,
+    artDirection: gameSpec.artDirection
+  };
+  const balance = content.balance || {
+    difficulty: gameSpec.gameplay && gameSpec.gameplay.difficulty,
+    settings: gameSpec.settings || {},
+    player: content.player || {},
+    bosses: Array.isArray(content.bosses) ? content.bosses.map(boss => ({
+      id: boss.id,
+      hp: boss.hp,
+      phases: boss.phases
+    })) : []
+  };
+  const effects = content.effects || {
+    projectilePatterns: content.projectilePatterns || [],
+    pickups: content.pickups || [],
+    palette: gameSpec.artDirection && gameSpec.artDirection.palette
+  };
+  const templateConfig = {
+    templateId: gameSpec.meta.templateId,
+    generatedBy: gameSpec.meta.generatedBy,
+    patchModel: gameSpec.meta.patchModel,
+    runtime: gameSpec.runtime,
+    entrySpec: 'spec/game.json',
+    splitSpecs: {
+      minimal: 'spec/minimal.json',
+      waves: 'spec/waves.json',
+      enemies: 'spec/enemies.json',
+      weapons: 'spec/weapons.json',
+      balance: 'spec/balance.json',
+      effects: 'spec/effects.json'
+    }
+  };
+
+  return {
+    'index.html': buildPreviewHtml(gameSpec),
+    'game.js': buildPreviewGameJs(),
+    'template-config.js': `window.DROI_TEMPLATE_CONFIG=${JSON.stringify(templateConfig, null, 2)};\n`,
+    'spec/game.json': JSON.stringify(gameSpec, null, 2),
+    'spec/minimal.json': JSON.stringify(minimalSpec, null, 2),
+    'spec/waves.json': JSON.stringify(content.waves || [], null, 2),
+    'spec/enemies.json': JSON.stringify(collectEnemySpec(gameSpec), null, 2),
+    'spec/weapons.json': JSON.stringify(collectWeaponSpec(gameSpec), null, 2),
+    'spec/balance.json': JSON.stringify(balance, null, 2),
+    'spec/effects.json': JSON.stringify(effects, null, 2),
+    'assets/manifest.json': JSON.stringify(buildManifest(gameSpec), null, 2)
+  };
+}
+
 function buildPreviewHtml(gameSpec) {
   return `<!doctype html>
 <html lang="en">
@@ -644,6 +722,13 @@ function buildPreviewGameJs() {
   const ctx = canvas.getContext('2d');
   const spec = window.GAME_SPEC || {};
   const isBullet = spec.meta && spec.meta.templateId === 'bullet_hell';
+  const content = spec.content || {};
+  const art = spec.artDirection || {};
+  const palette = Array.isArray(art.palette) && art.palette.length ? art.palette : ['#42e8ff', '#ff4fd8', '#ffe66d', '#88f3d2'];
+  const playerConfig = content.player || {};
+  const wavesConfig = Array.isArray(content.waves) ? content.waves : [];
+  const bossConfig = Array.isArray(content.bosses) && content.bosses.length ? content.bosses[0] : {};
+  const upgradesConfig = Array.isArray(content.upgrades) ? content.upgrades : [];
   let t = 0;
   let last = performance.now();
   let spawn = 0;
@@ -654,7 +739,14 @@ function buildPreviewGameJs() {
   let xp = 0;
   let over = false;
   let won = false;
-  const player = { x: canvas.width / 2, y: canvas.height * 0.72, hp: isBullet ? 3 : 120, r: isBullet ? 10 : 14, inv: 0 };
+  const player = {
+    x: canvas.width / 2,
+    y: canvas.height * 0.72,
+    hp: Number(playerConfig.hp) || (isBullet ? 3 : 120),
+    r: Number(playerConfig.hitbox || playerConfig.r) || (isBullet ? 10 : 14),
+    speed: Number(playerConfig.speed) || (isBullet ? 245 : 220),
+    inv: 0
+  };
   const enemies = [];
   const shots = [];
   const enemyShots = [];
@@ -675,12 +767,15 @@ function buildPreviewGameJs() {
 
   function addEnemy(kind) {
     if (isBullet) {
-      enemies.push({ kind, x: 80 + Math.random() * (canvas.width - 160), y: -30, hp: kind === 'boss' ? 220 : 24, r: kind === 'boss' ? 34 : 13, cd: 0 });
+      const wave = wavesConfig[Math.min(wavesConfig.length - 1, Math.max(0, Math.floor(t / 20)))] || {};
+      const bossHp = Number(bossConfig.hp) || 260;
+      enemies.push({ kind, x: 80 + Math.random() * (canvas.width - 160), y: -30, hp: kind === 'boss' ? bossHp : Number(wave.hp) || 24, r: kind === 'boss' ? 34 : 13, cd: 0 });
     } else {
       const side = Math.floor(Math.random() * 4);
       const x = side < 2 ? Math.random() * canvas.width : (side === 2 ? -20 : canvas.width + 20);
       const y = side >= 2 ? Math.random() * canvas.height : (side === 0 ? -20 : canvas.height + 20);
-      enemies.push({ kind, x, y, hp: kind === 'boss' ? 300 : (kind === 'elite' ? 60 : 24), r: kind === 'boss' ? 32 : 14, cd: 0 });
+      const bossHp = Number(bossConfig.hp) || 300;
+      enemies.push({ kind, x, y, hp: kind === 'boss' ? bossHp : (kind === 'elite' ? 60 : 24), r: kind === 'boss' ? 32 : 14, cd: 0 });
     }
   }
 
@@ -696,7 +791,7 @@ function buildPreviewGameJs() {
     t += dt;
     player.inv = Math.max(0, player.inv - dt);
     const focus = isBullet && (keys.has('ShiftLeft') || keys.has('ShiftRight'));
-    const speed = (focus ? 155 : 245) * dt;
+    const speed = (focus ? player.speed * 0.64 : player.speed) * dt;
     if (keys.has('ArrowLeft') || keys.has('KeyA')) player.x -= speed;
     if (keys.has('ArrowRight') || keys.has('KeyD')) player.x += speed;
     if (keys.has('ArrowUp') || keys.has('KeyW')) player.y -= speed;
@@ -707,7 +802,8 @@ function buildPreviewGameJs() {
     spawn -= dt;
     if (spawn <= 0) {
       addEnemy(t > 45 && enemies.length < 2 ? 'boss' : (t > 20 && Math.random() < 0.25 ? 'elite' : 'runner'));
-      spawn = isBullet ? 1.0 : Math.max(0.35, 1.2 - t * 0.01);
+      const waveInterval = wavesConfig[0] && Number(wavesConfig[0].interval || wavesConfig[0].spawnInterval);
+      spawn = isBullet ? (waveInterval || 1.0) : Math.max(0.35, waveInterval || (1.2 - t * 0.01));
     }
 
     fire -= dt;
@@ -805,7 +901,7 @@ function buildPreviewGameJs() {
     for (let i = 0; i < 48; i++) {
       const x = (i * 97 + t * 18) % canvas.width;
       const y = (i * 53 + Math.sin(t + i) * 24 + t * 12) % canvas.height;
-      ctx.fillStyle = i % 3 === 0 ? '#42e8ff' : '#8b5cf6';
+      ctx.fillStyle = i % 3 === 0 ? palette[0] : (palette[3] || '#8b5cf6');
       ctx.globalAlpha = 0.35;
       ctx.beginPath();
       ctx.arc(x, y, 2 + (i % 3), 0, Math.PI * 2);
@@ -813,32 +909,32 @@ function buildPreviewGameJs() {
     }
     ctx.globalAlpha = 1;
     pickups.forEach(p => {
-      ctx.fillStyle = '#f2c14e';
+      ctx.fillStyle = palette[2] || '#f2c14e';
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
       ctx.fill();
     });
     shots.forEach(s => {
-      ctx.fillStyle = '#88f3d2';
+      ctx.fillStyle = palette[3] || '#88f3d2';
       ctx.fillRect(s.x - 2, s.y - 10, 4, 14);
     });
     enemyShots.forEach(s => {
-      ctx.fillStyle = '#ff4fd8';
+      ctx.fillStyle = palette[1] || '#ff4fd8';
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
       ctx.fill();
     });
     enemies.forEach(e => {
-      ctx.fillStyle = e.kind === 'boss' ? '#ffe66d' : (e.kind === 'elite' ? '#ff7a90' : '#42e8ff');
+      ctx.fillStyle = e.kind === 'boss' ? (palette[2] || '#ffe66d') : (e.kind === 'elite' ? '#ff7a90' : (palette[0] || '#42e8ff'));
       ctx.beginPath();
       ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = 'rgba(0,0,0,.55)';
       ctx.fillRect(e.x - e.r, e.y - e.r - 10, e.r * 2, 4);
-      ctx.fillStyle = '#88f3d2';
+      ctx.fillStyle = palette[3] || '#88f3d2';
       ctx.fillRect(e.x - e.r, e.y - e.r - 10, e.r * 2 * Math.max(0, Math.min(1, e.hp / (e.kind === 'boss' ? 300 : 60))), 4);
     });
-    ctx.fillStyle = '#88f3d2';
+    ctx.fillStyle = palette[3] || '#88f3d2';
     ctx.globalAlpha = player.inv > 0 ? 0.45 : 1;
     ctx.beginPath();
     ctx.moveTo(player.x, player.y - 18);
@@ -850,7 +946,8 @@ function buildPreviewGameJs() {
     ctx.fillStyle = 'rgba(255,255,255,.86)';
     ctx.font = '16px Inter, Arial';
     ctx.fillText((spec.meta ? spec.meta.gameType : 'Generated Game') + ' | Score ' + score + ' | HP ' + Math.ceil(player.hp) + ' | Lv ' + level, 18, 28);
-    ctx.fillText(isBullet ? 'Move WASD/Arrows. X bomb clears bullets.' : 'Move WASD/Arrows. Weapons auto-fire. Collect gold XP.', 18, 52);
+    const upgradeText = upgradesConfig.length ? ' Upgrades: ' + upgradesConfig.slice(0, 3).join(', ') : '';
+    ctx.fillText((isBullet ? 'Move WASD/Arrows. X bomb clears bullets.' : 'Move WASD/Arrows. Weapons auto-fire. Collect XP.') + upgradeText, 18, 52);
     if (over) {
       ctx.fillStyle = 'rgba(0,0,0,.68)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -886,9 +983,19 @@ function escapeHtml(value) {
 }
 
 function serveStatic(req, res, pathname) {
-  const safePath = path.normalize(decodeURIComponent(pathname)).replace(/^(\.\.[/\\])+/, '');
-  let filePath = path.join(PUBLIC_DIR, safePath === '/' ? 'index.html' : safePath);
-  if (!filePath.startsWith(PUBLIC_DIR)) {
+  const decodedPath = decodeURIComponent(pathname);
+  let rootDir = PUBLIC_DIR;
+  let relativePath = decodedPath === '/' ? 'index.html' : decodedPath;
+
+  if (decodedPath.startsWith('/generated/')) {
+    rootDir = GENERATED_DIR;
+    relativePath = decodedPath.slice('/generated/'.length);
+  }
+
+  const safePath = path.normalize(relativePath).replace(/^(\.\.[/\\])+/, '');
+  const filePath = path.join(rootDir, safePath);
+  const relativeToRoot = path.relative(rootDir, filePath);
+  if (relativeToRoot.startsWith('..') || path.isAbsolute(relativeToRoot)) {
     sendError(res, 403, 'FORBIDDEN', 'Forbidden.');
     return;
   }

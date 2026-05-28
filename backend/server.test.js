@@ -2,6 +2,7 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const {
+  createServer,
   compileTemplateProject,
   saveManualQueueSubmission,
   detectTemplateId,
@@ -102,19 +103,66 @@ function testCompilerOutput() {
   assert.strictEqual(project.templateId, 'bullet_hell');
   assert.ok(project.previewUrl.includes('/generated/'));
   assert.ok(project.files.includes('spec/game.json'));
+  assert.ok(project.files.includes('template-config.js'));
+  assert.ok(project.files.includes('spec/minimal.json'));
+  assert.ok(project.files.includes('spec/waves.json'));
+  assert.ok(project.files.includes('spec/enemies.json'));
+  assert.ok(project.files.includes('spec/weapons.json'));
+  assert.ok(project.files.includes('spec/balance.json'));
+  assert.ok(project.files.includes('spec/effects.json'));
   assert.ok(!project.files.includes('README.md'));
   assert.strictEqual(project.validationReport.ok, true);
   const generatedSpecPath = path.join(__dirname, 'data', 'generated', project.id, 'spec', 'game.json');
   const generatedSpec = JSON.parse(fs.readFileSync(generatedSpecPath, 'utf8'));
+  const wavesSpec = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'generated', project.id, 'spec', 'waves.json'), 'utf8'));
+  const enemiesSpec = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'generated', project.id, 'spec', 'enemies.json'), 'utf8'));
+  const balanceSpec = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'generated', project.id, 'spec', 'balance.json'), 'utf8'));
+  const templateConfig = fs.readFileSync(path.join(__dirname, 'data', 'generated', project.id, 'template-config.js'), 'utf8');
   const generatedGameJs = fs.readFileSync(path.join(__dirname, 'data', 'generated', project.id, 'game.js'), 'utf8');
   assert.strictEqual(generatedSpec.meta.gameName, 'AI Patched Skybreak');
   assert.strictEqual(generatedSpec.content.bosses[0].id, 'patched_boss');
+  assert.strictEqual(wavesSpec[0].enemy, 'patched_drone');
+  assert.strictEqual(enemiesSpec[0].id, 'patched_drone');
+  assert.strictEqual(balanceSpec.bosses[0].id, 'patched_boss');
   assert.deepStrictEqual(generatedSpec.artDirection.palette, ['#00e5ff', '#ff4fd8']);
+  assert.ok(templateConfig.includes('window.DROI_TEMPLATE_CONFIG'));
   assert.ok(generatedGameJs.includes('const isBullet'));
+  assert.ok(generatedGameJs.includes('const content = spec.content'));
+  assert.ok(generatedGameJs.includes('const palette = Array.isArray'));
+  assert.ok(generatedGameJs.includes('const upgradesConfig'));
   assert.ok(generatedGameJs.includes('function shootAt'));
   assert.ok(generatedGameJs.includes('enemyShots'));
   assert.ok(generatedGameJs.includes('pickups'));
   assert.ok(generatedGameJs.includes('Prototype Cleared'));
+
+  const rogueProject = compileTemplateProject({
+    gameSpec: {
+      gameType: 'Vampire Survivors style',
+      artStyle: 'Dark Gothic',
+      gameSetting: 'Cursed cathedral',
+      background: 'Auto-attack survival with level-up choices.'
+    },
+    templateDecision: { templateId: 'roguelike_survival', templateLabel: 'Roguelike Survival' },
+    selectedModel: { label: 'Gemini 3.5 Flash' },
+    aiPlanDraft: 'AI generated roguelike plan',
+    templatePatchPlan: makePatchPlan({
+      gameName: 'AI Patched Cathedral Run',
+      contentPatch: {
+        waves: [{ t: 0, enemy: 'ghoul', interval: 0.9 }],
+        enemies: [{ id: 'ghoul', hp: 18 }, { id: 'abbot_boss', hp: 900, type: 'boss' }],
+        weapons: [{ id: 'auto_orbit_blade', cadence: 0.6 }],
+        upgrades: ['damage', 'cooldown', 'orbit_count'],
+        balance: { survivalSeconds: 600, bossAtSeconds: 540 },
+        effects: { hit: 'violet sparks' }
+      }
+    })
+  });
+  assert.strictEqual(rogueProject.templateId, 'roguelike_survival');
+  assert.ok(rogueProject.files.includes('spec/weapons.json'));
+  const rogueWeapons = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'generated', rogueProject.id, 'spec', 'weapons.json'), 'utf8'));
+  const rogueEnemies = JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'generated', rogueProject.id, 'spec', 'enemies.json'), 'utf8'));
+  assert.strictEqual(rogueWeapons[0].id, 'auto_orbit_blade');
+  assert.strictEqual(rogueEnemies[1].id, 'abbot_boss');
 
   assert.throws(
     () => compileTemplateProject({
@@ -236,13 +284,51 @@ function testNoClientSecrets() {
   assert.ok(ciWorkflow.includes('npm run test:backend'));
 }
 
-testTemplateDetection();
-testCompiledSpec();
-testCompilerOutput();
-testPublicModels();
-testRuntimeStatus();
-testCorsOriginRules();
-testManualQueue();
-testNoClientSecrets();
+async function testGeneratedStaticServing() {
+  const project = compileTemplateProject({
+    gameSpec: {
+      gameType: 'space shooter',
+      artStyle: 'Pixel retro',
+      gameSetting: 'Orbit station',
+      background: 'A flying shooter with boss phases.'
+    },
+    templateDecision: { templateId: 'bullet_hell', templateLabel: 'Bullet Hell / Flying Shooter' },
+    selectedModel: { label: 'GPT 5.5 High' },
+    aiPlanDraft: 'AI generated plan',
+    templatePatchPlan: makePatchPlan()
+  });
+  const server = createServer();
+  await new Promise(resolve => server.listen(0, resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  try {
+    const previewResponse = await fetch(`${base}${project.previewUrl}`);
+    assert.strictEqual(previewResponse.status, 200);
+    const previewHtml = await previewResponse.text();
+    assert.ok(previewHtml.includes('AI Patched Skybreak'));
 
-console.log('backend tests passed');
+    const wavesResponse = await fetch(`${base}${project.previewUrl.replace('/index.html', '/spec/waves.json')}`);
+    assert.strictEqual(wavesResponse.status, 200);
+    const waves = await wavesResponse.json();
+    assert.strictEqual(waves[0].enemy, 'patched_drone');
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+}
+
+async function run() {
+  testTemplateDetection();
+  testCompiledSpec();
+  testCompilerOutput();
+  testPublicModels();
+  testRuntimeStatus();
+  testCorsOriginRules();
+  testManualQueue();
+  testNoClientSecrets();
+  await testGeneratedStaticServing();
+  console.log('backend tests passed');
+}
+
+run().catch(error => {
+  console.error(error);
+  process.exit(1);
+});
