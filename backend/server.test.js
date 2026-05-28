@@ -6,6 +6,7 @@ const {
   saveManualQueueSubmission,
   detectTemplateId,
   buildCompiledGameSpec,
+  getRuntimeStatus,
   listPublicModels
 } = require('./server');
 
@@ -151,6 +152,18 @@ function testPublicModels() {
   assert.ok(models.every(model => !Object.prototype.hasOwnProperty.call(model, 'apiKey')));
 }
 
+function testRuntimeStatus() {
+  const status = getRuntimeStatus();
+  const serialized = JSON.stringify(status);
+  assert.strictEqual(status.service, 'droi-ai-backend');
+  assert.ok(Array.isArray(status.templates));
+  assert.ok(status.templates.includes('bullet_hell'));
+  assert.ok(status.templates.includes('roguelike_survival'));
+  assert.ok(Number.isInteger(status.modelCount));
+  assert.ok(!serialized.includes('API_KEY'));
+  assert.ok(!serialized.includes('sk-'));
+}
+
 function testManualQueue() {
   const submission = saveManualQueueSubmission({
     email: 'player@example.com',
@@ -195,6 +208,7 @@ testTemplateDetection();
 testCompiledSpec();
 testCompilerOutput();
 testPublicModels();
+testRuntimeStatus();
 testManualQueue();
 testNoClientSecrets();
 

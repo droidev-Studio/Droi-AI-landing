@@ -70,6 +70,8 @@ Do not commit `.env`. It is ignored by git.
 
 ## API Routes
 
+- `GET /api/health`
+- `GET /api/ready`
 - `GET /api/models`
 - `POST /api/chat`
 - `POST /api/ai/analyze-game-request`
@@ -79,6 +81,15 @@ Do not commit `.env`. It is ignored by git.
 - `POST /api/waitlist`
 
 Generated preview projects are written under `backend/data/generated/` and served from `/generated/...`.
+
+## Backend Deployment
+
+Deploy the backend as a Node service with `npm start` or build the included Dockerfile. Set provider API keys as environment variables on the hosting platform, then point the static frontend to the service with `droi-config.json`.
+
+Readiness checks:
+
+- `/api/health` always returns service status without secrets.
+- `/api/ready` returns `503 MODEL_NOT_CONFIGURED` until at least one provider key is configured.
 
 ## Checks
 

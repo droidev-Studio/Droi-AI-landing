@@ -58,6 +58,14 @@ For static hosting such as GitHub Pages, copy `droi-config.example.json` to `dro
 
 ## Required Backend Endpoints
 
+### `GET /api/health`
+
+Returns backend status, enabled provider names, enabled model count, supported templates, and manual queue capability. This endpoint must never expose API keys.
+
+### `GET /api/ready`
+
+Returns the same status as `/api/health`, but responds with `503 MODEL_NOT_CONFIGURED` until at least one provider API key is configured.
+
 ### `GET /api/session`
 
 Returns the signed-in Google user and role.

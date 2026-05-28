@@ -296,6 +296,26 @@ function listPublicModels() {
   });
 }
 
+function getRuntimeStatus() {
+  const models = listPublicModels();
+  const enabledModels = models.filter(model => model.enabled);
+  const enabledProviders = [...new Set(enabledModels.map(model => model.provider))];
+  return {
+    ok: true,
+    service: 'droi-ai-backend',
+    aiAvailable: enabledModels.length > 0,
+    enabledProviders,
+    enabledModelCount: enabledModels.length,
+    modelCount: models.length,
+    templates: ['bullet_hell', 'roguelike_survival'],
+    manualQueue: {
+      localStorage: true,
+      web3FormsForwarding: Boolean(process.env.WEB3FORMS_ACCESS_KEY)
+    },
+    generatedPreviewRoute: '/generated/'
+  };
+}
+
 function detectTemplateId(decision, spec) {
   const raw = [
     decision && decision.templateId,
@@ -853,6 +873,24 @@ async function handleApi(req, res, pathname) {
     return;
   }
   try {
+    if (req.method === 'GET' && pathname === '/api/health') {
+      sendJson(res, 200, getRuntimeStatus());
+      return;
+    }
+    if (req.method === 'GET' && pathname === '/api/ready') {
+      const status = getRuntimeStatus();
+      if (!status.aiAvailable) {
+        sendJson(res, 503, {
+          ...status,
+          ok: false,
+          code: 'MODEL_NOT_CONFIGURED',
+          message: 'No model provider API key is configured.'
+        });
+        return;
+      }
+      sendJson(res, 200, status);
+      return;
+    }
     if (req.method === 'GET' && pathname === '/api/session') {
       sendJson(res, 200, {
         ok: true,
@@ -970,5 +1008,6 @@ module.exports = {
   forwardManualQueueSubmission,
   buildCompiledGameSpec,
   detectTemplateId,
+  getRuntimeStatus,
   listPublicModels
 };
