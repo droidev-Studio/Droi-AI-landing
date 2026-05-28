@@ -1659,8 +1659,7 @@ Prompt: ${prompt}`
                 }
             ]);
 
-            const jsonMatch = response.content.match(/\{[\s\S]*\}/);
-            const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(response.content);
+            const parsed = validateAnalysisResponse(parseJsonObjectFromText(response.content, 'MODEL_JSON_PARSE_FAILED'));
             const modules = parsed.modules || parsed;
 
             applyExtractedModule('type', modules.gameType || parsed.gameType, GAME_TYPES, 'mechanic');
@@ -3059,8 +3058,7 @@ Keep every value under 54 words.`
                     }, null, 2)
                 }
             ]), AI_GAME_PLAN_TIMEOUT_MS);
-            const jsonMatch = response.content.match(/\{[\s\S]*\}/);
-            const plan = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(response.content);
+            const plan = validateGamePlanSummary(parseJsonObjectFromText(response.content, 'MODEL_JSON_PARSE_FAILED'));
             analysisState.finalModelMeta = responseModelMeta;
             return buildAISummaryHtml(plan);
         } catch (error) {
@@ -3080,6 +3078,42 @@ Keep every value under 54 words.`
             wrapped.cause = error;
             throw wrapped;
         }
+    }
+
+    function validateAnalysisResponse(parsed) {
+        if (!parsed || typeof parsed !== 'object') {
+            const error = new Error('AI analysis response must be a JSON object.');
+            error.code = 'MODEL_SCHEMA_INVALID';
+            throw error;
+        }
+        const modules = parsed.modules || parsed;
+        if (!modules || typeof modules !== 'object') {
+            const error = new Error('AI analysis response must include modules or GameSpec fields.');
+            error.code = 'MODEL_SCHEMA_INVALID';
+            throw error;
+        }
+        if (!parsed.templateDecision && !parsed.template && !parsed.decision) {
+            const error = new Error('AI analysis response must include templateDecision.');
+            error.code = 'MODEL_SCHEMA_INVALID';
+            throw error;
+        }
+        return parsed;
+    }
+
+    function validateGamePlanSummary(plan) {
+        if (!plan || typeof plan !== 'object') {
+            const error = new Error('AI game plan must be a JSON object.');
+            error.code = 'MODEL_SCHEMA_INVALID';
+            throw error;
+        }
+        const required = ['title', 'hook', 'coreLoop', 'prototypeScope', 'templateUsage', 'patchTargets'];
+        const missing = required.filter(key => !plan[key]);
+        if (missing.length) {
+            const error = new Error(`AI game plan missing required field(s): ${missing.join(', ')}.`);
+            error.code = 'MODEL_SCHEMA_INVALID';
+            throw error;
+        }
+        return plan;
     }
 
     function validateTemplatePatchPlan(plan) {
