@@ -271,6 +271,13 @@ function testNoClientSecrets() {
   assert.ok(clientScript.includes('expectedGeneratedFiles'));
   assert.ok(clientScript.includes('templateUsage'));
   assert.ok(clientScript.includes('patchTargets'));
+  assert.ok(clientScript.indexOf('TEMPLATE_CATALOG = [') > clientScript.indexOf('let TEMPLATE_CATALOG'));
+  assert.ok(clientScript.includes('\\u98de\\u884c\\u5c04\\u51fb'));
+  assert.ok(clientScript.includes('\\u8089\\u9e3d'));
+  assert.ok(clientScript.includes('\\u5854\\u9632'));
+  assert.ok(clientScript.includes("'飞行射击', '飞机大战', '太空射击'"));
+  assert.ok(clientScript.includes("'肉鸽', '肉鸽生存', '类吸血鬼幸存者'"));
+  assert.ok(clientScript.includes("'塔防', '防御塔', '防守'"));
   assert.ok(clientScript.includes('spec/waves.json'));
   assert.ok(clientScript.includes('spec/enemies.json'));
   assert.ok(clientScript.includes('spec/weapons.json'));
