@@ -271,6 +271,12 @@ function testNoClientSecrets() {
   assert.ok(clientScript.includes('expectedGeneratedFiles'));
   assert.ok(clientScript.includes('templateUsage'));
   assert.ok(clientScript.includes('patchTargets'));
+  assert.ok(clientScript.includes('handleFreeTextForStepWithAI'));
+  assert.ok(!clientScript.includes('function handleFreeTextForStep(definition'));
+  assert.ok(clientScript.includes('You classify one user answer for a single GameSpec field.'));
+  assert.ok(clientScript.includes('targetField'));
+  assert.ok(clientScript.includes('processActiveClarification'));
+  assert.ok(clientScript.includes('processWizardClarification'));
   assert.ok(clientScript.indexOf('TEMPLATE_CATALOG = [') > clientScript.indexOf('let TEMPLATE_CATALOG'));
   assert.ok(clientScript.includes('\\u98de\\u884c\\u5c04\\u51fb'));
   assert.ok(clientScript.includes('\\u8089\\u9e3d'));
