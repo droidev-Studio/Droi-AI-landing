@@ -1,0 +1,11 @@
+{
+  "name": "droi-ai-landing",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node backend/server.js",
+    "check": "node --check script.js && node --check backend/server.js",
+    "test:backend": "node backend/server.test.js"
+  }
+}

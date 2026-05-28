@@ -1,173 +1,82 @@
-# 🎮 Droi AI - AI-Powered Mini-Game Generation Platform
+# Droi AI Landing
 
-> **Build Playable Games With Just Words. No Coding. Just Imagination.**
+Droi AI is a landing page and chat prototype for AI-first mini-game generation.
 
-Describe any game concept in plain English and watch AI build a fully playable mini-game in 15 minutes. From RPG adventures to puzzle games and action platformers — if you can dream it, AI can build it.
+The current P0 flow is model-required:
 
----
+1. The user selects an enabled model.
+2. The frontend sends analysis, game-plan, and TemplatePatchPlan stages to the backend.
+3. The backend proxies the selected model API.
+4. The backend compiles a playable HTML5 Canvas preview from the selected P0 template and the AI-generated TemplatePatchPlan.
 
-## 🚀 What is Droi AI?
+The app must not claim a game was AI-generated when the selected model or template compiler fails.
 
-Droi AI is your gateway to instant game creation. We've democratized game development so anyone can become a game creator:
+## P0 Supported Templates
 
-- **🎯 One-Click Generation**: Describe your game idea, click generate — that's it
-- **⚡ 15-Minute Builds**: Go from concept to playable game faster than making coffee
-- **🎮 Fully Playable**: Every generated game is ready to play immediately
-- **🌐 Any Genre**: RPGs, puzzles, platformers, simulators — your choice
-- **🔧 Zero Setup**: No engines to install, no code to write, no assets to source
+- `bullet_hell`: bullet hell, flying shooter, space shooter, vertical shooter, plane shooter, shmup, boss bullet fights.
+- `roguelike_survival`: roguelike survival, Vampire Survivors-style games, arena survival, auto-attack survival, level-up choices.
 
----
+Unsupported or capability-exceeded requests should show a clear recoverable error or manual handoff path instead of pretending generation succeeded.
 
-## ✨ Key Features
+## Local Setup
 
-### 🤖 AI Game Engine
-Our proprietary AI understands game design patterns, mechanics, and aesthetics. It doesn't just generate code — it crafts complete gaming experiences.
-
-### 🎨 Visual Effects Showcase
-- **Mouse Spotlight**: Dynamic glow that follows your cursor
-- **Parallax Nebulae**: Multi-layer floating backgrounds with independent motion
-- **Starfield System**: 200+ twinkling stars in purple, pink, and cyan hues
-- **Cinematic Grain**: Retro film aesthetic with scanline effects
-- **Ripple Animations**: Beautiful click-triggered ripple effects
-
-### 💡 Smart Templates
-Jumpstart your creativity with curated game templates — **Roguelikes are our specialty!**
-
-- 🎲 **Roguelike Dungeons (⭐ FAN FAVORITE)**: Procedurally generated dungeon crawlers with permadeath, loot systems, and endless replayability. Every run is unique — from classic fantasy roguelikes to sci-fi space explorers.
-- 🎭 **RPG Adventures**: Story-driven games with branching narratives and character progression
-- 🧩 **Puzzle Games**: Brain teasers with progressive difficulty and unlockable mechanics
-- ⚔️ **Action Platformers**: Fast-paced, rhythm-based gameplay with pixel-perfect controls
-- 🏰 **Building Sims**: Creative sandbox experiences with physics and resource management
-
-### 📜 Creation History
-- Local storage persistence for all your game ideas
-- Quick access to previous concepts
-- Delete and manage your creation history
-
----
-
-## 🎯 Why Choose Droi AI?
-
-|  | Traditional Game Dev | Droi AI |
-|---|---------------------|----------|
-| ⏱️ **Time to Build** | Weeks/Months | 15 Minutes |
-| 💻 **Coding Required** | Yes | None |
-| 🎨 **Asset Creation** | Manual | AI-Generated |
-| 🔧 **Engine Setup** | Complex | Zero |
-| 💰 **Cost** | Thousands | Free |
-
----
-
-## 🚀 Quick Start
-
-### Live Demo
-**[👉 Play with the Live Demo](https://1718393785-a11y.github.io/Droi-AI-landing/)** — just open in your browser and start creating!
-
-### Local Development
 ```bash
-# Clone the repository
-git clone https://github.com/1718393785-a11y/Droi-AI-landing.git
-cd Droi-AI-landing
-
-# Open in any browser (no build steps!)
-start index.html
+npm start
 ```
 
----
+Then open:
 
-## 🎬 The Generation Experience
-
-### Step-by-Step Magic
-1. **Describe Your Game** — "A cyberpunk detective RPG where you solve crimes by hacking memories"
-2. **AI Analyzes** — Our AI breaks down your concept into mechanics, story, and visuals
-3. **Assets Generated** — Sprites, backgrounds, and soundtrack composed on-the-fly
-4. **Game Assembled** — All pieces come together into a cohesive experience
-5. **Play Instantly** — Get your playable game link delivered straight to your inbox
-
-### Real-Time Progress
-Watch the AI work with animated generation stages:
-- ✅ **Concept Analysis** — Understanding your vision
-- ✅ **Asset Generation** — Creating sprites, sounds, and worlds
-- ✅ **Game Assembly** — Building mechanics and interactions
-- ✅ **Quality Delivery** — Final polish and delivery to you
-
----
-
-## 🎨 Design System
-
-### Color Palette
-```css
-Deep Space:     #121017  /* Background */
-Stellar White:  #ffffff  /* Primary Text */
-Nebula Gray:    #8e8c95  /* Secondary Text */
-Cosmic Gold:    #facc15  /* Accent */
-Purple Haze:    #a482ff  /* Gradient Start */
-Azure Dreams:   #8093ff  /* Gradient End */
+```text
+http://localhost:3000/
 ```
 
-### Typography
-- **Font**: Inter (Google Fonts)
-- **Weights**: 400 → 800 for maximum visual impact
-- **Fluid Sizing**: CSS clamp() for perfect responsiveness
+The backend serves both the static page and the API routes.
 
----
+If the static frontend is hosted separately from the backend, set `window.DROI_API_BASE` before loading `script.js` so API calls and generated preview iframes use the backend origin:
 
-## 🌐 Deployment
+```html
+<script>
+  window.DROI_API_BASE = "https://your-backend.example.com";
+</script>
+```
 
-### GitHub Pages (Live!)
-This project is automatically deployed via GitHub Pages:
-- **Production URL**: https://1718393785-a11y.github.io/Droi-AI-landing/
-- **Auto-deploys** on every push to main branch
+## Environment
 
-### Other Platforms
-- **Vercel / Netlify**: Import and deploy — zero configuration needed
-- **Static Hosting**: Works with any CDN that serves HTML/CSS/JS
+Copy `.env.example` to `.env` and fill only the providers you want to enable.
 
----
+```bash
+copy .env.example .env
+```
 
-## 🤝 Community
+Supported variables:
 
-Join creators building the future of gaming:
-- **[Discord Server](https://discord.com/channels/1493509760866193552/1493509761814102058)** — Share your games, get help, connect with creators
-- **Twitter** — Follow for updates and feature announcements
-- **GitHub Issues** — Report bugs or request features
+- `OPENAI_API_KEY`
+- `GEMINI_API_KEY`
+- `ANTHROPIC_API_KEY`
+- `GROQ_API_KEY`
+- `WEB3FORMS_ACCESS_KEY` for optional backend-only manual queue forwarding
 
----
+Optional base URL overrides are also listed in `.env.example`.
 
-## 🛠️ Technical Stack
+Do not commit `.env`. It is ignored by git.
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | Pure HTML5 + CSS3 + Vanilla JavaScript |
-| **Animations** | CSS Keyframes + requestAnimationFrame |
-| **Storage** | LocalStorage API |
-| **Forms** | Web3Forms API |
-| **Hosting** | GitHub Pages |
+## API Routes
 
-**No frameworks, no build tools, no dependencies — just pure, fast web code.**
+- `GET /api/models`
+- `POST /api/chat`
+- `POST /api/ai/analyze-game-request`
+- `POST /api/ai/generate-game-plan`
+- `POST /api/ai/generate-template-patch`
+- `POST /api/template-project/compile`
+- `POST /api/waitlist`
 
----
+Generated preview projects are written under `backend/data/generated/` and served from `/generated/...`.
 
-## 📝 License
+## Checks
 
-MIT License — completely open source.
+```bash
+npm run check
+npm run test:backend
+```
 
-Use this project for personal projects, commercial products, or anything in between. Build something amazing!
-
----
-
-## ⭐ Star Us
-
-If Droi AI inspires you, give us a star on GitHub. It helps more creators discover the magic of AI-powered game development!
-
----
-
-<div align="center">
-
-**[🎮 Start Creating Now](https://1718393785-a11y.github.io/Droi-AI-landing/)**
-
-*"The best way to predict the future of gaming is to build it."*
-
-Made with 💜 by the Droi AI Team
-
-</div>
+`npm run check` validates JavaScript syntax for the frontend and backend. `npm run test:backend` verifies template matching, TemplatePatchPlan validation, and compile output.
