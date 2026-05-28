@@ -3175,8 +3175,13 @@ Keep every value under 54 words.`
             error.code = 'PATCH_REQUIRES_RUNTIME_CODE';
             throw error;
         }
-        const blockedKeys = ['files', 'filePatches', 'runtimePatch', 'codePatch', 'sourcePatch', 'diff', 'patches'];
-        const blocked = blockedKeys.find(key => Object.prototype.hasOwnProperty.call(plan, key));
+        const runtimePatchPath = findTemplatePatchKeyPath(plan, 'requiresRuntimeCodePatch', value => value === true);
+        if (runtimePatchPath && runtimePatchPath !== 'requiresRuntimeCodePatch') {
+            const error = new Error(`TemplatePatchPlan requires runtime code changes at ${runtimePatchPath}, which P0 compile does not allow.`);
+            error.code = 'PATCH_REQUIRES_RUNTIME_CODE';
+            throw error;
+        }
+        const blocked = findForbiddenTemplatePatchKeyPath(plan);
         if (blocked) {
             const error = new Error(`TemplatePatchPlan cannot include direct file patches: ${blocked}.`);
             error.code = 'PATCH_FILE_NOT_ALLOWED';
@@ -3188,6 +3193,31 @@ Keep every value under 54 words.`
             throw error;
         }
         return plan;
+    }
+
+    function findForbiddenTemplatePatchKeyPath(value) {
+        const blockedKeys = new Set(['files', 'filePatches', 'runtimePatch', 'codePatch', 'sourcePatch', 'diff', 'patches']);
+        return findTemplatePatchKeyPath(value, key => blockedKeys.has(key));
+    }
+
+    function findTemplatePatchKeyPath(value, matcher, valueMatcher = null, pathParts = []) {
+        if (!value || typeof value !== 'object') return '';
+        if (Array.isArray(value)) {
+            for (let index = 0; index < value.length; index += 1) {
+                const found = findTemplatePatchKeyPath(value[index], matcher, valueMatcher, pathParts.concat(`[${index}]`));
+                if (found) return found;
+            }
+            return '';
+        }
+        for (const [key, child] of Object.entries(value)) {
+            const keyMatches = typeof matcher === 'function' ? matcher(key) : key === matcher;
+            const valueMatches = !valueMatcher || valueMatcher(child);
+            const nextPath = pathParts.concat(key).join('.');
+            if (keyMatches && valueMatches) return nextPath;
+            const found = findTemplatePatchKeyPath(child, matcher, valueMatcher, pathParts.concat(key));
+            if (found) return found;
+        }
+        return '';
     }
 
     async function generateTemplatePatchPlan(spec, decision) {

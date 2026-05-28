@@ -13,6 +13,7 @@ const AI_STAGE_PROMPTS = {
   'generate-template-patch': 'Generate a safe TemplatePatchPlan JSON for the selected template. Do not include runtime source code patches.'
 };
 const SUPPORTED_TEMPLATE_IDS = new Set(['bullet_hell', 'roguelike_survival']);
+const FORBIDDEN_TEMPLATE_PATCH_KEYS = new Set(['files', 'filePatches', 'runtimePatch', 'codePatch', 'sourcePatch', 'diff', 'patches']);
 
 const PROVIDERS = {
   openai: {
@@ -695,8 +696,13 @@ function validateTemplatePatchPlan(plan) {
     error.code = 'PATCH_REQUIRES_RUNTIME_CODE';
     throw error;
   }
-  const blockedKeys = ['files', 'filePatches', 'runtimePatch', 'codePatch', 'sourcePatch', 'diff', 'patches'];
-  const blocked = blockedKeys.find(key => Object.prototype.hasOwnProperty.call(plan, key));
+  const runtimePatchPath = findTemplatePatchKeyPath(plan, 'requiresRuntimeCodePatch', value => value === true);
+  if (runtimePatchPath && runtimePatchPath !== 'requiresRuntimeCodePatch') {
+    const error = new Error(`TemplatePatchPlan requires runtime code changes at ${runtimePatchPath}, which P0 compile does not allow.`);
+    error.code = 'PATCH_REQUIRES_RUNTIME_CODE';
+    throw error;
+  }
+  const blocked = findForbiddenTemplatePatchKeyPath(plan);
   if (blocked) {
     const error = new Error(`TemplatePatchPlan cannot include direct file patches: ${blocked}.`);
     error.code = 'PATCH_FILE_NOT_ALLOWED';
@@ -710,6 +716,30 @@ function validateTemplatePatchPlan(plan) {
     }
   }
   return plan;
+}
+
+function findForbiddenTemplatePatchKeyPath(value) {
+  return findTemplatePatchKeyPath(value, key => FORBIDDEN_TEMPLATE_PATCH_KEYS.has(key));
+}
+
+function findTemplatePatchKeyPath(value, matcher, valueMatcher = null, pathParts = []) {
+  if (!value || typeof value !== 'object') return '';
+  if (Array.isArray(value)) {
+    for (let index = 0; index < value.length; index += 1) {
+      const found = findTemplatePatchKeyPath(value[index], matcher, valueMatcher, pathParts.concat(`[${index}]`));
+      if (found) return found;
+    }
+    return '';
+  }
+  for (const [key, child] of Object.entries(value)) {
+    const keyMatches = typeof matcher === 'function' ? matcher(key) : key === matcher;
+    const valueMatches = !valueMatcher || valueMatcher(child);
+    const nextPath = pathParts.concat(key).join('.');
+    if (keyMatches && valueMatches) return nextPath;
+    const found = findTemplatePatchKeyPath(child, matcher, valueMatcher, pathParts.concat(key));
+    if (found) return found;
+  }
+  return '';
 }
 
 function deepMerge(base, patch) {

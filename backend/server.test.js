@@ -268,6 +268,39 @@ function testCompilerOutput() {
         contentPatch: {
           waves: [{ t: 0, enemy: 'drone' }],
           bosses: [{ id: 'boss' }],
+          enemyTypes: [{ id: 'drone', codePatch: 'change runtime' }],
+          projectilePatterns: [{ id: 'spiral' }]
+        }
+      })
+    }),
+    /direct file patches: contentPatch\.enemyTypes\.\[0\]\.codePatch/
+  );
+
+  assert.throws(
+    () => compileTemplateProject({
+      gameSpec: { gameType: 'space shooter' },
+      templateDecision: { templateId: 'bullet_hell' },
+      selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      aiPlanDraft: 'AI generated plan',
+      templatePatchPlan: makePatchPlan({
+        settingsPatch: {
+          advanced: { requiresRuntimeCodePatch: true }
+        }
+      })
+    }),
+    /requires runtime code changes at settingsPatch\.advanced\.requiresRuntimeCodePatch/
+  );
+
+  assert.throws(
+    () => compileTemplateProject({
+      gameSpec: { gameType: 'space shooter' },
+      templateDecision: { templateId: 'bullet_hell' },
+      selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      aiPlanDraft: 'AI generated plan',
+      templatePatchPlan: makePatchPlan({
+        contentPatch: {
+          waves: [{ t: 0, enemy: 'drone' }],
+          bosses: [{ id: 'boss' }],
           enemyTypes: [{ id: 'drone' }]
         }
       })
@@ -429,6 +462,8 @@ function testNoClientSecrets() {
   assert.ok(clientScript.includes('TEMPLATE_NOT_SUPPORTED'));
   assert.ok(clientScript.includes('PATCH_REQUIRES_RUNTIME_CODE'));
   assert.ok(clientScript.includes('PATCH_FILE_NOT_ALLOWED'));
+  assert.ok(clientScript.includes('findForbiddenTemplatePatchKeyPath'));
+  assert.ok(clientScript.includes('findTemplatePatchKeyPath'));
   assert.ok(clientScript.includes('Current model returned invalid structure'));
   assert.ok(clientScript.includes('Automatic generation is not available for this request'));
   assert.ok(clientScript.includes('Template patch needs review'));
