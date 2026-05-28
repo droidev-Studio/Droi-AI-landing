@@ -241,6 +241,7 @@ function testErrorResponseMetadata() {
   assert.strictEqual(getErrorResponseMeta('MODEL_AUTH_FAILED').category, 'model_configuration_failure');
   assert.ok(getErrorResponseMeta('MODEL_AUTH_FAILED').actions.includes('open_deployment_guide'));
   assert.strictEqual(getErrorResponseMeta('MODEL_SCHEMA_INVALID').category, 'model_output_invalid');
+  assert.strictEqual(getErrorResponseMeta('MODEL_REQUEST_INVALID').category, 'request_invalid');
   assert.strictEqual(getErrorResponseMeta('TEMPLATE_NOT_SUPPORTED').manualQueueRecommended, true);
   assert.ok(getErrorResponseMeta('TEMPLATE_COMPILE_FAILED').actions.includes('retry_patch'));
 }
@@ -388,6 +389,29 @@ async function testGeneratedStaticServing() {
   }
 }
 
+async function testAIStageValidation() {
+  const server = createServer();
+  const port = await listenOnSafeTestPort(server);
+  const base = `http://127.0.0.1:${port}`;
+  try {
+    const response = await fetch(`${base}/api/ai/unknown-stage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider: 'openai',
+        model: 'gpt-5.5-high',
+        context: { prompt: 'test' }
+      })
+    });
+    assert.strictEqual(response.status, 400);
+    const payload = await response.json();
+    assert.strictEqual(payload.code, 'MODEL_REQUEST_INVALID');
+    assert.strictEqual(payload.error.category, 'request_invalid');
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+}
+
 function listenOnSafeTestPort(server) {
   const startPort = 43100;
   const maxAttempts = 25;
@@ -426,6 +450,7 @@ async function run() {
   testCorsOriginRules();
   testManualQueue();
   testNoClientSecrets();
+  await testAIStageValidation();
   await testGeneratedStaticServing();
   console.log('backend tests passed');
 }

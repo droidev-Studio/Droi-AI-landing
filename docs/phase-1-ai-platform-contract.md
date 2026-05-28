@@ -157,6 +157,8 @@ Uses the selected model and structured requirements to produce a complete P0 gam
 
 Uses the selected model to produce a safe `TemplatePatchPlan`. The plan must not include direct source code patches, runtime patches, file diffs, or writes outside the allowed spec/config/manifest surface.
 
+Only these three `/api/ai/*` stages are valid. Unknown AI stage paths must return `MODEL_REQUEST_INVALID` before any model call is attempted.
+
 ### `POST /api/template-project/compile`
 
 Compiles a playable HTML5 Canvas preview from the selected template and AI-generated `TemplatePatchPlan`. The compiler validates that the patch was AI-generated and that `TemplatePatchPlan.modelMeta.providerId/modelId` exactly matches the current `selectedModel.providerId/modelId`. It returns generated files, validation checks, and a preview URL.

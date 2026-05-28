@@ -7,6 +7,11 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const PUBLIC_DIR = ROOT_DIR;
 const DATA_DIR = path.join(__dirname, 'data');
 const GENERATED_DIR = path.join(DATA_DIR, 'generated');
+const AI_STAGE_PROMPTS = {
+  'analyze-game-request': 'Analyze the user request into structured GameSpec JSON, including templateDecision, capability, missingFields, and confidence.',
+  'generate-game-plan': 'Generate a complete P0 HTML5 Canvas game plan from the structured GameSpec and selected template. Return strict JSON.',
+  'generate-template-patch': 'Generate a safe TemplatePatchPlan JSON for the selected template. Do not include runtime source code patches.'
+};
 
 const PROVIDERS = {
   openai: {
@@ -391,6 +396,12 @@ function getErrorResponseMeta(code) {
       manualQueueRecommended: false,
       actions: ['retry', 'switch_model', 'manual_queue']
     },
+    MODEL_REQUEST_INVALID: {
+      category: 'request_invalid',
+      retryable: false,
+      manualQueueRecommended: false,
+      actions: ['revise_prompt']
+    },
     MODEL_JSON_PARSE_FAILED: {
       category: 'model_output_invalid',
       retryable: true,
@@ -563,6 +574,15 @@ function compileTemplateProject(payload) {
     generationReport,
     validationReport
   };
+}
+
+function validateAIStageRequest(stage) {
+  if (!Object.prototype.hasOwnProperty.call(AI_STAGE_PROMPTS, stage)) {
+    const error = new Error(`Unknown AI generation stage: ${stage || '(empty)'}.`);
+    error.code = 'MODEL_REQUEST_INVALID';
+    error.status = 400;
+    throw error;
+  }
 }
 
 function saveManualQueueSubmission(payload) {
@@ -1277,6 +1297,7 @@ async function handleApi(req, res, pathname) {
     }
     if (req.method === 'POST' && pathname.startsWith('/api/ai/')) {
       const stage = pathname.replace('/api/ai/', '');
+      validateAIStageRequest(stage);
       const body = await readJsonBody(req);
       const result = await callModel({
         provider: body.provider,
@@ -1317,16 +1338,12 @@ async function handleApi(req, res, pathname) {
 }
 
 function buildStageMessages(stage, body) {
+  validateAIStageRequest(stage);
   const context = body.context || body;
-  const stagePrompts = {
-    'analyze-game-request': 'Analyze the user request into structured GameSpec JSON, including templateDecision, capability, missingFields, and confidence.',
-    'generate-game-plan': 'Generate a complete P0 HTML5 Canvas game plan from the structured GameSpec and selected template. Return strict JSON.',
-    'generate-template-patch': 'Generate a safe TemplatePatchPlan JSON for the selected template. Do not include runtime source code patches.'
-  };
   return [
     {
       role: 'system',
-      content: stagePrompts[stage] || 'Process this AI game generation stage. Return strict JSON.'
+      content: AI_STAGE_PROMPTS[stage]
     },
     {
       role: 'user',
