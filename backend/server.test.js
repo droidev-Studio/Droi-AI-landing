@@ -192,6 +192,8 @@ function testCompilerOutput() {
     },
     templateDecision: { templateId: 'roguelike_survival', templateLabel: 'Roguelike Survival' },
     selectedModel: { providerId: 'gemini', modelId: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash' },
+    analysisModelMeta: { providerId: 'gemini', modelId: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash' },
+    gamePlanModelMeta: { providerId: 'gemini', modelId: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash' },
     aiPlanDraft: 'AI generated roguelike plan',
     aiPlanJson: makeGamePlan({ title: 'AI Patched Cathedral Run', templateUsage: 'Use roguelike_survival for an auto-attack survival loop.' }),
     templatePatchPlan: makePatchPlan({
@@ -221,6 +223,8 @@ function testCompilerOutput() {
     },
     templateDecision: { templateId: 'roguelike_survival', templateLabel: 'Roguelike Survival' },
     selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+    analysisModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+    gamePlanModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
     aiPlanDraft: 'AI generated authoritative template decision plan',
     aiPlanJson: makeGamePlan({ title: 'Authoritative Roguelike Plan', templateUsage: 'Use the AI-selected roguelike_survival template.' }),
     templatePatchPlan: makePatchPlan({
@@ -249,6 +253,8 @@ function testCompilerOutput() {
       gameSpec: { gameType: 'space shooter' },
       templateDecision: { templateId: 'bullet_hell' },
       selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      analysisModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      gamePlanModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
       aiPlanDraft: 'AI generated plan',
       aiPlanJson: makeGamePlan()
     }),
@@ -260,6 +266,8 @@ function testCompilerOutput() {
       gameSpec: { gameType: 'space shooter' },
       templateDecision: { templateId: 'bullet_hell' },
       selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      analysisModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      gamePlanModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
       aiPlanDraft: 'AI generated plan',
       templatePatchPlan: makePatchPlan()
     }),
@@ -271,6 +279,8 @@ function testCompilerOutput() {
       gameSpec: { gameType: 'space shooter' },
       templateDecision: { templateId: 'bullet_hell' },
       selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      analysisModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      gamePlanModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
       aiPlanDraft: 'AI generated plan',
       aiPlanJson: { title: 'Incomplete plan' },
       templatePatchPlan: makePatchPlan()
@@ -283,6 +293,8 @@ function testCompilerOutput() {
       gameSpec: { gameType: 'space shooter' },
       templateDecision: { templateId: 'bullet_hell' },
       selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      analysisModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      gamePlanModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
       aiPlanDraft: 'AI generated plan',
       aiPlanJson: makeGamePlan(),
       templatePatchPlan: makePatchPlan({ aiGenerated: false })
@@ -295,6 +307,8 @@ function testCompilerOutput() {
       gameSpec: { gameType: 'space shooter' },
       templateDecision: { templateId: 'bullet_hell' },
       selectedModel: { providerId: 'gemini', modelId: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash' },
+      analysisModelMeta: { providerId: 'gemini', modelId: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash' },
+      gamePlanModelMeta: { providerId: 'gemini', modelId: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash' },
       aiPlanDraft: 'AI generated plan',
       aiPlanJson: makeGamePlan(),
       templatePatchPlan: makePatchPlan()
@@ -307,6 +321,36 @@ function testCompilerOutput() {
       gameSpec: { gameType: 'space shooter' },
       templateDecision: { templateId: 'bullet_hell' },
       selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      analysisModelMeta: { providerId: 'gemini', modelId: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash' },
+      gamePlanModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      aiPlanDraft: 'AI generated plan',
+      aiPlanJson: makeGamePlan(),
+      templatePatchPlan: makePatchPlan()
+    }),
+    /Analysis modelMeta does not match the selected model/
+  );
+
+  assert.throws(
+    () => compileTemplateProject({
+      gameSpec: { gameType: 'space shooter' },
+      templateDecision: { templateId: 'bullet_hell' },
+      selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      analysisModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      gamePlanModelMeta: { providerId: 'gemini', modelId: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash' },
+      aiPlanDraft: 'AI generated plan',
+      aiPlanJson: makeGamePlan(),
+      templatePatchPlan: makePatchPlan()
+    }),
+    /Game plan modelMeta does not match the selected model/
+  );
+
+  assert.throws(
+    () => compileTemplateProject({
+      gameSpec: { gameType: 'space shooter' },
+      templateDecision: { templateId: 'bullet_hell' },
+      selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      analysisModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      gamePlanModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
       aiPlanDraft: 'AI generated plan',
       aiPlanJson: makeGamePlan(),
       templatePatchPlan: makePatchPlan({
@@ -326,6 +370,8 @@ function testCompilerOutput() {
       gameSpec: { gameType: 'space shooter' },
       templateDecision: { templateId: 'bullet_hell' },
       selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      analysisModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      gamePlanModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
       aiPlanDraft: 'AI generated plan',
       aiPlanJson: makeGamePlan(),
       templatePatchPlan: makePatchPlan({
@@ -342,6 +388,8 @@ function testCompilerOutput() {
       gameSpec: { gameType: 'space shooter' },
       templateDecision: { templateId: 'bullet_hell' },
       selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      analysisModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      gamePlanModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
       aiPlanDraft: 'AI generated plan',
       aiPlanJson: makeGamePlan(),
       templatePatchPlan: makePatchPlan({
@@ -360,6 +408,8 @@ function testCompilerOutput() {
       gameSpec: { gameType: 'Vampire Survivors style' },
       templateDecision: { templateId: 'roguelike_survival' },
       selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      analysisModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      gamePlanModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
       aiPlanDraft: 'AI generated plan',
       aiPlanJson: makeGamePlan({ templateUsage: 'Use roguelike_survival for survival combat.' }),
       templatePatchPlan: makePatchPlan({
@@ -379,6 +429,8 @@ function testCompilerOutput() {
       gameSpec: { gameType: 'space shooter', background: 'vertical shmup with boss bullets' },
       templateDecision: { templateId: 'unsupported' },
       selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      analysisModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      gamePlanModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
       aiPlanDraft: 'AI generated plan',
       aiPlanJson: makeGamePlan(),
       templatePatchPlan: makePatchPlan()
@@ -614,6 +666,8 @@ async function testGeneratedStaticServing() {
     },
     templateDecision: { templateId: 'bullet_hell', templateLabel: 'Bullet Hell / Flying Shooter' },
     selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+    analysisModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+    gamePlanModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
     aiPlanDraft: 'AI generated plan',
     aiPlanJson: makeGamePlan(),
     templatePatchPlan: makePatchPlan()
@@ -673,6 +727,8 @@ async function testCompileSchemaInvalidStatus() {
         gameSpec: { gameType: 'space shooter' },
         templateDecision: { templateId: 'bullet_hell' },
         selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+        analysisModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+        gamePlanModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
         aiPlanDraft: 'AI generated plan',
         aiPlanJson: makeGamePlan(),
         templatePatchPlan: makePatchPlan({

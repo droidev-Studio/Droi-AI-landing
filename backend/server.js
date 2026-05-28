@@ -553,6 +553,26 @@ function validatePatchModelMatchesSelectedModel(plan, selectedModel) {
   }
 }
 
+function validateStageModelMatchesSelectedModel(stageName, stageModel, selectedModel) {
+  const model = normalizeModelRef(stageModel || {});
+  const activeModel = normalizeModelRef(selectedModel || {});
+  if (!activeModel.providerId || !activeModel.modelId) {
+    const error = new Error('Template compile requires the selected model provider and model id.');
+    error.code = 'MODEL_SCHEMA_INVALID';
+    throw error;
+  }
+  if (!model.providerId || !model.modelId) {
+    const error = new Error(`${stageName} modelMeta must include providerId and modelId.`);
+    error.code = 'MODEL_SCHEMA_INVALID';
+    throw error;
+  }
+  if (model.providerId !== activeModel.providerId || model.modelId !== activeModel.modelId) {
+    const error = new Error(`${stageName} modelMeta does not match the selected model.`);
+    error.code = 'MODEL_SCHEMA_INVALID';
+    throw error;
+  }
+}
+
 function validateTemplatePatchContentForTemplate(templateId, plan) {
   const content = plan.contentPatch || {};
   const requiredByTemplate = {
@@ -604,6 +624,8 @@ function compileTemplateProject(payload) {
   const aiPlanJson = validateAIPlanJson(payload.aiPlanJson);
   const templatePatchPlan = validateTemplatePatchPlan(payload.templatePatchPlan);
   validatePatchModelMatchesSelectedModel(templatePatchPlan, payload.selectedModel);
+  validateStageModelMatchesSelectedModel('Analysis', payload.analysisModelMeta, payload.selectedModel);
+  validateStageModelMatchesSelectedModel('Game plan', payload.gamePlanModelMeta, payload.selectedModel);
 
   const spec = payload.gameSpec || {};
   const decision = payload.templateDecision || {};
