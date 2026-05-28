@@ -209,6 +209,9 @@ function testNoClientSecrets() {
   assert.match(clientScript, /code:\s*'MODEL_TIMEOUT'[\s\S]*actions:\s*\['retry_current_model'\]/);
   assert.ok(clientScript.includes('droi-config.json'));
   assert.ok(clientScript.includes('apiBaseUrl'));
+  assert.ok(clientScript.includes('Static frontend is missing droi-config.json'));
+  assert.ok(clientScript.includes('Backend is unreachable. Check droi-config.json apiBaseUrl'));
+  assert.ok(clientScript.includes('Backend is connected, but no provider API key is configured.'));
   assert.ok(!clientScript.includes('check_config'));
   assert.ok(!clientScript.includes('manual_queue'));
   assert.ok(envExample.includes('WEB3FORMS_ACCESS_KEY='));
