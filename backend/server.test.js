@@ -323,6 +323,10 @@ function testNoClientSecrets() {
   assert.ok(clientScript.includes('MODEL_RATE_LIMITED'));
   assert.ok(clientScript.includes('MODEL_SCHEMA_INVALID'));
   assert.ok(clientScript.includes('Current model returned invalid structure'));
+  assert.ok(clientScript.includes('validateAnalysisResponse(parseJsonObjectFromText'));
+  assert.ok(clientScript.includes('validateGamePlanSummary(parseJsonObjectFromText'));
+  assert.ok(clientScript.includes('AI analysis response must include templateDecision.'));
+  assert.ok(clientScript.includes('AI game plan missing required field(s):'));
   assert.ok(clientScript.includes('compiledProject'));
   assert.ok(clientScript.includes('generatedFiles'));
   assert.ok(clientScript.includes('validationReport'));
