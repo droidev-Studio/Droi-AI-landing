@@ -201,6 +201,7 @@ function testNoClientSecrets() {
   const clientScript = fs.readFileSync(path.join(__dirname, '..', 'script.js'), 'utf8');
   const envExample = fs.readFileSync(path.join(__dirname, '..', '.env.example'), 'utf8');
   const phaseContract = fs.readFileSync(path.join(__dirname, '..', 'docs', 'phase-1-ai-platform-contract.md'), 'utf8');
+  const deploymentDoc = fs.readFileSync(path.join(__dirname, '..', 'docs', 'backend-deployment.md'), 'utf8');
   const runtimeConfigExample = fs.readFileSync(path.join(__dirname, '..', 'droi-config.example.json'), 'utf8');
   assert.ok(!clientScript.includes('access_key'));
   assert.ok(!clientScript.includes('web3forms.com'));
@@ -211,8 +212,14 @@ function testNoClientSecrets() {
   assert.ok(!clientScript.includes('check_config'));
   assert.ok(!clientScript.includes('manual_queue'));
   assert.ok(envExample.includes('WEB3FORMS_ACCESS_KEY='));
+  assert.ok(!envExample.includes('GOOGLE_CLIENT_SECRET='));
+  assert.ok(!envExample.includes('SESSION_SECRET='));
   assert.ok(runtimeConfigExample.includes('apiBaseUrl'));
   assert.ok(phaseContract.includes('must not generate local fallback copy'));
+  assert.ok(phaseContract.includes('P0 model keys are configured as backend environment variables'));
+  assert.ok(deploymentDoc.includes('/api/ready'));
+  assert.ok(deploymentDoc.includes('droi-config.json'));
+  assert.ok(deploymentDoc.includes('FRONTEND_ORIGIN=https://droidev-studio.github.io'));
 }
 
 testTemplateDetection();

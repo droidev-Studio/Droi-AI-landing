@@ -58,6 +58,8 @@ copy .env.example .env
 
 Supported variables:
 
+- `FRONTEND_ORIGIN` for the deployed frontend origin allowlist
+- `MODEL_REQUEST_TIMEOUT_MS`
 - `OPENAI_API_KEY`
 - `GEMINI_API_KEY`
 - `ANTHROPIC_API_KEY`
@@ -85,6 +87,8 @@ Generated preview projects are written under `backend/data/generated/` and serve
 ## Backend Deployment
 
 Deploy the backend as a Node service with `npm start` or build the included Dockerfile. Set provider API keys as environment variables on the hosting platform, then point the static frontend to the service with `droi-config.json`.
+
+Use [docs/backend-deployment.md](docs/backend-deployment.md) as the deployment checklist.
 
 For cross-origin static hosting, set `FRONTEND_ORIGIN` to the deployed frontend origin, for example:
 

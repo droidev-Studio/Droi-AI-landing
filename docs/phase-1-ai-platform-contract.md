@@ -49,14 +49,25 @@ The deployed backend must allow the frontend origin in CORS because the browser 
 - Analysis, game-plan generation, TemplatePatchPlan generation, and template compile all require the selected model path.
 - If the backend or selected model is unavailable in static preview, the frontend shows a recoverable error. It must not generate local fallback copy or claim AI generation succeeded.
 
-## Admin Flow
+## P0 Configuration Flow
 
-- Admins sign in with Google through `GET /auth/google`.
-- The backend decides whether the user is an admin.
-- The admin email allowlist must live on the backend. Current product owner admin: `liyilin199976@gmail.com`.
-- Only when `GET /api/session` returns `isAdmin: true` does the frontend show `Admin AI Config`.
-- Admin API keys are submitted to the backend and must be stored server-side only.
+- P0 model keys are configured as backend environment variables.
+- Normal users never see API keys.
+- `GET /api/models` returns the public allowlist derived from configured backend providers.
+- If no provider key is configured, `/api/ready` returns `503 MODEL_NOT_CONFIGURED` and the frontend must show a recoverable configuration error.
 - The frontend intentionally strips API keys before writing any AI config to localStorage.
+
+## Future Admin Flow
+
+Google admin login and in-app provider-key editing are not part of the current P0 backend. They can be added later with:
+
+- `GET /auth/google`
+- `GET /auth/google/callback`
+- `GET /api/session` returning `isAdmin: true`
+- `POST /api/admin/ai-config`
+- `POST /api/admin/ai-config/test`
+
+Until those endpoints are implemented, `GET /api/session` returns `googleConfigured: false` and admin controls remain hidden.
 
 ## Required Backend Endpoints
 
@@ -70,19 +81,19 @@ Returns the same status as `/api/health`, but responds with `503 MODEL_NOT_CONFI
 
 ### `GET /api/session`
 
-Returns the signed-in Google user and role.
+Returns the current auth capability and user role. In the current P0 backend, Google OAuth is disabled and this returns a non-admin session.
 
 ```json
 {
-  "email": "liyilin199976@gmail.com",
-  "isAdmin": true,
-  "googleConfigured": true
+  "ok": true,
+  "loggedIn": false,
+  "email": "",
+  "isAdmin": false,
+  "googleConfigured": false
 }
 ```
 
-The frontend only shows admin controls when `isAdmin` is true. A temporary development-only `devAllowlist: true` flag can also allow the known product-owner email during local backend development, but production should rely on backend role checks.
-
-If this endpoint returns 404 or `googleConfigured: false` in static preview, the Google Login button will not navigate to `/auth/google`; it shows an in-app notice instead. This prevents users from landing on a blank or unconfigured auth route before the backend is connected.
+The frontend only shows admin controls when `isAdmin` is true. With the P0 backend, the Google Login button shows an in-app notice instead of navigating to `/auth/google`.
 
 ### `GET /api/models`
 
@@ -153,17 +164,3 @@ Compiles a playable HTML5 Canvas preview from the selected template and AI-gener
 ### `POST /api/waitlist`
 
 Stores manual queue context server-side. If `WEB3FORMS_ACCESS_KEY` is configured, the backend can optionally forward the submission. The browser must not contain third-party form access keys.
-
-### `POST /api/admin/ai-config`
-
-Requires an admin session. Receives provider API keys and model routing config, persists secrets server-side, and never returns raw API keys to the browser.
-
-### `POST /api/admin/ai-config/test`
-
-Requires an admin session. Tests a provider configuration from the server and returns a short status message.
-
-```json
-{
-  "message": "OpenAI connection ok"
-}
-```

@@ -2467,7 +2467,7 @@ Prompt: ${prompt}`
                 adminLoginBtn.disabled = false;
                 adminLoginBtn.textContent = 'Google Login';
             }
-            openAdminAuthModal(`Google admin login is not ready yet. Start the backend at ${API_BASE_URL || window.location.origin} and fill GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET in .env, then this button will redirect to Google.`);
+            openAdminAuthModal(`Admin login is not enabled in this P0 backend. Configure provider API keys in backend .env, restart the backend at ${API_BASE_URL || window.location.origin}, and use the public model selector.`);
             return;
         }
 
