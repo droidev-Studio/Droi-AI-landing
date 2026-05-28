@@ -397,6 +397,10 @@ function testNoClientSecrets() {
   assert.ok(clientScript.includes('aiPlanJson: latestGamePlanJson'));
   assert.ok(clientScript.includes('analysisModelMeta: analysisState.analysisModelMeta'));
   assert.ok(clientScript.includes('gamePlanModelMeta: latestGamePlanModelMeta'));
+  assert.ok(clientScript.includes('refreshAITemplateDecisionForCurrentSpec'));
+  assert.ok(clientScript.includes("decision.source !== 'ai'"));
+  assert.ok(clientScript.includes('Template decision must come from the selected AI model before game plan generation.'));
+  assert.ok(clientScript.includes('Template decision must come from the selected AI model before template patch generation.'));
   assert.ok(clientScript.includes('Analysis model:'));
   assert.ok(clientScript.includes('Game plan model:'));
   assert.ok(clientScript.includes('Patch model:'));
