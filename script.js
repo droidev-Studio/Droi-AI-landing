@@ -952,6 +952,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let botWorkIntervals = [];
     let activeGameCleanups = [];
     let latestGamePlanDraft = '';
+    let latestGamePlanJson = null;
     let latestTemplatePatchPlan = null;
     let latestCompiledProject = null;
     let latestAIFlowRetry = null;
@@ -1406,7 +1407,7 @@ Do not answer with the field name itself. If the user only repeats the field nam
                 title: 'Current model timed out',
                 modelLabel: active.label,
                 message: 'The model did not respond in time. Retry this request, or switch to a faster model.',
-                technicalMessage: error && error.message ? error.message : '',
+                technicalMessage: '',
                 validationReport: error && error.validationReport ? error.validationReport : null,
                 generationReport: error && error.generationReport ? error.generationReport : null,
                 actions: ['retry_current_model', 'switch_model']
@@ -3237,7 +3238,7 @@ Use templateCapability.outputFiles as the compile target, but do not emit a file
                     gameSpec: spec,
                     templateDecision: decision,
                     templateCapability,
-                    aiGamePlan: latestGamePlanDraft
+                    aiGamePlan: latestGamePlanJson || latestGamePlanDraft
                 }, null, 2)
             }
         ]), AI_TEMPLATE_PATCH_TIMEOUT_MS);
@@ -3930,6 +3931,7 @@ Use templateCapability.outputFiles as the compile target, but do not emit a file
             templateUsage: plan.templateUsage || '',
             patchTargets: plan.patchTargets || []
         };
+        latestGamePlanJson = safePlan;
         latestGamePlanDraft = buildGamePlanDraftText(safePlan);
 
         return [
@@ -4367,6 +4369,7 @@ Use templateCapability.outputFiles as the compile target, but do not emit a file
                 templateDecision: decision,
                 selectedModel: getActiveModelMeta(),
                 aiPlanDraft: latestGamePlanDraft,
+                aiPlanJson: latestGamePlanJson,
                 templatePatchPlan
             })
         }), TEMPLATE_COMPILE_TIMEOUT_MS);
@@ -4518,6 +4521,7 @@ Decision Source: ${decision.source || 'unknown'}`;
         chatShown = createChatTracking(() => new Set());
         chatCurrent = createChatTracking(() => []);
         latestGamePlanDraft = '';
+        latestGamePlanJson = null;
         analysisState = {
             active: false,
             ...createEmptySelections(),
@@ -4851,6 +4855,7 @@ Decision Source: ${decision.source || 'unknown'}`;
             capability: analysisState.capability,
             missingFields: analysisState.missingFields,
             aiGamePlanDraft: latestGamePlanDraft,
+            aiGamePlanJson: latestGamePlanJson,
             templatePatchPlan: latestTemplatePatchPlan,
             compiledProject: latestCompiledProject ? {
                 id: latestCompiledProject.id,
