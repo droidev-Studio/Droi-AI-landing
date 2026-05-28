@@ -176,13 +176,19 @@ function testManualQueue() {
 function testNoClientSecrets() {
   const clientScript = fs.readFileSync(path.join(__dirname, '..', 'script.js'), 'utf8');
   const envExample = fs.readFileSync(path.join(__dirname, '..', '.env.example'), 'utf8');
+  const phaseContract = fs.readFileSync(path.join(__dirname, '..', 'docs', 'phase-1-ai-platform-contract.md'), 'utf8');
+  const runtimeConfigExample = fs.readFileSync(path.join(__dirname, '..', 'droi-config.example.json'), 'utf8');
   assert.ok(!clientScript.includes('access_key'));
   assert.ok(!clientScript.includes('web3forms.com'));
   assert.ok(!clientScript.includes('ad7acb48'));
   assert.match(clientScript, /code:\s*'MODEL_TIMEOUT'[\s\S]*actions:\s*\['retry_current_model'\]/);
+  assert.ok(clientScript.includes('droi-config.json'));
+  assert.ok(clientScript.includes('apiBaseUrl'));
   assert.ok(!clientScript.includes('check_config'));
   assert.ok(!clientScript.includes('manual_queue'));
   assert.ok(envExample.includes('WEB3FORMS_ACCESS_KEY='));
+  assert.ok(runtimeConfigExample.includes('apiBaseUrl'));
+  assert.ok(phaseContract.includes('must not generate local fallback copy'));
 }
 
 testTemplateDetection();

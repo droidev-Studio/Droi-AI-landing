@@ -32,7 +32,15 @@ http://localhost:3000/
 
 The backend serves both the static page and the API routes.
 
-If the static frontend is hosted separately from the backend, set `window.DROI_API_BASE` before loading `script.js` so API calls and generated preview iframes use the backend origin:
+If the static frontend is hosted separately from the backend, copy `droi-config.example.json` to `droi-config.json` and set `apiBaseUrl` to the deployed backend:
+
+```json
+{
+  "apiBaseUrl": "https://your-backend.example.com"
+}
+```
+
+You can also set `window.DROI_API_BASE` before loading `script.js` when injecting runtime config from a hosting platform:
 
 ```html
 <script>

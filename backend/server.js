@@ -853,6 +853,21 @@ async function handleApi(req, res, pathname) {
     return;
   }
   try {
+    if (req.method === 'GET' && pathname === '/api/session') {
+      sendJson(res, 200, {
+        ok: true,
+        loggedIn: false,
+        email: '',
+        isAdmin: false,
+        googleConfigured: false,
+        devAllowlist: false
+      });
+      return;
+    }
+    if (req.method === 'POST' && pathname === '/api/logout') {
+      sendJson(res, 200, { ok: true });
+      return;
+    }
     if (req.method === 'GET' && pathname === '/api/models') {
       sendJson(res, 200, { ok: true, models: listPublicModels() });
       return;

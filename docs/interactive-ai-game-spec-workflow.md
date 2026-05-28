@@ -8,18 +8,21 @@ The design is feasible, but it should be implemented in phases.
 
 Current implementation already supports:
 
-- AI-assisted prompt analysis through the platform backend.
+- AI-required prompt analysis through the platform backend.
 - A public model selector backed by the platform model allowlist.
 - Usage tracking for successful AI calls.
 - An 8-module clarification flow: `Game Type`, `Art Style`, `Game Setting`, `Core Gameplay`, `Player Goal`, `Main Challenge`, `Progression System`, `Difficulty Level`.
 - Fixed internal M9 output-package intent.
 - AI-generated game-plan summary after the required modules are present.
+- AI-generated `TemplatePatchPlan` creation through the selected model.
+- Backend template compile for `bullet_hell` and `roguelike_survival` P0 playable HTML5 Canvas previews.
 
 Current implementation does not yet support:
 
 - Schema-level confidence/status validation.
 - Schema validation for final `GameSpec`.
-- Real project-file generation or export package creation.
+- ZIP export package creation.
+- Hosted playable links beyond the running backend's `/generated/...` preview route.
 
 Because of that, the next step should not be “one-shot game generation”. The web AI role should be defined as a game requirements analyst first.
 
@@ -194,8 +197,8 @@ Phase 3: Add validation.
 
 Phase 4: Real generation/export.
 
-- Only after `GameSpec` is valid, start actual game generation.
-- Replace the current progress-only animation with real generation steps.
+- Only after `GameSpec` is valid, start actual game generation. P0 now does this through the selected model, `TemplatePatchPlan`, and backend template compile.
+- Replace the current progress-only animation with real generation steps. P0 now disables local progress-only success rendering.
 - M9 remains fixed: in-page preview plus complete project folder export.
 
 ## Current Project Gap
@@ -208,11 +211,11 @@ At the time this document was added, all connected platform models share the sam
 
 Connected platform models are not yet used for:
 
-- Complete game code generation.
-- Project folder export.
+- ZIP export.
 - Schema-validated `GameSpec` production.
+- Arbitrary runtime code generation outside the P0 template compiler allowlist.
 
-Those should be implemented as later phases, not implied by the current progress animation.
+Those should be implemented as later phases, not implied by the current P0 template compile.
 
 ## Testing Notes
 
