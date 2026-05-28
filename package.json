@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node backend/server.js",
     "dev:backend": "node backend/server.js",
-    "check": "node --check script.js && node --check backend/server.js"
+    "check": "node --check script.js && node --check backend/server.js && node --check scripts/flow-smoke-test.js && node --check scripts/layout-smoke-test.js && node --check scripts/browser-e2e-smoke.js && node --check showcase/roll/showcase.js",
+    "test:flow": "node scripts/flow-smoke-test.js",
+    "test:layout": "node scripts/layout-smoke-test.js",
+    "test:browser": "node scripts/browser-e2e-smoke.js"
   },
   "dependencies": {
     "dotenv": "^16.4.7",

@@ -24,39 +24,102 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '')
     .filter(Boolean);
 const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-session-secret-change-me';
 const CONFIG_SECRET = process.env.CONFIG_ENCRYPTION_SECRET || SESSION_SECRET;
-const LOCAL_FRONTEND_PORTS = new Set(['3000', '4173', '5173', '5500']);
+const LOCAL_FRONTEND_PORTS = new Set(['3000', '4173', '4176', '5173', '5500', '5501', '5502']);
 const AI_MAX_OUTPUT_TOKENS = 2048;
 const SPEECH_MAX_AUDIO_BYTES = 5 * 1024 * 1024;
 const SPEECH_MAX_OUTPUT_TOKENS = 512;
+const CHAT_RATE_LIMIT = 30;
+const CHAT_RATE_WINDOW_MS = 10 * 60 * 1000;
 const SPEECH_RATE_LIMIT = 12;
 const SPEECH_RATE_WINDOW_MS = 10 * 60 * 1000;
+const WAITLIST_RATE_LIMIT = 5;
+const WAITLIST_RATE_WINDOW_MS = 10 * 60 * 1000;
+const WEB3FORMS_ENDPOINT = 'https://api.web3forms.com/submit';
+const WEB3FORMS_ACCESS_KEY = process.env.WEB3FORMS_ACCESS_KEY || '';
+const chatRateBuckets = new Map();
 const speechRateBuckets = new Map();
+const waitlistRateBuckets = new Map();
+const compiledTemplateProjects = new Map();
+
+const TEMPLATE_SOURCES = {
+    bullet_hell: {
+        id: 'bullet_hell',
+        label: 'Bullet Hell / Flying Shooter',
+        rootPath: 'D:\\Codex\\Codex game design\\bullet_hell',
+        templateType: 'bullet-hell',
+        entryFiles: ['index.html', 'GameSettings.js', 'game.js', 'bullet-hell.css', 'spec/game.json', 'spec/schema.json', 'assets/manifest.json', 'README.md'],
+        patchableFiles: ['spec/game.json', 'assets/manifest.json'],
+        assetManifestPath: 'assets/manifest.json',
+        priorityCategories: ['player', 'enemies', 'bosses', 'weaponAttacks', 'effects', 'ui']
+    },
+    roguelike_survival: {
+        id: 'roguelike_survival',
+        label: 'Roguelike Survival',
+        rootPath: 'D:\\Codex\\Codex game design\\Groglike-SOP',
+        templateType: 'roguelike-survival',
+        entryFiles: [
+            'index.html', 'game.css', 'template-config.js', 'FeatureFlags.js', 'GameRuntime.js', 'GameSettings.js',
+            'AudioManager.js', 'AssetRuntime.js', 'ConfigManager.js', 'SpatialHashGrid.js', 'DebugRuntime.js',
+            'SystemPipeline.js', 'InputController.js', 'SaveManager.js', 'ViewportManager.js', 'SpawnDirector.js',
+            'RewardSystem.js', 'ProgressionSystem.js', 'PerkSystem.js', 'game.js', 'spec/schema.js',
+            'spec/minimal.json', 'spec/waves.json', 'spec/enemies.json', 'spec/weapons.json', 'spec/balance.json',
+            'spec/effects.json', 'assets/manifest.json', 'README.md'
+        ],
+        patchableFiles: ['template-config.js', 'spec/minimal.json', 'spec/waves.json', 'spec/enemies.json', 'spec/balance.json', 'assets/manifest.json'],
+        assetManifestPath: 'assets/manifest.json',
+        priorityCategories: ['player', 'enemies', 'bosses', 'weapons', 'pickups', 'skills', 'map', 'ui']
+    }
+};
+
+const ASSET_REFERENCE_ROOT = 'D:\\Codex\\Codex game design\\zero_downtime_refactor\\assets';
+const ASSET_GROUPS = {
+    'Game Art': ['player', 'enemies', 'bosses', 'miniBosses', 'weapons', 'weaponAttacks', 'pickups', 'skills', 'map', 'tiles', 'terrain', 'bullets'],
+    'Visual Style': ['ui', 'styleProofs', 'themeTokens', 'hud', 'panelFrames', 'buttonFrames'],
+    'Audio & Feel': ['effects', 'audio', 'sfx', 'bgm', 'hitFeedback', 'screenShake', 'particles']
+};
 
 const PROVIDER_META = {
     openai: {
         label: 'OpenAI',
         defaultBaseUrl: 'https://api.openai.com/v1',
-        adapter: 'responses'
+        adapter: 'responses',
+        envApiKey: 'OPENAI_API_KEY',
+        defaultModel: 'gpt-5.5'
+    },
+    qwen: {
+        label: 'Qwen',
+        defaultBaseUrl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
+        adapter: 'openai-compatible',
+        envApiKey: 'QWEN_API_KEY',
+        defaultModel: 'qwen3.7-max'
     },
     anthropic: {
         label: 'Claude code',
         defaultBaseUrl: 'https://api.anthropic.com/v1',
-        adapter: 'anthropic'
+        adapter: 'anthropic',
+        envApiKey: 'ANTHROPIC_API_KEY',
+        defaultModel: 'claude-opus-4-7'
     },
     groq: {
         label: 'xAI Grok',
         defaultBaseUrl: 'https://api.x.ai/v1',
-        adapter: 'responses'
+        adapter: 'responses',
+        envApiKey: 'XAI_API_KEY',
+        defaultModel: 'grok-4.20-multi-agent-0309'
     },
     gemini: {
         label: 'Gemini',
         defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta',
-        adapter: 'gemini'
+        adapter: 'gemini',
+        envApiKey: 'GEMINI_API_KEY',
+        defaultModel: 'gemini-3.1-pro-preview'
     },
     custom: {
         label: 'Custom',
         defaultBaseUrl: 'http://localhost:11434/v1',
-        adapter: 'openai-compatible'
+        adapter: 'openai-compatible',
+        envApiKey: 'CUSTOM_API_KEY',
+        defaultModel: 'custom-model'
     }
 };
 
@@ -83,32 +146,65 @@ function isAllowedOrigin(origin) {
     }
 }
 
-function enforceSpeechRateLimit(req, res) {
+function enforceRateLimit(req, res, buckets, limit, windowMs, message) {
     const now = Date.now();
     const key = req.sessionID || req.ip || 'anonymous';
-    const current = speechRateBuckets.get(key) || { count: 0, resetAt: now + SPEECH_RATE_WINDOW_MS };
+    const current = buckets.get(key) || { count: 0, resetAt: now + windowMs };
 
     if (current.resetAt <= now) {
         current.count = 0;
-        current.resetAt = now + SPEECH_RATE_WINDOW_MS;
+        current.resetAt = now + windowMs;
     }
 
     current.count += 1;
-    speechRateBuckets.set(key, current);
+    buckets.set(key, current);
 
-    if (speechRateBuckets.size > 1000) {
-        for (const [bucketKey, bucket] of speechRateBuckets) {
-            if (bucket.resetAt <= now) speechRateBuckets.delete(bucketKey);
+    if (buckets.size > 1000) {
+        for (const [bucketKey, bucket] of buckets) {
+            if (bucket.resetAt <= now) buckets.delete(bucketKey);
         }
     }
 
-    if (current.count > SPEECH_RATE_LIMIT) {
+    if (current.count > limit) {
         res.setHeader('Retry-After', String(Math.ceil((current.resetAt - now) / 1000)));
-        sendError(res, 429, 'Too many voice transcription requests. Please try again later.');
+        sendError(res, 429, message);
         return false;
     }
 
     return true;
+}
+
+function enforceSpeechRateLimit(req, res) {
+    return enforceRateLimit(
+        req,
+        res,
+        speechRateBuckets,
+        SPEECH_RATE_LIMIT,
+        SPEECH_RATE_WINDOW_MS,
+        'Too many voice transcription requests. Please try again later.'
+    );
+}
+
+function enforceChatRateLimit(req, res) {
+    return enforceRateLimit(
+        req,
+        res,
+        chatRateBuckets,
+        CHAT_RATE_LIMIT,
+        CHAT_RATE_WINDOW_MS,
+        'Too many AI chat requests. Please try again later.'
+    );
+}
+
+function enforceWaitlistRateLimit(req, res) {
+    return enforceRateLimit(
+        req,
+        res,
+        waitlistRateBuckets,
+        WAITLIST_RATE_LIMIT,
+        WAITLIST_RATE_WINDOW_MS,
+        'Too many waitlist submissions. Please try again later.'
+    );
 }
 
 function requireAdmin(req, res, next) {
@@ -159,18 +255,57 @@ function decryptSecret(value) {
     ]).toString('utf8');
 }
 
-function defaultConfig() {
+function getEnvApiKey(providerId) {
+    const meta = PROVIDER_META[providerId] || PROVIDER_META.custom;
+    const envName = meta.envApiKey;
+    return envName && process.env[envName] ? String(process.env[envName]).trim() : '';
+}
+
+function getProviderApiKey(providerId, provider = {}) {
+    const envApiKey = getEnvApiKey(providerId);
+    try {
+        return decryptSecret(provider.encryptedApiKey) || envApiKey;
+    } catch (error) {
+        return envApiKey;
+    }
+}
+
+function hasStoredApiKey(provider) {
+    try {
+        return Boolean(decryptSecret(provider.encryptedApiKey));
+    } catch (error) {
+        return false;
+    }
+}
+
+function isProviderPubliclyAvailable(providerId, provider = {}) {
+    const sanitized = sanitizeProvider(providerId, provider);
+    return Boolean(getEnvApiKey(providerId) || (sanitized.enabled && hasStoredApiKey(sanitized)));
+}
+
+function createDefaultProvider(providerId) {
+    const meta = PROVIDER_META[providerId] || PROVIDER_META.custom;
     return {
-        defaultModel: 'gpt-5.5',
-        providers: {
-            openai: {
-                enabled: false,
-                baseUrl: PROVIDER_META.openai.defaultBaseUrl,
-                encryptedApiKey: '',
-                currentModel: 'gpt-5.5',
-                reasoningEffort: 'low'
-            }
-        },
+        enabled: Boolean(getEnvApiKey(providerId)),
+        baseUrl: providerId === 'qwen'
+            ? process.env.QWEN_BASE_URL || meta.defaultBaseUrl
+            : meta.defaultBaseUrl,
+        encryptedApiKey: '',
+        currentModel: meta.defaultModel || 'custom-model',
+        customModel: providerId === 'custom' ? meta.defaultModel : '',
+        reasoningEffort: providerId === 'openai' || providerId === 'groq' ? 'high' : 'none'
+    };
+}
+
+function defaultConfig() {
+    const providers = Object.fromEntries(
+        Object.keys(PROVIDER_META).map(providerId => [providerId, createDefaultProvider(providerId)])
+    );
+    const firstEnabledProvider = Object.entries(providers).find(([, provider]) => provider.enabled);
+
+    return {
+        defaultModel: firstEnabledProvider?.[1]?.currentModel || 'qwen3.7-max',
+        providers,
         publicModels: []
     };
 }
@@ -178,7 +313,17 @@ function defaultConfig() {
 async function readConfig() {
     try {
         const raw = await fs.readFile(CONFIG_PATH, 'utf8');
-        return { ...defaultConfig(), ...JSON.parse(raw) };
+        const parsed = JSON.parse(raw);
+        const defaults = defaultConfig();
+        return {
+            ...defaults,
+            ...parsed,
+            providers: {
+                ...defaults.providers,
+                ...(parsed.providers || {})
+            },
+            publicModels: Array.isArray(parsed.publicModels) ? parsed.publicModels : defaults.publicModels
+        };
     } catch (error) {
         return defaultConfig();
     }
@@ -195,7 +340,7 @@ function sanitizeProvider(providerId, provider) {
         enabled: Boolean(provider.enabled),
         baseUrl: provider.baseUrl || meta.defaultBaseUrl,
         encryptedApiKey: provider.encryptedApiKey || '',
-        currentModel: provider.currentModel || provider.customModel || 'custom-model',
+        currentModel: provider.currentModel || provider.customModel || meta.defaultModel || 'custom-model',
         customModel: provider.customModel || '',
         reasoningEffort: provider.reasoningEffort || 'none'
     };
@@ -205,6 +350,7 @@ function publicModelsFromConfig(config) {
     const configuredModels = Array.isArray(config.publicModels) ? config.publicModels : [];
     const explicitModels = configuredModels
         .filter(model => model && model.enabled !== false)
+        .filter(model => model.provider && isProviderPubliclyAvailable(model.provider, config.providers?.[model.provider]))
         .map(model => ({
             id: model.id || model.model,
             provider: model.provider,
@@ -215,19 +361,29 @@ function publicModelsFromConfig(config) {
         }))
         .filter(model => model.id && model.provider && model.model);
 
-    if (explicitModels.length) return explicitModels;
-
-    return Object.entries(config.providers || {})
-        .filter(([, provider]) => provider.enabled)
-        .map(([providerId, provider]) => ({
-            id: provider.currentModel || provider.customModel,
-            provider: providerId,
-            model: provider.currentModel || provider.customModel,
-            label: provider.currentModel || provider.customModel,
-            reasoningEffort: provider.reasoningEffort || 'none',
-            enabled: true
-        }))
+    const providerModels = Object.entries(config.providers || {})
+        .filter(([providerId, provider]) => isProviderPubliclyAvailable(providerId, provider))
+        .map(([providerId, provider]) => {
+            const sanitized = sanitizeProvider(providerId, provider);
+            const model = sanitized.currentModel || sanitized.customModel;
+            return {
+                id: model,
+                provider: providerId,
+                model,
+                label: model,
+                reasoningEffort: sanitized.reasoningEffort || 'none',
+                enabled: true
+            };
+        })
         .filter(model => model.id);
+
+    if (!explicitModels.length) return providerModels;
+
+    const seen = new Set(explicitModels.map(model => `${model.provider}:${model.model}`));
+    return [
+        ...explicitModels,
+        ...providerModels.filter(model => !seen.has(`${model.provider}:${model.model}`))
+    ];
 }
 
 async function getProviderRuntime(providerId, modelId) {
@@ -238,8 +394,8 @@ async function getProviderRuntime(providerId, modelId) {
     if (!publicModel) throw new Error('Model is not enabled.');
 
     const provider = sanitizeProvider(providerId, (config.providers || {})[providerId] || {});
-    const apiKey = decryptSecret(provider.encryptedApiKey);
-    if (!provider.enabled || !apiKey) throw new Error(`${providerId} API key is not configured.`);
+    const apiKey = getProviderApiKey(providerId, provider);
+    if (!isProviderPubliclyAvailable(providerId, provider) || !apiKey) throw new Error(`${providerId} API key is not configured.`);
 
     return {
         config,
@@ -478,6 +634,351 @@ async function callProvider(providerId, provider, meta, model, messages) {
     return callOpenAICompatible(provider, model, messages);
 }
 
+function normalizeTemplateId(templateId) {
+    const id = String(templateId || '').trim();
+    if (id === 'bullet-hell' || id === 'bulletHell') return 'bullet_hell';
+    if (id === 'roguelike' || id === 'roguelike-survival' || id === 'Groglike-SOP') return 'roguelike_survival';
+    return id;
+}
+
+function getTemplateSource(templateId) {
+    return TEMPLATE_SOURCES[normalizeTemplateId(templateId)] || null;
+}
+
+function resolveInside(rootPath, relativePath = '') {
+    const root = path.resolve(rootPath);
+    const target = path.resolve(root, String(relativePath || '').replace(/^[/\\]+/, ''));
+    if (target !== root && !target.startsWith(root + path.sep)) {
+        const error = new Error('Template path escapes the source root.');
+        error.status = 400;
+        throw error;
+    }
+    return target;
+}
+
+async function pathExists(filePath) {
+    try {
+        await fs.access(filePath);
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+async function readTextIfExists(rootPath, relativePath) {
+    const filePath = resolveInside(rootPath, relativePath);
+    if (!(await pathExists(filePath))) return null;
+    return fs.readFile(filePath, 'utf8');
+}
+
+async function readJsonIfExists(rootPath, relativePath) {
+    const text = await readTextIfExists(rootPath, relativePath);
+    if (!text) return null;
+    return JSON.parse(text);
+}
+
+function makeProjectId() {
+    return `${Date.now().toString(36)}-${crypto.randomBytes(5).toString('hex')}`;
+}
+
+function asArray(value) {
+    return Array.isArray(value) ? value : (value ? [value] : []);
+}
+
+function collectAssetNodesFromValue(value, category, parentKey = '', nodes = []) {
+    if (typeof value === 'string') {
+        nodes.push({ manifestKey: parentKey || category, src: value, usage: [], assetRole: category });
+        return nodes;
+    }
+    if (!value || typeof value !== 'object') return nodes;
+    if (typeof value.src === 'string') {
+        nodes.push({
+            manifestKey: parentKey || category,
+            src: value.src,
+            usage: asArray(value.usage),
+            assetRole: value.role || value.type || category
+        });
+    }
+    if (Array.isArray(value.frames)) {
+        value.frames.slice(0, 2).forEach((frame, index) => {
+            nodes.push({
+                manifestKey: `${parentKey || category}.frames.${index + 1}`,
+                src: frame,
+                usage: asArray(value.usage),
+                assetRole: value.role || category
+            });
+        });
+    }
+    Object.entries(value).forEach(([key, child]) => {
+        if (['src', 'frames', 'usage', 'sourceSize', 'anchor', 'worldSize'].includes(key)) return;
+        collectAssetNodesFromValue(child, category, parentKey ? `${parentKey}.${key}` : `${category}.${key}`, nodes);
+    });
+    return nodes;
+}
+
+function groupForCategory(category) {
+    return Object.entries(ASSET_GROUPS).find(([, categories]) => categories.includes(category))?.[0] || 'Game Art';
+}
+
+async function buildAssetSidebar(templateSource, manifest, patchPlan = {}) {
+    const sourceBasePath = String(manifest?.basePath || 'assets/').replace(/^\/+/, '');
+    const rootsToCheck = [
+        path.join(templateSource.rootPath, sourceBasePath),
+        path.join(templateSource.rootPath, 'assets')
+    ];
+    const rawNodes = [];
+
+    Object.entries(manifest || {}).forEach(([category, value]) => {
+        if (['version', 'basePath', 'fallback', '$schema'].includes(category)) return;
+        if (category === 'images' && value && typeof value === 'object') {
+            Object.entries(value).forEach(([imageCategory, imageValue]) => {
+                collectAssetNodesFromValue(imageValue, imageCategory, imageCategory, rawNodes);
+            });
+            return;
+        }
+        collectAssetNodesFromValue(value, category, category, rawNodes);
+    });
+
+    const promptNodes = [];
+    Object.entries(patchPlan.assetPrompts || {}).forEach(([key, prompt]) => {
+        const category = key.split('.')[0] || 'styleProofs';
+        promptNodes.push({
+            manifestKey: key,
+            src: '',
+            usage: ['asset_generation_prompt'],
+            assetRole: category,
+            status: 'Generated Prompt',
+            prompt: String(prompt || '')
+        });
+    });
+
+    const nodes = await Promise.all([...rawNodes, ...promptNodes].map(async node => {
+        const category = node.assetRole || String(node.manifestKey || '').split('.')[0] || 'asset';
+        const src = String(node.src || '').replace(/^assets[\/\\]/, '');
+        let status = node.status || (src ? 'Inherited' : 'Missing/Fallback');
+        let previewable = false;
+        if (src) {
+            const exists = await Promise.all(rootsToCheck.map(root => pathExists(resolveInside(root, src))));
+            previewable = exists.some(Boolean);
+            if (!previewable) status = 'Missing/Fallback';
+        }
+        return {
+            group: groupForCategory(category),
+            category,
+            manifestKey: node.manifestKey || category,
+            src: src ? `assets/${src.replace(/\\/g, '/')}` : '',
+            usage: asArray(node.usage).join(', ') || 'runtime manifest',
+            assetRole: category,
+            status,
+            source: status === 'Inherited' ? templateSource.id : 'ai_prompt',
+            previewable,
+            prompt: node.prompt || ''
+        };
+    }));
+
+    const grouped = Object.keys(ASSET_GROUPS).map(group => {
+        const groupNodes = nodes.filter(node => node.group === group);
+        const categories = [...new Set(groupNodes.map(node => node.category))].map(category => {
+            const items = groupNodes.filter(node => node.category === category);
+            return {
+                category,
+                total: items.length,
+                defaultOpen: templateSource.priorityCategories.includes(category),
+                items: items.slice(0, 6),
+                overflow: Math.max(0, items.length - 6)
+            };
+        });
+        return { group, categories };
+    });
+
+    return { groups: grouped, total: nodes.length };
+}
+
+function patchBulletHellGameSpec(gameSpec, userSpec = {}, patchPlan = {}) {
+    const next = JSON.parse(JSON.stringify(gameSpec || {}));
+    const specPatches = patchPlan.specPatches || {};
+    const productionPlan = patchPlan.productionPlan || userSpec.productionPlan || null;
+    next.meta = {
+        ...(next.meta || {}),
+        gameName: patchPlan.gameName || userSpec.gameSetting || next.meta?.gameName || 'Bullet Hell / Flying Shooter',
+        genre: 'bullet-hell',
+        description: specPatches.meta?.description || patchPlan.userIntentSummary || userSpec.background || next.meta?.description || '',
+        storyPremise: specPatches.meta?.storyPremise || productionPlan?.storyPremise || next.meta?.storyPremise || '',
+        productionPlan: productionPlan || next.meta?.productionPlan || null
+    };
+    next.flow = {
+        ...(next.flow || {}),
+        ...(specPatches.flow || {})
+    };
+    next.generated = {
+        templateId: 'bullet_hell',
+        userSpec,
+        templatePatchPlan: patchPlan,
+        generatedAt: new Date().toISOString()
+    };
+
+    const difficultyText = String(userSpec.difficultyLevel || patchPlan.difficultyTuning || '').toLowerCase();
+    const difficultyScale = /hard|困难|高难|hardcore|expert/.test(difficultyText) ? 1.35 : (/easy|简单|casual/.test(difficultyText) ? 0.82 : 1);
+    if (next.enemyTypes) {
+        Object.values(next.enemyTypes).forEach(enemy => {
+            if (typeof enemy.hp === 'number') enemy.hp = Math.max(1, Math.round(enemy.hp * difficultyScale));
+            if (typeof enemy.speed === 'number') enemy.speed = Math.round(enemy.speed * Math.min(1.25, difficultyScale));
+            if (typeof enemy.fireRate === 'number') enemy.fireRate = Number(Math.max(0.35, enemy.fireRate / Math.min(1.22, difficultyScale)).toFixed(2));
+        });
+    }
+    if (next.bosses) {
+        Object.values(next.bosses).forEach(boss => {
+            if (typeof boss.hp === 'number') boss.hp = Math.round(boss.hp * difficultyScale);
+            boss.phases = boss.phases || patchPlan.bossPhases || boss.phases;
+        });
+    }
+    if (next.coreRules) {
+        next.coreRules.autoAttack = true;
+        next.coreRules.defaultShootMode = 'auto';
+        next.coreRules.playerShootOnKey = false;
+    }
+    if (next.enemyBulletTypes && userSpec.artStyle) {
+        const neonPalette = ['#74e5ff', '#8a78ff', '#f093fb', '#f8d878'];
+        Object.values(next.enemyBulletTypes).forEach((bullet, index) => {
+            bullet.color = neonPalette[index % neonPalette.length];
+        });
+    }
+    return next;
+}
+
+function patchRoguelikeTemplateConfig(sourceText, userSpec = {}, patchPlan = {}) {
+    let next = String(sourceText || '');
+    const gameName = patchPlan.gameName || userSpec.gameSetting || 'Generated Roguelike Survival';
+    next = next.replace(/gameName:\s*['"][^'"]+['"]/, `gameName: '${String(gameName).replace(/'/g, "\\'")}'`);
+    if (/hard|困难|hardcore|expert/i.test(String(userSpec.difficultyLevel || ''))) {
+        next = next.replace(/baseHp:\s*\d+/, 'baseHp: 90');
+        next = next.replace(/baseSpeed:\s*\d+/, 'baseSpeed: 210');
+    }
+    return `${next}\n\nwindow.GENERATED_TEMPLATE_PATCH_PLAN = ${JSON.stringify(patchPlan, null, 2)};\nwindow.GENERATED_PRODUCTION_PLAN = ${JSON.stringify(patchPlan.productionPlan || userSpec.productionPlan || null, null, 2)};\nwindow.GENERATED_USER_SPEC = ${JSON.stringify(userSpec, null, 2)};\n`;
+}
+
+function patchRoguelikeMinimalSpec(minimalSpec, userSpec = {}, patchPlan = {}) {
+    const next = JSON.parse(JSON.stringify(minimalSpec || {}));
+    const specPatches = patchPlan.specPatches || {};
+    const productionPlan = patchPlan.productionPlan || userSpec.productionPlan || null;
+    next.meta = {
+        ...(next.meta || {}),
+        gameName: patchPlan.gameName || userSpec.gameSetting || next.meta?.gameName || 'Generated Roguelike Survival',
+        description: specPatches.meta?.description || patchPlan.userIntentSummary || userSpec.background || '',
+        storyPremise: specPatches.meta?.storyPremise || productionPlan?.storyPremise || '',
+        productionPlan
+    };
+    next.flow = {
+        ...(next.flow || {}),
+        production: specPatches.flow || {},
+        productionBrief: patchPlan.productionBrief || ''
+    };
+    next.generated = {
+        templateId: 'roguelike_survival',
+        userSpec,
+        templatePatchPlan: patchPlan,
+        generatedAt: new Date().toISOString()
+    };
+    return next;
+}
+
+async function buildCompiledTemplateProject(templateSource, userSpec = {}, patchPlan = {}) {
+    const files = new Map();
+    for (const relativePath of templateSource.entryFiles) {
+        const content = await readTextIfExists(templateSource.rootPath, relativePath);
+        if (content != null) files.set(relativePath.replace(/\\/g, '/'), content);
+    }
+
+    const manifest = await readJsonIfExists(templateSource.rootPath, templateSource.assetManifestPath) || {};
+    if (templateSource.id === 'bullet_hell') {
+        const gameSpec = await readJsonIfExists(templateSource.rootPath, 'spec/game.json');
+        const patchedGameSpec = patchBulletHellGameSpec(gameSpec, userSpec, patchPlan);
+        files.set('spec/game.json', JSON.stringify(patchedGameSpec, null, 2));
+    }
+    if (templateSource.id === 'roguelike_survival') {
+        const templateConfig = await readTextIfExists(templateSource.rootPath, 'template-config.js');
+        if (templateConfig) files.set('template-config.js', patchRoguelikeTemplateConfig(templateConfig, userSpec, patchPlan));
+        const minimalSpec = await readJsonIfExists(templateSource.rootPath, 'spec/minimal.json');
+        if (minimalSpec) files.set('spec/minimal.json', JSON.stringify(patchRoguelikeMinimalSpec(minimalSpec, userSpec, patchPlan), null, 2));
+    }
+
+    const manifestWithPrompts = {
+        ...manifest,
+        generatedPrompts: patchPlan.assetPrompts || {},
+        generatedStylePatch: patchPlan.stylePatch || {}
+    };
+    files.set(templateSource.assetManifestPath, JSON.stringify(manifestWithPrompts, null, 2));
+
+    const assetSidebar = await buildAssetSidebar(templateSource, manifestWithPrompts, patchPlan);
+    const projectId = makeProjectId();
+    const fileList = [...files.entries()].map(([filePath, content]) => ({
+        path: filePath,
+        kind: filePath.includes('/assets/') ? 'manifest' : (filePath.endsWith('.json') ? 'spec' : (filePath.endsWith('.js') ? 'runtime' : (filePath.endsWith('.css') ? 'style' : 'doc'))),
+        size: Buffer.byteLength(content, 'utf8'),
+        language: path.extname(filePath).replace('.', '') || 'text',
+        patched: templateSource.patchableFiles.includes(filePath)
+    }));
+    const validationChecks = [
+        { label: 'Template source mounted', ok: true },
+        { label: 'Runtime files inherited from template', ok: files.has('game.js') && files.has('GameSettings.js') },
+        { label: 'Manifest parsed and routed through assets/manifest.json', ok: Boolean(manifest && Object.keys(manifest).length) },
+        { label: 'State machine, input, collision, restart stay in template runtime', ok: !patchPlan.requiresRuntimeCodePatch },
+        { label: 'Asset sidebar generated from manifest', ok: assetSidebar.total > 0 }
+    ];
+    const validationReport = {
+        ok: validationChecks.every(check => check.ok),
+        checks: validationChecks
+    };
+    const project = {
+        id: projectId,
+        templateId: templateSource.id,
+        templateLabel: templateSource.label,
+        templateType: templateSource.templateType,
+        previewEntry: 'index.html',
+        previewUrl: `/api/template-project/${projectId}/index.html`,
+        changedFiles: [...new Set(templateSource.patchableFiles.filter(filePath => files.has(filePath)))],
+        files: fileList,
+        fileContents: files,
+        assetSidebar,
+        validationReport,
+        source: {
+            rootPath: templateSource.rootPath,
+            templateType: templateSource.templateType,
+            assetManifestPath: templateSource.assetManifestPath
+        },
+        createdAt: Date.now()
+    };
+    compiledTemplateProjects.set(projectId, project);
+    if (compiledTemplateProjects.size > 20) {
+        const oldest = [...compiledTemplateProjects.entries()].sort((a, b) => a[1].createdAt - b[1].createdAt)[0];
+        if (oldest) compiledTemplateProjects.delete(oldest[0]);
+    }
+    return project;
+}
+
+async function sendTemplateProjectFile(req, res) {
+    const project = compiledTemplateProjects.get(req.params.projectId);
+    if (!project) return sendError(res, 404, 'Template project not found.');
+    const templateSource = getTemplateSource(project.templateId);
+    if (!templateSource) return sendError(res, 404, 'Template source not found.');
+    const requestedPath = String(req.params[0] || 'index.html').replace(/^[/\\]+/, '').replace(/\\/g, '/');
+    const content = project.fileContents.get(requestedPath);
+    if (content != null) {
+        const ext = path.extname(requestedPath).toLowerCase();
+        const type = ext === '.html' ? 'text/html' : (ext === '.css' ? 'text/css' : (ext === '.js' ? 'application/javascript' : (ext === '.json' ? 'application/json' : 'text/plain')));
+        res.type(type).send(content);
+        return;
+    }
+    const assetPath = requestedPath.startsWith('assets/') ? requestedPath : '';
+    if (assetPath) {
+        const filePath = resolveInside(templateSource.rootPath, assetPath);
+        if (await pathExists(filePath)) return res.sendFile(filePath);
+    }
+    const sourcePath = resolveInside(templateSource.rootPath, requestedPath);
+    if (await pathExists(sourcePath)) return res.sendFile(sourcePath);
+    return sendError(res, 404, 'Template project file not found.');
+}
+
 app.use((req, res, next) => {
     const origin = req.headers.origin;
     if (isAllowedOrigin(origin)) {
@@ -585,14 +1086,18 @@ app.post('/api/logout', (req, res) => {
 
 app.get('/api/models', async (req, res) => {
     const config = await readConfig();
+    const models = publicModelsFromConfig(config);
+    const defaultModel = models.find(model => model.id === config.defaultModel || model.model === config.defaultModel);
     res.json({
-        defaultModel: config.defaultModel,
-        models: publicModelsFromConfig(config)
+        defaultModel: defaultModel?.id || models[0]?.id || '',
+        models
     });
 });
 
 app.post('/api/chat', async (req, res) => {
     try {
+        if (!enforceChatRateLimit(req, res)) return;
+
         const messages = Array.isArray(req.body.messages) ? req.body.messages : [];
         const providerId = req.body.provider;
         const modelId = req.body.modelId || req.body.model;
@@ -608,6 +1113,66 @@ app.post('/api/chat', async (req, res) => {
         });
     } catch (error) {
         sendError(res, 400, error.message);
+    }
+});
+
+app.post('/api/template-project/compile', async (req, res) => {
+    try {
+        const templateSource = getTemplateSource(req.body.templateId);
+        if (!templateSource) {
+            return sendError(res, 400, 'Unsupported template. Automatic generation only supports bullet_hell and roguelike_survival.');
+        }
+        const patchPlan = req.body.patchPlan || {};
+        if (patchPlan.requiresRuntimeCodePatch) {
+            return sendError(res, 409, 'Template patch requires runtime code changes. Route this request to the manual production flow.', {
+                runtimePatchReason: patchPlan.runtimePatchReason || 'Template configuration cannot express the requested change.'
+            });
+        }
+        const project = await buildCompiledTemplateProject(templateSource, req.body.spec || {}, patchPlan);
+        const publicProject = {
+            ...project,
+            fileContents: undefined
+        };
+        res.json({ ok: true, project: publicProject });
+    } catch (error) {
+        sendError(res, error.status || 500, error.message);
+    }
+});
+
+app.post('/api/waitlist', async (req, res) => {
+    try {
+        if (!enforceWaitlistRateLimit(req, res)) return;
+        if (!WEB3FORMS_ACCESS_KEY) {
+            return sendError(res, 500, 'Waitlist submission is not configured.');
+        }
+
+        const email = String(req.body.email || '').trim();
+        const prompt = String(req.body.prompt || '').trim().slice(0, 5000);
+        const subject = String(req.body.subject || 'New Droi AI Waitlist Submission').trim().slice(0, 160);
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return sendError(res, 400, 'A valid email address is required.');
+        }
+
+        const formData = new URLSearchParams();
+        formData.set('access_key', WEB3FORMS_ACCESS_KEY);
+        formData.set('email', email);
+        formData.set('prompt', prompt);
+        formData.set('subject', subject);
+
+        const response = await fetch(WEB3FORMS_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData.toString()
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.success === false) {
+            return sendError(res, response.status || 502, data.message || 'Waitlist submission failed.');
+        }
+
+        res.json({ ok: true });
+    } catch (error) {
+        sendError(res, error.status || 400, error.message);
     }
 });
 
@@ -646,8 +1211,8 @@ app.post('/api/speech/transcribe', async (req, res) => {
         }
 
         const provider = sanitizeProvider('gemini', (config.providers || {}).gemini || {});
-        const apiKey = decryptSecret(provider.encryptedApiKey);
-        if (!provider.enabled || !apiKey) {
+        const apiKey = getProviderApiKey('gemini', provider);
+        if (!isProviderPubliclyAvailable('gemini', provider) || !apiKey) {
             return sendError(res, 400, 'Gemini API key is not configured.');
         }
 
@@ -676,7 +1241,7 @@ app.get('/api/admin/ai-config', requireAdmin, async (req, res) => {
             {
                 ...provider,
                 encryptedApiKey: undefined,
-                hasApiKey: Boolean(provider.encryptedApiKey)
+                hasApiKey: Boolean(provider.encryptedApiKey || getEnvApiKey(providerId))
             }
         ])))
     };
@@ -728,7 +1293,7 @@ app.post('/api/admin/ai-config/test', requireAdmin, async (req, res) => {
         });
         provider.apiKey = providerInput.apiKey && providerInput.apiKey.trim()
             ? providerInput.apiKey.trim()
-            : decryptSecret(savedProvider.encryptedApiKey);
+            : getProviderApiKey(providerId, savedProvider);
 
         if (!provider.apiKey) {
             return sendError(res, 400, `${meta.label} API key is required.`, { stage: 'credential' });
@@ -751,8 +1316,28 @@ app.post('/api/admin/ai-config/test', requireAdmin, async (req, res) => {
     }
 });
 
-app.use(express.static(ROOT_DIR));
+app.get('/', (req, res) => {
+    res.sendFile(path.join(ROOT_DIR, 'index.html'));
+});
+app.get('/index.html', (req, res) => {
+    res.sendFile(path.join(ROOT_DIR, 'index.html'));
+});
+app.get('/script.js', (req, res) => {
+    res.sendFile(path.join(ROOT_DIR, 'script.js'));
+});
+app.get('/style.css', (req, res) => {
+    res.sendFile(path.join(ROOT_DIR, 'style.css'));
+});
+app.get('/favicon.ico.png', (req, res) => {
+    res.sendFile(path.join(ROOT_DIR, 'favicon.ico.png'));
+});
+app.get('/api/template-project/:projectId/*', sendTemplateProjectFile);
+app.use('/assets', express.static(path.join(ROOT_DIR, 'assets')));
+app.use('/showcase', express.static(path.join(ROOT_DIR, 'showcase')));
 app.get('*', (req, res) => {
+    if (req.path.includes('/.') || path.extname(req.path)) {
+        return sendError(res, 404, 'Not found.');
+    }
     res.sendFile(path.join(ROOT_DIR, 'index.html'));
 });
 
