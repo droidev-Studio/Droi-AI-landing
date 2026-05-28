@@ -2730,14 +2730,27 @@ Prompt: ${prompt}`
         try {
             const responseModelMeta = getActiveModelMeta();
             const spec = getCurrentGameSpec();
+            const decision = matchTemplate(spec);
+            const templateCapability = getTemplateCapabilitySummary(decision);
             const response = await withTimeout(aiService.stageChat('/api/ai/generate-game-plan', [
                 {
                     role: 'system',
-                    content: 'You are a game design assistant. Return only valid JSON with keys title, hook, storyPremise, coreLoop, momentToMoment, visualDirection, enemyDesign, progressionPlan, playerFantasy, prototypeScope, risk. Avoid repeating the same genre/style words mechanically. Keep every value under 42 words.'
+                    content: `You are a game design assistant for an AI-first playable game generator.
+Return only valid JSON with keys title, hook, storyPremise, coreLoop, momentToMoment, visualDirection, enemyDesign, progressionPlan, playerFantasy, prototypeScope, risk, templateUsage, patchTargets.
+Use the selected template capability summary as a hard constraint.
+Avoid repeating the same genre/style words mechanically.
+Every value must be concrete enough for the next model stage to produce TemplatePatchPlan data.
+Keep every value under 54 words.`
                 },
                 {
                     role: 'user',
-                    content: JSON.stringify(spec)
+                    content: JSON.stringify({
+                        selectedModel: responseModelMeta,
+                        gameSpec: spec,
+                        templateDecision: decision,
+                        templateCapability,
+                        expectedGeneratedFiles: templateCapability.outputFiles
+                    }, null, 2)
                 }
             ]), AI_GAME_PLAN_TIMEOUT_MS);
             const jsonMatch = response.content.match(/\{[\s\S]*\}/);
@@ -2791,6 +2804,7 @@ Prompt: ${prompt}`
 
     async function generateTemplatePatchPlan(spec, decision) {
         if (!hasLiveAIProvider()) throw createModelNotConfiguredError('template_patch');
+        const templateCapability = getTemplateCapabilitySummary(decision);
 
         const response = await withTimeout(aiService.stageChat('/api/ai/generate-template-patch', [
             {
@@ -2810,7 +2824,8 @@ Required shape:
 }
 Never include direct file patches, source code patches, diffs, runtimePatch, files, filePatches, codePatch, sourcePatch, or patches.
 For bullet_hell contentPatch should include waves, bosses, enemyTypes, pickups, and projectilePatterns.
-For roguelike_survival contentPatch should include waves, enemies, weapons, upgrades, pickups, and balance.`
+For roguelike_survival contentPatch should include waves, enemies, weapons, upgrades, pickups, and balance.
+Use templateCapability.outputFiles as the compile target, but do not emit a files/filePatches key.`
             },
             {
                 role: 'user',
@@ -2818,6 +2833,7 @@ For roguelike_survival contentPatch should include waves, enemies, weapons, upgr
                     selectedModel: getActiveModelMeta(),
                     gameSpec: spec,
                     templateDecision: decision,
+                    templateCapability,
                     aiGamePlan: latestGamePlanDraft
                 }, null, 2)
             }
@@ -2952,6 +2968,64 @@ For roguelike_survival contentPatch should include waves, enemies, weapons, upgr
                     : 'This idea is outside the current automatic template coverage. Please leave an email and we will route it to the manual queue.'),
             candidates: scored.slice(0, 3),
             source: 'local_safety'
+        };
+    }
+
+    function getTemplateCapabilitySummary(decision = matchTemplate()) {
+        const template = TEMPLATE_CATALOG.find(item => item.id === decision.templateId) || null;
+        const templateId = template ? template.id : decision.templateId;
+        const sharedFiles = [
+            'index.html',
+            'game.js',
+            'template-config.js',
+            'spec/game.json',
+            'spec/minimal.json',
+            'spec/waves.json',
+            'spec/enemies.json',
+            'spec/weapons.json',
+            'spec/balance.json',
+            'spec/effects.json',
+            'assets/manifest.json'
+        ];
+        const templateNotes = templateId === 'bullet_hell'
+            ? [
+                'HTML5 Canvas flying shooter or bullet hell template.',
+                'Supports movement, focused slow movement, shooting, bombs, projectile patterns, enemy waves, pickups, boss phases, score, HUD, win, fail, pause, and restart.',
+                'contentPatch should include player, waves, enemyTypes, bosses, projectilePatterns, pickups, optional balance, optional effects, and optional weapons.'
+            ]
+            : templateId === 'roguelike_survival'
+                ? [
+                    'HTML5 Canvas roguelike survival template.',
+                    'Supports movement, auto-fire combat, XP pickups, upgrade choices, enemy swarms, elites, timed survival, boss node, health, score, HUD, win, fail, pause, and restart.',
+                    'contentPatch should include player, waves, enemies, weapons, upgrades, pickups, balance, and effects.'
+                ]
+                : [
+                    'Unsupported by the current P0 automatic template whitelist.'
+                ];
+
+        return {
+            templateId,
+            templateLabel: template ? template.label : decision.templateLabel,
+            sourceArchitecture: template ? template.sourceArchitecture : '',
+            specMode: template ? template.specMode : '',
+            contentModules: template ? template.contentModules : [],
+            gameplayPillars: template ? template.gameplayPillars : [],
+            systems: template ? template.systems : [],
+            outputFiles: sharedFiles,
+            patchAllowlist: [
+                'settingsPatch',
+                'stylePatch',
+                'contentPatch',
+                'assetPrompts',
+                'playabilityChecklist'
+            ],
+            forbiddenPatchSurfaces: [
+                'runtime source code patches',
+                'file diffs',
+                'direct file writes',
+                'patches outside spec/config/manifest-derived data'
+            ],
+            notes: templateNotes
         };
     }
 
@@ -3420,6 +3494,8 @@ For roguelike_survival contentPatch should include waves, enemies, weapons, upgr
             `Progression Plan: ${plan.progressionPlan || ''}`,
             `Player Fantasy: ${plan.playerFantasy}`,
             `P0 Prototype Scope: ${plan.prototypeScope || ''}`,
+            `Template Usage: ${plan.templateUsage || ''}`,
+            `Patch Targets: ${Array.isArray(plan.patchTargets) ? plan.patchTargets.join(', ') : (plan.patchTargets || '')}`,
             '',
             buildGameSpecPlainText(spec)
         ].join('\n');
@@ -3436,13 +3512,23 @@ For roguelike_survival contentPatch should include waves, enemies, weapons, upgr
             enemyDesign: plan.enemyDesign || plan.challengeDesign || 'Challenge rules should be readable and escalate through the session.',
             progressionPlan: plan.progressionPlan || 'Progression should create clear power growth and meaningful upgrade choices.',
             playerFantasy: plan.playerFantasy || 'Step into a clear role and chase a focused goal.',
-            prototypeScope: plan.prototypeScope || 'Build one compact playable loop with win, fail, pause, and restart states.'
+            prototypeScope: plan.prototypeScope || 'Build one compact playable loop with win, fail, pause, and restart states.',
+            templateUsage: plan.templateUsage || '',
+            patchTargets: plan.patchTargets || []
         };
         latestGamePlanDraft = buildGamePlanDraftText(safePlan);
 
         return [
             '<div class="selection-summary ai-plan-summary">',
             buildEnhancedPlanHtml(safePlan),
+            safePlan.templateUsage
+                ? `<div class="summary-item"><strong>Template Usage:</strong> ${escapeHtml(safePlan.templateUsage)}</div>`
+                : '',
+            Array.isArray(safePlan.patchTargets) && safePlan.patchTargets.length
+                ? `<div class="summary-item"><strong>Patch Targets:</strong> ${safePlan.patchTargets.map(item => escapeHtml(String(item))).join(', ')}</div>`
+                : (safePlan.patchTargets
+                    ? `<div class="summary-item"><strong>Patch Targets:</strong> ${escapeHtml(String(safePlan.patchTargets))}</div>`
+                    : ''),
             '<div class="summary-title">Recognized GameSpec modules</div>',
             buildGameSpecItemsHtml(getCurrentGameSpec(), safePlan),
             '</div>'
