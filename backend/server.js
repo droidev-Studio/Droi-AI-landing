@@ -989,7 +989,12 @@ function buildPreviewGameJs() {
   const playerConfig = content.player || {};
   const wavesConfig = Array.isArray(content.waves) ? content.waves : [];
   const bossConfig = Array.isArray(content.bosses) && content.bosses.length ? content.bosses[0] : {};
+  const enemyTypesConfig = Array.isArray(content.enemyTypes) ? content.enemyTypes : (Array.isArray(content.enemies) ? content.enemies : []);
+  const weaponsConfig = Array.isArray(content.weapons) ? content.weapons : [];
+  const projectilePatternsConfig = Array.isArray(content.projectilePatterns) ? content.projectilePatterns : [];
   const upgradesConfig = Array.isArray(content.upgrades) ? content.upgrades : [];
+  const balanceConfig = content.balance || {};
+  const defaultWeapon = weaponsConfig[0] || {};
   let t = 0;
   let last = performance.now();
   let spawn = 0;
@@ -1000,6 +1005,7 @@ function buildPreviewGameJs() {
   let xp = 0;
   let over = false;
   let won = false;
+  let bossSpawned = false;
   const player = {
     x: canvas.width / 2,
     y: canvas.height * 0.72,
@@ -1026,25 +1032,70 @@ function buildPreviewGameJs() {
     return Math.hypot(dx, dy);
   }
 
+  function findEnemyConfig(id) {
+    return enemyTypesConfig.find(enemy => enemy && (enemy.id === id || enemy.type === id || enemy.name === id)) || {};
+  }
+
+  function getCurrentWave() {
+    if (!wavesConfig.length) return {};
+    const sorted = wavesConfig.slice().sort((a, b) => Number(a.t || a.time || 0) - Number(b.t || b.time || 0));
+    let active = sorted[0] || {};
+    for (const wave of sorted) {
+      if (t >= Number(wave.t || wave.time || 0)) active = wave;
+    }
+    return active || {};
+  }
+
+  function getPatternConfig(enemy) {
+    if (!projectilePatternsConfig.length) return {};
+    const phase = enemy && enemy.kind === 'boss' ? 'boss' : 'default';
+    return projectilePatternsConfig.find(pattern => pattern && (pattern.id === phase || pattern.enemy === (enemy && enemy.kind))) || projectilePatternsConfig[0] || {};
+  }
+
   function addEnemy(kind) {
     if (isBullet) {
-      const wave = wavesConfig[Math.min(wavesConfig.length - 1, Math.max(0, Math.floor(t / 20)))] || {};
+      const wave = getCurrentWave();
+      const enemyId = kind === 'boss' ? (bossConfig.id || 'boss') : (wave.enemy || kind);
+      const enemyConfig = findEnemyConfig(enemyId);
       const bossHp = Number(bossConfig.hp) || 260;
-      enemies.push({ kind, x: 80 + Math.random() * (canvas.width - 160), y: -30, hp: kind === 'boss' ? bossHp : Number(wave.hp) || 24, r: kind === 'boss' ? 34 : 13, cd: 0 });
+      enemies.push({
+        kind,
+        id: enemyId,
+        x: 80 + Math.random() * (canvas.width - 160),
+        y: -30,
+        hp: kind === 'boss' ? bossHp : Number(enemyConfig.hp || wave.hp) || 24,
+        r: kind === 'boss' ? Number(bossConfig.radius || bossConfig.r) || 34 : Number(enemyConfig.radius || enemyConfig.r) || 13,
+        speed: Number(enemyConfig.speed || wave.speed) || 58,
+        color: enemyConfig.color || '',
+        cd: 0
+      });
     } else {
       const side = Math.floor(Math.random() * 4);
       const x = side < 2 ? Math.random() * canvas.width : (side === 2 ? -20 : canvas.width + 20);
       const y = side >= 2 ? Math.random() * canvas.height : (side === 0 ? -20 : canvas.height + 20);
+      const wave = getCurrentWave();
+      const enemyId = kind === 'boss' ? (bossConfig.id || 'boss') : (wave.enemy || kind);
+      const enemyConfig = findEnemyConfig(enemyId);
       const bossHp = Number(bossConfig.hp) || 300;
-      enemies.push({ kind, x, y, hp: kind === 'boss' ? bossHp : (kind === 'elite' ? 60 : 24), r: kind === 'boss' ? 32 : 14, cd: 0 });
+      enemies.push({
+        kind,
+        id: enemyId,
+        x,
+        y,
+        hp: kind === 'boss' ? bossHp : Number(enemyConfig.hp) || (kind === 'elite' ? 60 : 24),
+        r: kind === 'boss' ? Number(bossConfig.radius || bossConfig.r) || 32 : Number(enemyConfig.radius || enemyConfig.r) || 14,
+        speed: Number(enemyConfig.speed) || (kind === 'elite' ? 64 : 82),
+        color: enemyConfig.color || '',
+        cd: 0
+      });
     }
   }
 
   function shootAt(from, to, hostile) {
     const angle = Math.atan2(to.y - from.y, to.x - from.x);
-    const speed = hostile ? (isBullet ? 165 : 110) : 420;
+    const speed = hostile ? (isBullet ? 165 : 110) : (Number(defaultWeapon.projectileSpeed || defaultWeapon.speed) || 420);
     const list = hostile ? enemyShots : shots;
-    list.push({ x: from.x, y: from.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, r: hostile ? 6 : 4, life: 3, dmg: hostile ? 14 : 18 });
+    list.push({ x: from.x, y: from.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, r: hostile ? 6 : 4, life: 3, dmg: hostile ? 14 : (Number(defaultWeapon.damage) || 18) });
   }
 
   function update(dt) {
@@ -1062,8 +1113,9 @@ function buildPreviewGameJs() {
 
     spawn -= dt;
     if (spawn <= 0) {
-      addEnemy(t > 45 && enemies.length < 2 ? 'boss' : (t > 20 && Math.random() < 0.25 ? 'elite' : 'runner'));
-      const waveInterval = wavesConfig[0] && Number(wavesConfig[0].interval || wavesConfig[0].spawnInterval);
+      const wave = getCurrentWave();
+      addEnemy(t > 45 && enemies.length < 2 ? 'boss' : (wave.enemy || (t > 20 && Math.random() < 0.25 ? 'elite' : 'runner')));
+      const waveInterval = Number(wave.interval || wave.spawnInterval);
       spawn = isBullet ? (waveInterval || 1.0) : Math.max(0.35, waveInterval || (1.2 - t * 0.01));
     }
 
@@ -1073,28 +1125,32 @@ function buildPreviewGameJs() {
         const target = isBullet ? { x: player.x, y: 0 } : enemies.reduce((best, enemy) => !best || dist(player, enemy) < dist(player, best) ? enemy : best, null);
         if (target) shootAt(player, target, false);
       }
-      fire = isBullet ? 0.12 : Math.max(0.22, 0.55 - level * 0.035);
+      const weaponCadence = Number(defaultWeapon.cadence || defaultWeapon.cooldown || defaultWeapon.fireInterval);
+      fire = weaponCadence || (isBullet ? 0.12 : Math.max(0.22, 0.55 - level * 0.035));
     }
 
     enemyFire -= dt;
     if (isBullet && enemyFire <= 0) {
       enemies.forEach(enemy => {
-        const count = enemy.kind === 'boss' ? 10 : 3;
+        const pattern = getPatternConfig(enemy);
+        const count = Number(pattern.count || pattern.bulletCount || pattern.projectileCount) || (enemy.kind === 'boss' ? 10 : 3);
+        const shotSpeed = Number(pattern.speed || pattern.projectileSpeed) || 150;
         for (let i = 0; i < count; i++) {
-          const angle = enemy.kind === 'boss' ? (Math.PI * 2 * i / count + t) : Math.atan2(player.y - enemy.y, player.x - enemy.x) + (i - 1) * 0.24;
-          enemyShots.push({ x: enemy.x, y: enemy.y, vx: Math.cos(angle) * 150, vy: Math.sin(angle) * 150, r: enemy.kind === 'boss' ? 6 : 5, life: 5, dmg: 1 });
+          const spread = Number(pattern.spread) || 0.24;
+          const angle = enemy.kind === 'boss' ? (Math.PI * 2 * i / count + t) : Math.atan2(player.y - enemy.y, player.x - enemy.x) + (i - (count - 1) / 2) * spread;
+          enemyShots.push({ x: enemy.x, y: enemy.y, vx: Math.cos(angle) * shotSpeed, vy: Math.sin(angle) * shotSpeed, r: Number(pattern.radius || pattern.r) || (enemy.kind === 'boss' ? 6 : 5), life: Number(pattern.life) || 5, dmg: 1, color: pattern.color || '' });
         }
       });
-      enemyFire = 0.75;
+      enemyFire = Number((projectilePatternsConfig[0] || {}).cadence || (projectilePatternsConfig[0] || {}).interval) || 0.75;
     }
 
     enemies.forEach(enemy => {
       if (isBullet) {
-        enemy.y += (enemy.kind === 'boss' ? 22 : 58) * dt;
+        enemy.y += (enemy.kind === 'boss' ? 22 : enemy.speed) * dt;
         enemy.x += Math.sin(t * 2 + enemy.y) * 30 * dt;
       } else {
         const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
-        const speed = enemy.kind === 'boss' ? 35 : (enemy.kind === 'elite' ? 64 : 82);
+        const speed = enemy.kind === 'boss' ? 35 : enemy.speed;
         enemy.x += Math.cos(angle) * speed * dt;
         enemy.y += Math.sin(angle) * speed * dt;
       }
@@ -1152,7 +1208,8 @@ function buildPreviewGameJs() {
       if (enemies[i].y > canvas.height + 80) enemies.splice(i, 1);
     }
     if (player.hp <= 0) { over = true; won = false; }
-    if (!isBullet && t >= 180) { addEnemy('boss'); t = -999; }
+    const bossAt = Number(balanceConfig.bossAtSeconds || balanceConfig.bossAt || balanceConfig.survivalSeconds || 180);
+    if (!isBullet && !bossSpawned && t >= bossAt) { addEnemy('boss'); bossSpawned = true; }
   }
 
   function draw() {
@@ -1180,13 +1237,13 @@ function buildPreviewGameJs() {
       ctx.fillRect(s.x - 2, s.y - 10, 4, 14);
     });
     enemyShots.forEach(s => {
-      ctx.fillStyle = palette[1] || '#ff4fd8';
+      ctx.fillStyle = s.color || palette[1] || '#ff4fd8';
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
       ctx.fill();
     });
     enemies.forEach(e => {
-      ctx.fillStyle = e.kind === 'boss' ? (palette[2] || '#ffe66d') : (e.kind === 'elite' ? '#ff7a90' : (palette[0] || '#42e8ff'));
+      ctx.fillStyle = e.color || (e.kind === 'boss' ? (palette[2] || '#ffe66d') : (e.kind === 'elite' ? '#ff7a90' : (palette[0] || '#42e8ff')));
       ctx.beginPath();
       ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
       ctx.fill();

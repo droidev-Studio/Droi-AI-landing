@@ -142,6 +142,11 @@ function testCompilerOutput() {
   assert.ok(generatedGameJs.includes('const isBullet'));
   assert.ok(generatedGameJs.includes('const content = spec.content'));
   assert.ok(generatedGameJs.includes('const palette = Array.isArray'));
+  assert.ok(generatedGameJs.includes('const enemyTypesConfig'));
+  assert.ok(generatedGameJs.includes('const weaponsConfig'));
+  assert.ok(generatedGameJs.includes('const projectilePatternsConfig'));
+  assert.ok(generatedGameJs.includes('function findEnemyConfig'));
+  assert.ok(generatedGameJs.includes('function getPatternConfig'));
   assert.ok(generatedGameJs.includes('const upgradesConfig'));
   assert.ok(generatedGameJs.includes('function shootAt'));
   assert.ok(generatedGameJs.includes('enemyShots'));
