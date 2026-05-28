@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'What difficulty level should we tune for? <span class="highlight-text">Difficulty Level</span>'
     ];
 
-    const TEMPLATE_CATALOG = [
+    let TEMPLATE_CATALOG = [
         {
             id: 'roguelike_survival',
             label: 'Roguelike Survival',
@@ -204,6 +204,97 @@ document.addEventListener('DOMContentLoaded', () => {
             confidenceBoost: 0.12
         }
     ];
+
+    TEMPLATE_CATALOG = [
+        {
+            id: 'roguelike_survival',
+            label: 'Roguelike Survival',
+            type: 'roguelike',
+            keywords: [
+                'roguelike', 'roguelite', 'roguelike survival', 'survivors-like', 'vampire survivors',
+                'bullet heaven', 'reverse bullet hell', 'arena survival', 'horde survival', 'swarm survival',
+                'survival', 'survive', 'wave', 'horde', 'auto attack', 'auto weapon', 'level-up', 'level up',
+                'upgrade choice', 'three choices', 'xp', 'experience pickup',
+                '肉鸽', '肉鸽生存', '类吸血鬼幸存者', '吸血鬼幸存者', '幸存者', '生存', '割草',
+                '波次', '刷怪', '敌潮', '自动攻击', '自动武器', '升级', '升级三选一', '经验', '存活', '生存计时'
+            ],
+            sourceArchitecture: 'Groglike-SOP',
+            specMode: 'module-spec',
+            contentModules: ['minimal', 'weapons', 'enemies', 'waves', 'balance', 'effects', 'manifest'],
+            gameplayPillars: ['auto-weapons', 'xp-pickups', 'level-up-options', 'survival-timeline'],
+            systems: ['input', 'movement', 'collision', 'combat', 'spawn', 'pickup', 'health', 'progression', 'reward', 'animation', 'render_canvas'],
+            confidenceBoost: 0.16
+        },
+        {
+            id: 'bullet_hell',
+            label: 'Bullet Hell / Flying Shooter',
+            type: 'bullet-hell',
+            keywords: [
+                'bullet hell', 'danmaku', 'shmup', 'shoot em up', 'shooter', 'flying shooter',
+                'space shooter', 'vertical shooter', 'plane shooter', 'airplane shooter', 'aircraft shooter',
+                'shoot', 'dodge', 'projectile', 'boss phase', 'boss bullet', 'boss fight',
+                '飞行射击', '飞机大战', '太空射击', '纵版射击', '竖版射击', '竖版打飞机', '打飞机',
+                '弹幕射击', '弹幕', '躲子弹', '躲避子弹', 'Boss 弹幕战', 'boss 弹幕战', '射击',
+                '子弹', '躲避', '首领'
+            ],
+            sourceArchitecture: 'bullet_hell',
+            specMode: 'single-game-spec',
+            contentModules: ['game', 'schema', 'manifest'],
+            gameplayPillars: ['focused-movement', 'projectile-patterns', 'graze', 'bombs', 'boss-phases'],
+            systems: ['input', 'movement', 'collision', 'combat', 'spawn', 'projectile', 'bullet_pattern', 'pickup', 'hud', 'render_canvas'],
+            confidenceBoost: 0.13
+        },
+        {
+            id: 'tower_defense',
+            label: 'Tower Defense',
+            type: 'tower-defense',
+            keywords: ['tower', 'defense', 'defence', 'lane', 'base', 'turret', 'path', '塔防', '防御塔', '防守', '基地', '路线'],
+            sourceArchitecture: 'p0-local-preview',
+            specMode: 'single-game-spec',
+            contentModules: ['game', 'waves', 'manifest'],
+            gameplayPillars: ['base-defense', 'pathing', 'tower-projectiles', 'wave-pressure'],
+            systems: ['input', 'collision', 'combat', 'spawn', 'health', 'projectile', 'wave', 'ui_render'],
+            confidenceBoost: 0.12
+        }
+    ];
+
+    TEMPLATE_CATALOG = TEMPLATE_CATALOG.map(template => {
+        if (template.id === 'roguelike_survival') {
+            return {
+                ...template,
+                keywords: [
+                    ...template.keywords,
+                    '\u8089\u9e3d', '\u8089\u9e3d\u751f\u5b58', '\u7c7b\u5438\u8840\u9b3c\u5e78\u5b58\u8005',
+                    '\u5438\u8840\u9b3c\u5e78\u5b58\u8005', '\u5e78\u5b58\u8005', '\u751f\u5b58', '\u5272\u8349',
+                    '\u6ce2\u6b21', '\u5237\u602a', '\u654c\u6f6e', '\u81ea\u52a8\u653b\u51fb', '\u81ea\u52a8\u6b66\u5668',
+                    '\u5347\u7ea7', '\u5347\u7ea7\u4e09\u9009\u4e00', '\u7ecf\u9a8c', '\u5b58\u6d3b', '\u751f\u5b58\u8ba1\u65f6'
+                ]
+            };
+        }
+        if (template.id === 'bullet_hell') {
+            return {
+                ...template,
+                keywords: [
+                    ...template.keywords,
+                    '\u98de\u884c\u5c04\u51fb', '\u98de\u673a\u5927\u6218', '\u592a\u7a7a\u5c04\u51fb',
+                    '\u7eb5\u7248\u5c04\u51fb', '\u7ad6\u7248\u5c04\u51fb', '\u7ad6\u7248\u6253\u98de\u673a',
+                    '\u6253\u98de\u673a', '\u5f39\u5e55\u5c04\u51fb', '\u5f39\u5e55', '\u8eb2\u5b50\u5f39',
+                    '\u8eb2\u907f\u5b50\u5f39', 'Boss \u5f39\u5e55\u6218', 'boss \u5f39\u5e55\u6218',
+                    '\u5c04\u51fb', '\u5b50\u5f39', '\u8eb2\u907f', '\u9996\u9886'
+                ]
+            };
+        }
+        if (template.id === 'tower_defense') {
+            return {
+                ...template,
+                keywords: [
+                    ...template.keywords,
+                    '\u5854\u9632', '\u9632\u5fa1\u5854', '\u9632\u5b88', '\u57fa\u5730', '\u8def\u7ebf'
+                ]
+            };
+        }
+        return template;
+    });
 
     const THEME_PRESETS = {
         animal_island: {
