@@ -292,11 +292,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const TEMPLATE_COMPILE_TIMEOUT_MS = 30000;
     const isLocalHost = ['127.0.0.1', 'localhost'].includes(window.location.hostname);
     const isBackendPort = window.location.port === '3000';
-    const API_BASE_URL = window.DROI_API_BASE || (
+    const DEFAULT_API_BASE_URL = (
         isLocalHost && window.location.port && !isBackendPort
             ? 'http://127.0.0.1:3000'
             : ''
     );
+    let API_BASE_URL = normalizeApiBaseUrl(window.DROI_API_BASE || DEFAULT_API_BASE_URL);
     const PROVIDER_ORDER = ['openai', 'gemini', 'anthropic', 'groq'];
     const PROVIDER_META = {
         openai: {
@@ -489,6 +490,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function isAllowedAdminEmail(email) {
         return ADMIN_EMAIL_ALLOWLIST.includes(String(email || '').trim().toLowerCase());
+    }
+
+    function normalizeApiBaseUrl(value) {
+        return String(value || '').trim().replace(/\/+$/, '');
+    }
+
+    async function loadRuntimeConfig() {
+        if (window.DROI_API_BASE) {
+            API_BASE_URL = normalizeApiBaseUrl(window.DROI_API_BASE);
+            return;
+        }
+
+        try {
+            const response = await fetch('droi-config.json', { cache: 'no-store' });
+            if (!response.ok) return;
+            const config = await response.json();
+            const apiBase = config.apiBaseUrl || config.apiBase || config.backendUrl || '';
+            if (apiBase) {
+                API_BASE_URL = normalizeApiBaseUrl(apiBase);
+            }
+        } catch (error) {
+            // Static hosting can omit droi-config.json; the UI will show model/backend errors instead of faking generation.
+        }
     }
 
     function apiUrl(path) {
@@ -4293,9 +4317,10 @@ Decision Source: ${decision.source || 'unknown'}`;
     renderProviderList();
     syncProviderEditor();
     updateModelUI();
-    loadPlatformModels();
-
-    refreshAdminSession();
+    loadRuntimeConfig().finally(() => {
+        loadPlatformModels();
+        refreshAdminSession();
+    });
 
     // Modal Close Logic -> Transition to Success State
     closeModalBtn.addEventListener('click', () => {
