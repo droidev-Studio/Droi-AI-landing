@@ -390,6 +390,9 @@ function testNoClientSecrets() {
   assert.ok(clientScript.includes('templateCapability'));
   assert.ok(clientScript.includes('latestGamePlanJson'));
   assert.ok(clientScript.includes('aiPlanJson: latestGamePlanJson'));
+  assert.ok(clientScript.includes('getRecentChatTranscript'));
+  assert.ok(clientScript.includes('chatTranscript: getRecentChatTranscript()'));
+  assert.ok(clientScript.includes('Readable alias note'));
   assert.ok(clientScript.includes('expectedGeneratedFiles'));
   assert.ok(clientScript.includes('templateUsage'));
   assert.ok(clientScript.includes('patchTargets'));
