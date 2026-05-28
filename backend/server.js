@@ -395,6 +395,27 @@ function compileTemplateProject(payload) {
 
   const generatedSpec = buildCompiledGameSpec(spec, decision, templateId, payload.selectedModel || {}, templatePatchPlan);
   const projectFiles = buildGeneratedProjectFiles(generatedSpec);
+  const validationReport = {
+    ok: true,
+    checks: [
+      { ok: true, label: 'Current model was used before compile' },
+      { ok: true, label: 'TemplatePatchPlan validated as AI-generated' },
+      { ok: true, label: `${templateId} P0 template selected` },
+      { ok: true, label: 'HTML5 Canvas preview files emitted' },
+      { ok: true, label: 'GameSpec, split spec modules, template config, and manifest emitted' },
+      { ok: true, label: 'Generation trace report emitted' }
+    ]
+  };
+  const generationReport = buildGenerationReport({
+    projectId,
+    generatedSpec,
+    templateId,
+    selectedModel: payload.selectedModel || {},
+    templatePatchPlan,
+    aiPlanDraft: payload.aiPlanDraft,
+    validationReport
+  });
+  projectFiles['generation-report.json'] = JSON.stringify(generationReport, null, 2);
   const files = Object.keys(projectFiles);
   for (const [relativePath, contents] of Object.entries(projectFiles)) {
     const targetPath = path.join(projectDir, relativePath);
@@ -408,16 +429,8 @@ function compileTemplateProject(payload) {
     templateId,
     previewUrl: `/generated/${projectId}/index.html`,
     files,
-    validationReport: {
-      ok: true,
-      checks: [
-        { ok: true, label: 'Current model was used before compile' },
-        { ok: true, label: 'TemplatePatchPlan validated as AI-generated' },
-        { ok: true, label: `${templateId} P0 template selected` },
-        { ok: true, label: 'HTML5 Canvas preview files emitted' },
-        { ok: true, label: 'GameSpec, split spec modules, template config, and manifest emitted' }
-      ]
-    }
+    generationReport,
+    validationReport
   };
 }
 
@@ -686,6 +699,64 @@ function buildGeneratedProjectFiles(gameSpec) {
     'spec/balance.json': JSON.stringify(balance, null, 2),
     'spec/effects.json': JSON.stringify(effects, null, 2),
     'assets/manifest.json': JSON.stringify(buildManifest(gameSpec), null, 2)
+  };
+}
+
+function buildGenerationReport({
+  projectId,
+  generatedSpec,
+  templateId,
+  selectedModel,
+  templatePatchPlan,
+  aiPlanDraft,
+  validationReport
+}) {
+  return {
+    projectId,
+    generatedAt: new Date().toISOString(),
+    aiFirst: true,
+    aiGenerated: true,
+    fallbackReason: '',
+    templateId,
+    templateLabel: generatedSpec.meta && generatedSpec.meta.gameType,
+    selectedModel: {
+      providerId: selectedModel.providerId || selectedModel.provider || '',
+      modelId: selectedModel.modelId || selectedModel.model || '',
+      label: selectedModel.label || selectedModel.modelLabel || 'Selected model'
+    },
+    stages: {
+      analysis: { required: true, modelRequired: true },
+      gamePlan: { required: true, modelRequired: true, draftLength: String(aiPlanDraft || '').length },
+      templatePatch: {
+        required: true,
+        modelRequired: true,
+        aiGenerated: templatePatchPlan.aiGenerated === true,
+        modelMeta: templatePatchPlan.modelMeta || null
+      },
+      compile: {
+        required: true,
+        modelRequired: false,
+        compiler: 'p0-template-project-compiler'
+      }
+    },
+    outputs: {
+      files: [
+        'index.html',
+        'game.js',
+        'template-config.js',
+        'spec/game.json',
+        'spec/minimal.json',
+        'spec/waves.json',
+        'spec/enemies.json',
+        'spec/weapons.json',
+        'spec/balance.json',
+        'spec/effects.json',
+        'assets/manifest.json',
+        'generation-report.json'
+      ],
+      preview: `/generated/${projectId}/index.html`
+    },
+    validationReport
   };
 }
 

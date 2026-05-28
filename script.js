@@ -4225,6 +4225,9 @@ Use templateCapability.outputFiles as the compile target, but do not emit a file
         const files = Array.isArray(project.files) ? project.files : [];
         const validation = project.validationReport || {};
         const checks = Array.isArray(validation.checks) ? validation.checks : [];
+        const trace = project.generationReport || {};
+        const traceModel = trace.selectedModel || {};
+        const traceStages = trace.stages || {};
         const previewUrl = resolveBackendUrl(project.previewUrl || project.url || '');
 
         return [
@@ -4232,6 +4235,15 @@ Use templateCapability.outputFiles as the compile target, but do not emit a file
             '<div class="generation-status">AI template compile path</div>',
             `<div class="generation-title">${escapeHtml(project.name || project.gameName || 'Playable project ready')}</div>`,
             `<div class="generation-meta"><span>${escapeHtml(decision.templateLabel || 'Template')}</span><span>${escapeHtml(getActiveModelMeta().label)}</span></div>`,
+            trace.aiFirst
+                ? [
+                    '<div class="summary-title">Generation trace</div>',
+                    `<div class="summary-item"><strong>AI-first:</strong> ${trace.aiGenerated ? 'true' : 'false'}</div>`,
+                    `<div class="summary-item"><strong>Selected model:</strong> ${escapeHtml(traceModel.label || getActiveModelMeta().label)}</div>`,
+                    `<div class="summary-item"><strong>Template:</strong> ${escapeHtml(trace.templateId || decision.templateId || '')}</div>`,
+                    `<div class="summary-item"><strong>Stages:</strong> ${['analysis', 'gamePlan', 'templatePatch', 'compile'].filter(stage => traceStages[stage]).join(' -> ')}</div>`
+                ].join('')
+                : '',
             files.length
                 ? `<div class="summary-title">Generated files</div><div class="compiled-file-list">${files.map(file => `<span>${escapeHtml(String(file))}</span>`).join('')}</div>`
                 : '<div class="summary-item">The compiler did not return a file list.</div>',
