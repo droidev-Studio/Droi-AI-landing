@@ -10,7 +10,8 @@ const {
   getRuntimeStatus,
   getFrontendOrigins,
   isAllowedCorsOrigin,
-  listPublicModels
+  listPublicModels,
+  getErrorResponseMeta
 } = require('./server');
 
 function makePatchPlan(overrides = {}) {
@@ -222,6 +223,16 @@ function testRuntimeStatus() {
   assert.ok(!serialized.includes('sk-'));
 }
 
+function testErrorResponseMetadata() {
+  assert.deepStrictEqual(getErrorResponseMeta('MODEL_TIMEOUT').actions, ['retry', 'switch_model']);
+  assert.strictEqual(getErrorResponseMeta('MODEL_TIMEOUT').category, 'recoverable_model_failure');
+  assert.strictEqual(getErrorResponseMeta('MODEL_AUTH_FAILED').category, 'model_configuration_failure');
+  assert.ok(getErrorResponseMeta('MODEL_AUTH_FAILED').actions.includes('open_deployment_guide'));
+  assert.strictEqual(getErrorResponseMeta('MODEL_SCHEMA_INVALID').category, 'model_output_invalid');
+  assert.strictEqual(getErrorResponseMeta('TEMPLATE_NOT_SUPPORTED').manualQueueRecommended, true);
+  assert.ok(getErrorResponseMeta('TEMPLATE_COMPILE_FAILED').actions.includes('retry_patch'));
+}
+
 function testCorsOriginRules() {
   const origins = getFrontendOrigins();
   assert.ok(origins.includes('https://droidev-studio.github.io'));
@@ -295,6 +306,10 @@ function testNoClientSecrets() {
   assert.ok(clientScript.includes('Generation trace'));
   assert.ok(clientScript.includes('generationReport'));
   assert.ok(clientScript.includes('AI-first:'));
+  assert.ok(clientScript.includes('MODEL_AUTH_FAILED'));
+  assert.ok(clientScript.includes('MODEL_RATE_LIMITED'));
+  assert.ok(clientScript.includes('MODEL_SCHEMA_INVALID'));
+  assert.ok(clientScript.includes('Current model returned invalid structure'));
   assert.ok(clientScript.includes('compiledProject'));
   assert.ok(clientScript.includes('generatedFiles'));
   assert.ok(clientScript.includes('validationReport'));
@@ -364,6 +379,7 @@ async function run() {
   testCompilerOutput();
   testPublicModels();
   testRuntimeStatus();
+  testErrorResponseMetadata();
   testCorsOriginRules();
   testManualQueue();
   testNoClientSecrets();

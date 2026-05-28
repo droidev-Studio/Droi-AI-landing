@@ -1425,6 +1425,50 @@ Do not answer with the field name itself. If the user only repeats the field nam
             };
         }
 
+        if (code === 'MODEL_AUTH_FAILED' || code === 'MODEL_QUOTA_EXCEEDED') {
+            return {
+                code,
+                stage,
+                title: code === 'MODEL_AUTH_FAILED' ? 'Current model credentials failed' : 'Current model quota is unavailable',
+                modelLabel: active.label,
+                message: code === 'MODEL_AUTH_FAILED'
+                    ? 'The selected model rejected the configured credentials. Switch model or check deployment configuration.'
+                    : 'The selected model quota is unavailable. Switch model or check provider billing/quota.',
+                technicalMessage: error && error.message ? error.message : '',
+                validationReport: error && error.validationReport ? error.validationReport : null,
+                generationReport: error && error.generationReport ? error.generationReport : null,
+                actions: ['open_deployment_guide', 'switch_model']
+            };
+        }
+
+        if (code === 'MODEL_RATE_LIMITED') {
+            return {
+                code,
+                stage,
+                title: 'Current model is rate limited',
+                modelLabel: active.label,
+                message: 'The provider is rate limiting this model. Retry shortly, or switch to a faster/available model.',
+                technicalMessage: error && error.message ? error.message : '',
+                validationReport: error && error.validationReport ? error.validationReport : null,
+                generationReport: error && error.generationReport ? error.generationReport : null,
+                actions: ['retry_current_model', 'switch_model']
+            };
+        }
+
+        if (code === 'MODEL_SCHEMA_INVALID' || code === 'MODEL_JSON_PARSE_FAILED') {
+            return {
+                code,
+                stage,
+                title: 'Current model returned invalid structure',
+                modelLabel: active.label,
+                message: 'The selected model answered, but the output did not match the required JSON schema. Retry or switch model.',
+                technicalMessage: error && error.message ? error.message : '',
+                validationReport: error && error.validationReport ? error.validationReport : null,
+                generationReport: error && error.generationReport ? error.generationReport : null,
+                actions: ['retry_current_model', 'switch_model']
+            };
+        }
+
         if (code === 'TEMPLATE_COMPILE_BACKEND_MISSING' || code === 'TEMPLATE_COMPILE_FAILED') {
             return {
                 code,

@@ -340,6 +340,108 @@ function listPublicModels() {
   });
 }
 
+function getErrorResponseMeta(code) {
+  const normalized = String(code || 'SERVER_ERROR');
+  const table = {
+    MODEL_TIMEOUT: {
+      category: 'recoverable_model_failure',
+      retryable: true,
+      manualQueueRecommended: false,
+      actions: ['retry', 'switch_model']
+    },
+    MODEL_NETWORK_ERROR: {
+      category: 'recoverable_model_failure',
+      retryable: true,
+      manualQueueRecommended: false,
+      actions: ['retry', 'switch_model', 'manual_queue']
+    },
+    MODEL_RATE_LIMITED: {
+      category: 'recoverable_model_failure',
+      retryable: true,
+      manualQueueRecommended: false,
+      actions: ['retry', 'switch_model']
+    },
+    MODEL_QUOTA_EXCEEDED: {
+      category: 'model_configuration_failure',
+      retryable: false,
+      manualQueueRecommended: false,
+      actions: ['switch_model', 'open_deployment_guide', 'manual_queue']
+    },
+    MODEL_AUTH_FAILED: {
+      category: 'model_configuration_failure',
+      retryable: false,
+      manualQueueRecommended: false,
+      actions: ['switch_model', 'open_deployment_guide', 'manual_queue']
+    },
+    MODEL_NOT_CONFIGURED: {
+      category: 'model_configuration_failure',
+      retryable: false,
+      manualQueueRecommended: false,
+      actions: ['switch_model', 'open_deployment_guide', 'manual_queue']
+    },
+    MODEL_NOT_FOUND: {
+      category: 'model_configuration_failure',
+      retryable: false,
+      manualQueueRecommended: false,
+      actions: ['switch_model', 'open_deployment_guide', 'manual_queue']
+    },
+    MODEL_SCHEMA_INVALID: {
+      category: 'model_output_invalid',
+      retryable: true,
+      manualQueueRecommended: false,
+      actions: ['retry', 'switch_model', 'manual_queue']
+    },
+    MODEL_JSON_PARSE_FAILED: {
+      category: 'model_output_invalid',
+      retryable: true,
+      manualQueueRecommended: false,
+      actions: ['retry', 'switch_model', 'manual_queue']
+    },
+    CAPABILITY_UNSUPPORTED: {
+      category: 'capability_unsupported',
+      retryable: false,
+      manualQueueRecommended: true,
+      actions: ['revise_prompt', 'manual_queue']
+    },
+    TEMPLATE_NOT_SUPPORTED: {
+      category: 'capability_unsupported',
+      retryable: false,
+      manualQueueRecommended: true,
+      actions: ['revise_prompt', 'manual_queue']
+    },
+    PATCH_REQUIRES_RUNTIME_CODE: {
+      category: 'template_patch_invalid',
+      retryable: true,
+      manualQueueRecommended: true,
+      actions: ['retry_patch', 'revise_prompt', 'manual_queue']
+    },
+    PATCH_FILE_NOT_ALLOWED: {
+      category: 'template_patch_invalid',
+      retryable: true,
+      manualQueueRecommended: false,
+      actions: ['retry_patch', 'switch_model', 'manual_queue']
+    },
+    TEMPLATE_COMPILE_FAILED: {
+      category: 'template_compile_failed',
+      retryable: true,
+      manualQueueRecommended: true,
+      actions: ['retry_patch', 'revise_prompt', 'manual_queue']
+    },
+    PREVIEW_BOOT_FAILED: {
+      category: 'template_compile_failed',
+      retryable: true,
+      manualQueueRecommended: true,
+      actions: ['retry_patch', 'manual_queue']
+    }
+  };
+  return table[normalized] || {
+    category: 'request_failed',
+    retryable: false,
+    manualQueueRecommended: false,
+    actions: ['retry']
+  };
+}
+
 function getRuntimeStatus() {
   const models = listPublicModels();
   const enabledModels = models.filter(model => model.enabled);
@@ -1178,10 +1280,9 @@ async function handleApi(req, res, pathname) {
   } catch (error) {
     const code = error.code || 'SERVER_ERROR';
     const status = error.status || (code === 'MODEL_NOT_CONFIGURED' ? 400 : code === 'TEMPLATE_NOT_SUPPORTED' ? 422 : 500);
+    const meta = getErrorResponseMeta(code);
     sendError(res, status, code, error.message || 'Request failed.', {
-      retryable: ['MODEL_TIMEOUT', 'MODEL_NETWORK_ERROR', 'MODEL_RATE_LIMITED'].includes(code),
-      manualQueueRecommended: ['TEMPLATE_NOT_SUPPORTED'].includes(code),
-      actions: code === 'MODEL_NOT_CONFIGURED' ? ['switch_model'] : ['retry']
+      ...meta
     });
   }
 }
@@ -1232,6 +1333,7 @@ module.exports = {
   forwardManualQueueSubmission,
   buildCompiledGameSpec,
   detectTemplateId,
+  getErrorResponseMeta,
   getRuntimeStatus,
   getFrontendOrigins,
   isAllowedCorsOrigin,
