@@ -208,7 +208,11 @@ function testNoClientSecrets() {
   assert.ok(!clientScript.includes('access_key'));
   assert.ok(!clientScript.includes('web3forms.com'));
   assert.ok(!clientScript.includes('ad7acb48'));
-  assert.match(clientScript, /code:\s*'MODEL_TIMEOUT'[\s\S]*actions:\s*\['retry_current_model'\]/);
+  assert.match(clientScript, /code:\s*'MODEL_TIMEOUT'[\s\S]*actions:\s*\['retry_current_model', 'switch_model'\]/);
+  assert.ok(clientScript.includes('Switch faster model'));
+  assert.ok(clientScript.includes('open_deployment_guide'));
+  assert.ok(clientScript.includes('Deployment guide'));
+  assert.ok(clientScript.includes('docs/backend-deployment.md'));
   assert.ok(clientScript.includes('droi-config.json'));
   assert.ok(clientScript.includes('apiBaseUrl'));
   assert.ok(clientScript.includes('Static frontend is missing droi-config.json'));

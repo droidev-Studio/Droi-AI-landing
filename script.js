@@ -1261,9 +1261,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 stage,
                 title: 'Current model timed out',
                 modelLabel: active.label,
-                message: 'This model did not respond in time. Retry the same request.',
-                technicalMessage: '',
-                actions: ['retry_current_model']
+                message: 'The model did not respond in time. Retry this request, or switch to a faster model.',
+                technicalMessage: error && error.message ? error.message : '',
+                actions: ['retry_current_model', 'switch_model']
             };
         }
 
@@ -1275,7 +1275,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 modelLabel: active.label,
                 message: getBackendModelStatusMessage(),
                 technicalMessage: error && error.message ? error.message : '',
-                actions: ['switch_model']
+                actions: ['open_deployment_guide', 'retry_current_model', 'switch_model']
             };
         }
 
@@ -1319,10 +1319,18 @@ document.addEventListener('DOMContentLoaded', () => {
         return error;
     }
 
+    function getAIErrorActionLabel(action, flowError) {
+        if (action === 'retry_current_model') return 'Retry';
+        if (action === 'switch_model' && flowError && flowError.code === 'MODEL_TIMEOUT') return 'Switch faster model';
+        if (action === 'switch_model') return 'Switch model';
+        if (action === 'open_deployment_guide') return 'Deployment guide';
+        return action;
+    }
+
     function buildAIFlowErrorHtml(flowError) {
         const actionHtml = flowError.actions.map(action => {
-            const label = action === 'retry_current_model' ? 'Retry' : 'Switch model';
-            const className = action === 'retry_current_model'
+            const label = getAIErrorActionLabel(action, flowError);
+            const className = (action === 'retry_current_model' || action === 'open_deployment_guide')
                 ? 'ai-error-action ai-error-action-primary'
                 : 'ai-error-action ai-error-action-secondary';
             return `<button type="button" class="${className}" data-ai-error-action="${action}">${escapeHtml(label)}</button>`;
@@ -1931,6 +1939,12 @@ Prompt: ${prompt}`
                 modelDropdown.style.display = 'block';
                 modelSelector.setAttribute('aria-expanded', 'true');
             }
+            return;
+        }
+
+        if (action === 'open_deployment_guide') {
+            if (button) button.disabled = false;
+            window.open('docs/backend-deployment.md', '_blank', 'noopener');
         }
     }
 
