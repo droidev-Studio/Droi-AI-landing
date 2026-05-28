@@ -58,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { label: 'Puzzle', value: 'Puzzle', mechanic: 'clever logic puzzles and satisfying aha moments' },
         { label: 'Action', value: 'Action Platformer', mechanic: 'fast-paced combat and fluid movement mechanics' },
         { label: 'Roguelike', value: 'Roguelike', mechanic: 'procedurally generated levels and permadeath mechanics' },
+        { label: 'Bullet Hell / Flying Shooter', value: 'Bullet Hell / Flying Shooter', mechanic: 'dense projectile dodging, flying shooting, and boss phase patterns' },
         { label: 'Simulation', value: 'Life Simulation', mechanic: 'relaxing life management and cozy progression loops' },
         { label: 'Horror', value: 'Horror Survival', mechanic: 'tension-building atmosphere and scarce resource management' },
         { label: 'Rhythm', value: 'Rhythm Battle', mechanic: 'music-synced gameplay and beat-perfect combos' },
@@ -141,20 +142,154 @@ document.addEventListener('DOMContentLoaded', () => {
     const CHAT_POOLS = MODULE_STEPS.map(step => step ? step.pool : null);
     const BOT_MESSAGES = [
         null,
-        "Awesome! What vibes are we channeling today? Choose a game type.",
-        "Great choice! What art style should we use?",
-        "Perfect! And what about the setting?",
-        "Now let's define the core gameplay. What should the player mainly do?",
-        "What should the player goal be?",
-        "What should be the main challenge?",
-        "How should the player progress or grow stronger?",
-        "What difficulty level should we tune for?"
+        'Awesome! What vibes are we channeling today? <span class="highlight-text">Game Type</span>',
+        'Great choice! What art style should we use? <span class="highlight-text">Art Style</span>',
+        'Perfect! What world or background should the game use? <span class="highlight-text">Game Setting</span>',
+        'Now define the moment-to-moment action. <span class="highlight-text">Core Gameplay</span>',
+        'How does the player win or clear the game? <span class="highlight-text">Player Goal</span>',
+        'What creates the main pressure or challenge? <span class="highlight-text">Main Challenge</span>',
+        'How should the player grow stronger? <span class="highlight-text">Progression System</span>',
+        'What difficulty level should we tune for? <span class="highlight-text">Difficulty Level</span>'
     ];
+
+    const TEMPLATE_CATALOG = [
+        {
+            id: 'roguelike_survival',
+            label: 'Roguelike Survival',
+            type: 'roguelike',
+            keywords: [
+                'roguelike', 'roguelite', 'roguelike survival', 'survivors-like', 'vampire survivors',
+                'bullet heaven', 'reverse bullet hell', 'arena survival', 'horde survival', 'swarm survival',
+                'survival', 'survive', 'wave', 'horde', 'auto attack', 'auto weapon', 'level-up', 'level up',
+                'upgrade choice', 'three choices', 'xp', 'experience pickup', '肉鸽', '肉鸽生存', '类吸血鬼幸存者',
+                '吸血鬼幸存者', '幸存者', '生存', '割草', '波次', '刷怪', '敌潮', '自动攻击', '自动武器',
+                '升级', '升级三选一', '经验', '存活', '生存计时'
+            ],
+            sourceArchitecture: 'Groglike-SOP',
+            specMode: 'module-spec',
+            contentModules: ['minimal', 'weapons', 'enemies', 'waves', 'balance', 'effects', 'manifest'],
+            gameplayPillars: ['auto-weapons', 'xp-pickups', 'level-up-options', 'survival-timeline'],
+            systems: ['input', 'movement', 'collision', 'combat', 'spawn', 'pickup', 'health', 'progression', 'reward', 'animation', 'render_canvas'],
+            confidenceBoost: 0.16
+        },
+        {
+            id: 'bullet_hell',
+            label: 'Bullet Hell / Flying Shooter',
+            type: 'bullet-hell',
+            keywords: [
+                'bullet hell', 'danmaku', 'shmup', 'shoot em up', 'shooter', 'flying shooter',
+                'space shooter', 'vertical shooter', 'plane shooter', 'airplane shooter', 'aircraft shooter',
+                'shoot', 'dodge', 'projectile', 'boss phase', 'boss bullet', 'boss fight',
+                '飞行射击', '飞机大战', '太空射击', '纵版射击', '竖版射击', '竖版打飞机', '打飞机',
+                '弹幕射击', '弹幕', '躲子弹', '躲避子弹', 'Boss 弹幕战', 'boss 弹幕战', '射击',
+                '子弹', '躲避', '首领'
+            ],
+            sourceArchitecture: 'bullet_hell',
+            specMode: 'single-game-spec',
+            contentModules: ['game', 'schema', 'manifest'],
+            gameplayPillars: ['focused-movement', 'projectile-patterns', 'graze', 'bombs', 'boss-phases'],
+            systems: ['input', 'movement', 'collision', 'combat', 'spawn', 'projectile', 'bullet_pattern', 'pickup', 'hud', 'render_canvas'],
+            confidenceBoost: 0.13
+        },
+        {
+            id: 'tower_defense',
+            label: 'Tower Defense',
+            type: 'tower-defense',
+            keywords: ['tower', 'defense', 'defence', 'lane', 'base', 'turret', 'path', '塔防', '防御塔', '防守', '基地', '路线'],
+            sourceArchitecture: 'p0-local-preview',
+            specMode: 'single-game-spec',
+            contentModules: ['game', 'waves', 'manifest'],
+            gameplayPillars: ['base-defense', 'pathing', 'tower-projectiles', 'wave-pressure'],
+            systems: ['input', 'collision', 'combat', 'spawn', 'health', 'projectile', 'wave', 'ui_render'],
+            confidenceBoost: 0.12
+        }
+    ];
+
+    const THEME_PRESETS = {
+        animal_island: {
+            label: 'Animal Island',
+            keywords: ['animal', 'island', 'cozy', 'cute', 'farm', 'village'],
+            styleLock: {
+                preset: 'warm_cozy_handmade',
+                anchorImage: 'theme/animal_island/style-anchor.png',
+                fingerprint: ['rounded-shapes', 'soft-contrast', 'warm-daylight', 'low-pressure']
+            },
+            uiTokens: {
+                colors: { background: '#f5efe2', surface: '#fff7e8', accent: '#4b9f6f', danger: '#d95d55' },
+                radius: 8,
+                shadow: 'soft'
+            },
+            balance: { enemyPressure: 0.85, playerForgiveness: 1.15, economyGain: 1.05 }
+        },
+        three_kingdoms_ink: {
+            label: 'Three Kingdoms Ink',
+            keywords: ['three kingdoms', 'warlord', 'ink', 'spear', 'guan', 'battlefield'],
+            styleLock: {
+                preset: 'ink_war_scroll',
+                anchorImage: 'theme/three_kingdoms_ink/style-anchor.png',
+                fingerprint: ['ink-lines', 'paper-texture', 'historic-armor', 'high-contrast-silhouette']
+            },
+            uiTokens: {
+                colors: { background: '#e8dfcf', surface: '#fbf2df', accent: '#9c2f2f', danger: '#3b2621' },
+                radius: 4,
+                shadow: 'ink'
+            },
+            balance: { enemyPressure: 1.05, playerForgiveness: 0.95, economyGain: 1 }
+        },
+        cyberpunk_neon: {
+            label: 'Cyberpunk Neon',
+            keywords: ['cyberpunk', 'neon', 'future', 'hacker', 'city', 'sci-fi'],
+            styleLock: {
+                preset: 'neon_arcade',
+                anchorImage: 'theme/cyberpunk_neon/style-anchor.png',
+                fingerprint: ['high-saturation-neon', 'dark-grid', 'glow-projectiles', 'sharp-ui']
+            },
+            uiTokens: {
+                colors: { background: '#10131a', surface: '#161b26', accent: '#38e8ff', danger: '#ff3f7f' },
+                radius: 6,
+                shadow: 'glow'
+            },
+            balance: { enemyPressure: 1.1, playerForgiveness: 0.9, economyGain: 1 }
+        },
+        dark_gothic: {
+            label: 'Dark Gothic',
+            keywords: ['gothic', 'dark', 'vampire', 'castle', 'grave', 'demon'],
+            styleLock: {
+                preset: 'gothic_horror',
+                anchorImage: 'theme/dark_gothic/style-anchor.png',
+                fingerprint: ['deep-shadows', 'stone-metal', 'crimson-accents', 'dramatic-silhouette']
+            },
+            uiTokens: {
+                colors: { background: '#171417', surface: '#242024', accent: '#b48a57', danger: '#b42d40' },
+                radius: 5,
+                shadow: 'heavy'
+            },
+            balance: { enemyPressure: 1.15, playerForgiveness: 0.9, economyGain: 0.95 }
+        },
+        pixel_retro: {
+            label: 'Pixel Retro',
+            keywords: ['pixel', 'retro', '8bit', '16bit', 'arcade'],
+            styleLock: {
+                preset: 'pixel_retro',
+                anchorImage: 'theme/pixel_retro/style-anchor.png',
+                fingerprint: ['low-resolution-grid', 'limited-palette', 'crisp-edges', 'arcade-feedback']
+            },
+            uiTokens: {
+                colors: { background: '#101820', surface: '#203040', accent: '#f2c14e', danger: '#e4572e' },
+                radius: 2,
+                shadow: 'none'
+            },
+            balance: { enemyPressure: 1, playerForgiveness: 1, economyGain: 1.05 }
+        }
+    };
 
     const AI_STORAGE_KEY = 'droi_ai_model_config';
     const ADMIN_SESSION_KEY = 'droi_ai_admin_session';
     const ADMIN_EMAIL_ALLOWLIST = ['liyilin199976@gmail.com'];
     const AI_ANALYSIS_TIMEOUT_MS = 6000;
+    const AI_GAME_PLAN_TIMEOUT_MS = 30000;
+    const AI_TEMPLATE_PATCH_TIMEOUT_MS = 45000;
+    const TEMPLATE_COMPILE_TIMEOUT_MS = 30000;
     const isLocalHost = ['127.0.0.1', 'localhost'].includes(window.location.hostname);
     const isBackendPort = window.location.port === '3000';
     const API_BASE_URL = window.DROI_API_BASE || (
@@ -162,18 +297,18 @@ document.addEventListener('DOMContentLoaded', () => {
             ? 'http://127.0.0.1:3000'
             : ''
     );
-    const PROVIDER_ORDER = ['gemini', 'openai', 'anthropic', 'groq'];
+    const PROVIDER_ORDER = ['openai', 'gemini', 'anthropic', 'groq'];
     const PROVIDER_META = {
         openai: {
-            label: 'OpenAI',
-            icon: 'AI',
+            label: 'GPT',
+            icon: 'GP',
             color: '#10a37f',
             defaultBaseUrl: 'https://api.openai.com/v1',
             adapter: 'responses',
             models: [
-                { id: 'gpt-5.5-pro', label: 'GPT 5.5 Pro' },
-                { id: 'gpt-5.5', label: 'GPT 5.5' },
-                { id: 'gpt-5.4-mini', label: 'GPT 5.4 Mini' }
+                { id: 'gpt-5.5-high', label: 'GPT 5.5 High', reasoningEffort: 'high' },
+                { id: 'gpt-5.5-low', label: 'GPT 5.5 Low', reasoningEffort: 'low' },
+                { id: 'gpt-5.4-mid', label: 'GPT 5.4 Mid', reasoningEffort: 'medium' }
             ]
         },
         anthropic: {
@@ -207,9 +342,9 @@ document.addEventListener('DOMContentLoaded', () => {
             defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta',
             adapter: 'gemini',
             models: [
-                { id: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro' },
-                { id: 'gemini-3-flash-preview', label: 'Gemini 3 Flash' },
-                { id: 'gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash-Lite' }
+                { id: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash', reasoningEffort: 'none' },
+                { id: 'gemini-3.5-pro', label: 'Gemini 3.5 Pro', reasoningEffort: 'medium' },
+                { id: 'gemini-3.0-flash-lite', label: 'Gemini 3.0 Flash Lite', reasoningEffort: 'none' }
             ]
         },
         custom: {
@@ -360,6 +495,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${API_BASE_URL}${path}`;
     }
 
+    function resolveBackendUrl(pathOrUrl) {
+        const value = String(pathOrUrl || '');
+        if (!value) return '';
+        if (/^https?:\/\//i.test(value)) return value;
+        return apiUrl(value.startsWith('/') ? value : `/${value}`);
+    }
+
     async function parseJsonResponse(response) {
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
@@ -416,18 +558,13 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    function getLocalFallbackMeta() {
-        return { icon: 'LF', label: 'Local Fallback', color: '#6b6972' };
-    }
-
     function hasConfiguredProvider(providerId = aiConfig.activeProvider) {
-        const provider = aiConfig.providers[providerId];
-        return Boolean(provider && provider.enabled && provider.apiKey && provider.apiKey.trim());
+        const modelId = getProviderModelId(providerId);
+        return platformModels.some(model => model.providerId === providerId && model.modelId === modelId && model.enabled !== false);
     }
 
     function hasLiveAIProvider(providerId = aiConfig.activeProvider) {
-        const provider = aiConfig.providers[providerId];
-        return Boolean(platformAIAvailable && provider && provider.enabled) || hasConfiguredProvider(providerId);
+        return Boolean(platformAIAvailable && hasConfiguredProvider(providerId));
     }
 
     function applyModelSelection(modelConfig) {
@@ -533,6 +670,38 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error(`Platform API for ${meta.label} is not configured yet.`);
         }
 
+        async stageChat(endpoint, messages, options = {}) {
+            const config = this.getConfig();
+            const providerId = options.provider || config.activeProvider;
+            const provider = config.providers[providerId];
+            const meta = PROVIDER_META[providerId];
+
+            if (!provider || !meta) throw new Error(`Provider ${providerId} is not supported.`);
+            const model = options.model || getProviderModelId(providerId);
+
+            const response = await fetch(apiUrl(endpoint), {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    provider: providerId,
+                    model,
+                    modelId: model,
+                    messages
+                })
+            });
+            const data = await this.parseResponse(response);
+            platformAIAvailable = true;
+            this.onUsage(providerId, model, data.usage || {});
+            return {
+                content: data.content || data.message || data.text || '',
+                usage: data.usage || {},
+                providerId,
+                model,
+                stage: data.stage || ''
+            };
+        }
+
         async tryPlatformChat(providerId, model, messages) {
             try {
                 const response = await fetch(apiUrl('/api/chat'), {
@@ -555,6 +724,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     usage: data.usage || {}
                 };
             } catch (error) {
+                if (isModelTimeoutError(error) || error.status) throw error;
                 return null;
             }
         }
@@ -623,6 +793,9 @@ document.addEventListener('DOMContentLoaded', () => {
         revisionMode: false,
         finalModelMeta: null,
         workStartedAt: 0,
+        templateDecision: null,
+        capability: null,
+        missingFields: [],
         modules: createModuleStates()
     };
 
@@ -630,7 +803,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let generationInterval = null;
     let generationTimeouts = [];
     let botWorkIntervals = [];
+    let activeGameCleanups = [];
     let latestGamePlanDraft = '';
+    let latestTemplatePatchPlan = null;
+    let latestAIFlowRetry = null;
+    let latestAIFlowError = null;
 
     function regTimeout(fn, delay) {
         const t = setTimeout(fn, delay);
@@ -646,6 +823,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getStepByKey(key) {
         return MODULE_STEPS.findIndex(step => step && step.key === key);
+    }
+
+    function normalizeFieldName(value) {
+        return String(value || '')
+            .replace(/([a-z])([A-Z])/g, '$1 $2')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, ' ')
+            .trim();
+    }
+
+    function getStepFromMissingField(fieldName) {
+        const normalized = normalizeFieldName(fieldName);
+        if (!normalized) return null;
+        return MODULE_STEPS.find(step => {
+            if (!step) return false;
+            return [step.key, step.specKey, step.title]
+                .map(normalizeFieldName)
+                .some(name => name === normalized || normalized.includes(name) || name.includes(normalized));
+        }) || null;
     }
 
     function setModuleSelection(key, item, status = 'confirmed', confidence = 1, userEdited = true) {
@@ -665,6 +861,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 userEdited
             };
         }
+        if (userEdited && Array.isArray(analysisState.missingFields)) {
+            const currentStep = MODULE_STEPS.find(step => step && step.key === key);
+            analysisState.missingFields = analysisState.missingFields.filter(fieldName => {
+                const missingStep = getStepFromMissingField(fieldName);
+                return !(currentStep && missingStep && missingStep.key === currentStep.key);
+            });
+        }
     }
 
     function getModuleSelection(key) {
@@ -672,6 +875,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getNextMissingStep() {
+        const aiMissingFields = Array.isArray(analysisState.missingFields) ? analysisState.missingFields : [];
+        for (const fieldName of aiMissingFields) {
+            const definition = getStepFromMissingField(fieldName);
+            if (!definition) continue;
+            const moduleState = analysisState.modules && analysisState.modules[definition.key];
+            if (moduleState && moduleState.userEdited && moduleState.status === 'confirmed') continue;
+            return getStepByKey(definition.key);
+        }
         for (let step = 1; step < MODULE_STEPS.length; step += 1) {
             const definition = getStepDefinition(step);
             if (definition && !getModuleSelection(definition.key)) return step;
@@ -683,6 +894,107 @@ document.addEventListener('DOMContentLoaded', () => {
         const definition = getStepDefinition(step);
         if (!definition) return 'What should we define next?';
         return `${definition.prompt}`;
+    }
+
+    function normalizeAnswerText(value) {
+        return String(value || '')
+            .toLowerCase()
+            .replace(/<[^>]*>/g, ' ')
+            .replace(/[^a-z0-9\u4e00-\u9fff]+/g, ' ')
+            .trim()
+            .replace(/\s+/g, ' ');
+    }
+
+    function keyToWords(key) {
+        return String(key || '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
+    }
+
+    function getInvalidAnswerReason(promptText, definition) {
+        if (!definition) return '';
+        const normalized = normalizeAnswerText(promptText);
+        const title = normalizeAnswerText(definition.title);
+        const key = normalizeAnswerText(keyToWords(definition.key));
+        const systemPhrases = [
+            'auto generation ready',
+            'manual queue fallback',
+            'p0 gamespec ready',
+            'p0 template',
+            'decision',
+            'create',
+            'add more in chat',
+            'exit new idea'
+        ];
+
+        if (!normalized) return 'Please enter a concrete answer.';
+        if (normalized === title || normalized === key) {
+            return `That is the module name. Please choose a concrete ${definition.title.toLowerCase()} option.`;
+        }
+        if (systemPhrases.includes(normalized)) {
+            return 'That is a system status, not an answer to the current question.';
+        }
+        if (definition.key === 'progressionSystem' && ['progression', 'progression system', 'upgrade', 'upgrades', 'growth', 'grow stronger'].includes(normalized)) {
+            return 'Please describe how the player grows stronger, for example Level-up choices, Skill tree, Equipment drops, or Permanent unlocks.';
+        }
+        return '';
+    }
+
+    function buildClarificationRetryMessage(definition, reason) {
+        const examples = (definition.pool || []).slice(0, 3).map(item => item.label).join(', ');
+        return `${escapeHtml(reason)}<br><span style="opacity:0.72">Try: ${escapeHtml(examples)}</span>`;
+    }
+
+    function isWizardStepActive() {
+        return !analysisState.active && chatStep > 0 && chatStep < MODULE_STEPS.length;
+    }
+
+    function inferWizardStepFromVisibleOptions() {
+        if (!chatOptionsList) return null;
+        const visibleTexts = Array.from(chatOptionsList.querySelectorAll('button'))
+            .map(button => normalizeAnswerText(button.textContent))
+            .filter(Boolean);
+        if (!visibleTexts.length) return null;
+
+        let bestMatch = null;
+        MODULE_STEPS.slice(1).forEach((step, index) => {
+            const score = (step.pool || []).reduce((count, item) => {
+                const label = normalizeAnswerText(item.label);
+                return count + (label && visibleTexts.some(text => text.includes(label)) ? 1 : 0);
+            }, 0);
+            if (score > 0 && (!bestMatch || score > bestMatch.score)) {
+                bestMatch = { stepIndex: index + 1, score };
+            }
+        });
+
+        return bestMatch ? getStepDefinition(bestMatch.stepIndex) : null;
+    }
+
+    function getWizardFreeTextDefinition() {
+        if (analysisState.active) return null;
+        return inferWizardStepFromVisibleOptions() || (isWizardStepActive() ? getStepDefinition(chatStep) : null);
+    }
+
+    function shouldAnalyzeWizardFreeText(promptText, definition) {
+        if (!definition || definition.key !== 'type') return false;
+        const text = String(promptText || '').trim();
+        if (text.length < 20) return false;
+        const best = scoreTemplatesForText(text)[0];
+        return Boolean(best && best.confidence >= 0.7 && best.hits.length > 0);
+    }
+
+    function handleFreeTextForStep(definition, promptText, onAccepted) {
+        if (!definition) return false;
+        const reservedReason = getInvalidAnswerReason(promptText, definition);
+        const matchedChoice = reservedReason ? null : matchChoice(definition.pool, promptText, 'desc');
+        const invalidReason = reservedReason || (matchedChoice ? '' : getInvalidAnswerReason(promptText, definition));
+        if (invalidReason) {
+            addBotMessage(buildClarificationRetryMessage(definition, invalidReason), () => {
+                regTimeout(() => renderChatOptions(getStepByKey(definition.key)), 160);
+            });
+            return true;
+        }
+        const selected = matchedChoice || { label: promptText, value: promptText, desc: promptText };
+        onAccepted(selected);
+        return true;
     }
 
     function startAnalysisFlow(prompt) {
@@ -697,6 +1009,9 @@ document.addEventListener('DOMContentLoaded', () => {
         analysisState.modules = createModuleStates();
         analysisState.background = prompt;
         analysisState.workStartedAt = Date.now();
+        analysisState.templateDecision = null;
+        analysisState.capability = null;
+        analysisState.missingFields = [];
 
         const analysisMessage = addBotMessage('', null, { pending: true });
 
@@ -704,20 +1019,93 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function runPromptAnalysis(prompt, runStartedAt, pendingMessage) {
-        applyLocalPromptAnalysis(prompt);
+        if (!hasLiveAIProvider()) {
+            analysisState.processing = false;
+            showAIFlowError(createModelNotConfiguredError('analysis'), { stage: 'analysis', prompt, pendingMessage });
+            return;
+        }
 
-        if (getNextMissingStep() !== null) {
-            try {
-                await withTimeout(analyzePromptWithAIIfAvailable(prompt), AI_ANALYSIS_TIMEOUT_MS);
-            } catch (error) {
-                console.warn('AI analysis timed out, using local extraction:', error);
-            }
+        try {
+            await withTimeout(analyzePromptWithAIIfAvailable(prompt), AI_ANALYSIS_TIMEOUT_MS);
+        } catch (error) {
+            if (!analysisState.active || analysisState.workStartedAt !== runStartedAt) return;
+            analysisState.processing = false;
+            showAIFlowError(error, { stage: 'analysis', prompt, pendingMessage });
+            return;
         }
 
         if (!analysisState.active || analysisState.workStartedAt !== runStartedAt) return;
         analysisState.processing = false;
         if (pendingMessage) pendingMessage.remove();
         continueClarification();
+    }
+
+    function scoreTemplatesForText(text) {
+        const intent = String(text || '').toLowerCase();
+        return TEMPLATE_CATALOG.map(template => {
+            const hits = template.keywords.filter(keyword => intent.includes(String(keyword).toLowerCase()));
+            const directHit = intent.includes(template.type) ||
+                intent.includes(template.id.replace(/_/g, ' ')) ||
+                intent.includes(template.label.toLowerCase());
+            const hitScore = Math.min(0.66, hits.length * 0.11);
+            const confidence = Math.min(0.98, (directHit ? 0.58 : 0.18) + hitScore + template.confidenceBoost);
+            return { ...template, confidence, hits, directHit };
+        }).sort((a, b) => (b.confidence - a.confidence) || (b.hits.length - a.hits.length) || Number(b.directHit) - Number(a.directHit));
+    }
+
+    function applyP0ClosureDefaults(prompt) {
+        const text = String(prompt || '').trim();
+        if (text.length < 20) return;
+        const best = scoreTemplatesForText(text)[0];
+        const matched = Boolean(best && best.confidence >= 0.7 && best.hits.length > 0);
+
+        if (matched) {
+            if (!getModuleSelection('type')) {
+                const typeChoice = GAME_TYPES.find(item => String(item.label).toLowerCase().includes(best.type.split('-')[0])) ||
+                    GAME_TYPES.find(item => String(item.label).toLowerCase() === best.label.toLowerCase()) ||
+                    (best.id === 'tower_defense' ? GAME_TYPES.find(item => item.label === 'Strategy') : null) ||
+                    { label: best.label, value: best.label, mechanic: best.label };
+                setModuleSelection('type', typeChoice, 'suggested', best.confidence, false);
+            }
+            if (!getModuleSelection('style')) setModuleSelection('style', ART_STYLES[0], 'suggested', 0.62, false);
+            if (!getModuleSelection('setting')) {
+                setModuleSelection('setting', {
+                    label: 'Custom World',
+                    value: 'the world described in your prompt',
+                    desc: text
+                }, 'suggested', 0.72, false);
+            }
+            if (!getModuleSelection('coreGameplay')) {
+                const core = best.id === 'tower_defense'
+                    ? CORE_GAMEPLAY_OPTIONS[2]
+                    : (best.id === 'roguelike_survival' ? CORE_GAMEPLAY_OPTIONS[0] : CORE_GAMEPLAY_OPTIONS[1]);
+                setModuleSelection('coreGameplay', core, 'suggested', 0.74, false);
+            }
+            if (!getModuleSelection('playerGoal')) {
+                setModuleSelection('playerGoal', best.id === 'tower_defense' ? PLAYER_GOAL_OPTIONS[2] : PLAYER_GOAL_OPTIONS[0], 'suggested', 0.74, false);
+            }
+            if (!getModuleSelection('mainChallenge')) {
+                setModuleSelection('mainChallenge', best.id === 'bullet_hell' ? MAIN_CHALLENGE_OPTIONS[2] : MAIN_CHALLENGE_OPTIONS[0], 'suggested', 0.7, false);
+            }
+            if (!getModuleSelection('progressionSystem')) setModuleSelection('progressionSystem', PROGRESSION_OPTIONS[0], 'suggested', 0.65, false);
+            if (!getModuleSelection('difficultyLevel')) setModuleSelection('difficultyLevel', DIFFICULTY_OPTIONS[1], 'suggested', 0.65, false);
+            return;
+        }
+
+        MODULE_STEPS.slice(1).forEach(step => {
+            if (getModuleSelection(step.key)) return;
+            if (step.key === 'type') {
+                setModuleSelection(step.key, { label: 'Custom Request', value: 'custom request', mechanic: 'outside current P0 templates' }, 'suggested', 0.4, false);
+            } else if (step.key === 'style') {
+                setModuleSelection(step.key, { label: 'Prompt-defined style', value: 'prompt-defined style' }, 'suggested', 0.4, false);
+            } else if (step.key === 'setting') {
+                setModuleSelection(step.key, { label: 'Custom World', value: 'custom world', desc: text }, 'suggested', 0.45, false);
+            } else if (step.key === 'difficultyLevel') {
+                setModuleSelection(step.key, DIFFICULTY_OPTIONS[1], 'suggested', 0.5, false);
+            } else {
+                setModuleSelection(step.key, { label: `Custom ${step.title}`, value: `Custom ${step.title}`, desc: 'Manual queue will clarify this requirement.' }, 'suggested', 0.38, false);
+            }
+        });
     }
 
     function applyLocalPromptAnalysis(prompt) {
@@ -785,16 +1173,174 @@ document.addEventListener('DOMContentLoaded', () => {
         return Promise.race([
             promise,
             new Promise((_, reject) => {
-                setTimeout(() => reject(new Error(`Timed out after ${timeoutMs}ms`)), timeoutMs);
+                setTimeout(() => {
+                    const error = new Error(`Timed out after ${timeoutMs}ms`);
+                    error.code = 'MODEL_TIMEOUT';
+                    error.status = 408;
+                    reject(error);
+                }, timeoutMs);
             })
         ]);
     }
 
+    function getAIErrorCode(error) {
+        return error && (
+            error.code ||
+            (error.data && error.data.code) ||
+            (error.data && error.data.error && error.data.error.code) ||
+            ''
+        );
+    }
+
+    function isModelTimeoutError(error) {
+        const code = String(getAIErrorCode(error) || '').toUpperCase();
+        const message = String(error && error.message ? error.message : '');
+        return code === 'MODEL_TIMEOUT' || error.status === 408 || /timed out|timeout/i.test(message);
+    }
+
+    function createAIFlowError(error, stage) {
+        const active = getActiveModelMeta();
+        const code = String(getAIErrorCode(error) || '').toUpperCase();
+        if (isModelTimeoutError(error)) {
+            return {
+                code: 'MODEL_TIMEOUT',
+                stage,
+                title: 'Current model timed out',
+                modelLabel: active.label,
+                message: 'This model did not respond in time. Retry the same request.',
+                technicalMessage: '',
+                actions: ['retry_current_model']
+            };
+        }
+
+        if (code === 'MODEL_NOT_CONFIGURED' || code === 'MODEL_NOT_FOUND') {
+            return {
+                code: code || 'MODEL_NOT_CONFIGURED',
+                stage,
+                title: 'Current model is not available',
+                modelLabel: active.label,
+                message: 'AI generation needs a configured model before it can continue.',
+                technicalMessage: error && error.message ? error.message : '',
+                actions: ['switch_model']
+            };
+        }
+
+        if (code === 'TEMPLATE_COMPILE_BACKEND_MISSING' || code === 'TEMPLATE_COMPILE_FAILED') {
+            return {
+                code,
+                stage,
+                title: code === 'TEMPLATE_COMPILE_BACKEND_MISSING' ? 'Template compiler is not connected' : 'Template compile failed',
+                modelLabel: active.label,
+                message: error && error.message
+                    ? error.message
+                    : 'The AI plan is ready, but the game project compiler could not finish this build.',
+                technicalMessage: '',
+                actions: ['retry_current_model']
+            };
+        }
+
+        return {
+            code: code || 'MODEL_CALL_FAILED',
+            stage,
+            title: 'Current model call failed',
+            modelLabel: active.label,
+            message: 'The selected model could not continue this AI generation step.',
+            technicalMessage: error && error.message ? error.message : '',
+            actions: ['retry_current_model', 'switch_model']
+        };
+    }
+
+    function createModelNotConfiguredError(stage) {
+        const active = getActiveModelMeta();
+        const error = new Error(`${active.label} is not configured for live AI generation.`);
+        error.code = 'MODEL_NOT_CONFIGURED';
+        error.stage = stage;
+        return error;
+    }
+
+    function createTemplateCompileUnavailableError() {
+        const error = new Error('The static page cannot generate game files until /api/template-project/compile is available.');
+        error.code = 'TEMPLATE_COMPILE_BACKEND_MISSING';
+        error.status = 404;
+        return error;
+    }
+
+    function buildAIFlowErrorHtml(flowError) {
+        const actionHtml = flowError.actions.map(action => {
+            const label = action === 'retry_current_model' ? 'Retry' : 'Switch model';
+            const className = action === 'retry_current_model'
+                ? 'ai-error-action ai-error-action-primary'
+                : 'ai-error-action ai-error-action-secondary';
+            return `<button type="button" class="${className}" data-ai-error-action="${action}">${escapeHtml(label)}</button>`;
+        }).join('');
+
+        const technical = flowError.technicalMessage
+            ? `<div class="ai-error-tech"><strong>Technical:</strong> ${escapeHtml(flowError.technicalMessage)}</div>`
+            : '';
+
+        return `
+            <div class="ai-error-card" data-error-code="${escapeHtml(flowError.code)}">
+                <div class="ai-error-title">${escapeHtml(flowError.title)}</div>
+                <div class="ai-error-model"><strong>Current model:</strong> ${escapeHtml(flowError.modelLabel)}</div>
+                <div class="ai-error-message">${escapeHtml(flowError.message)}</div>
+                ${technical}
+                <div class="ai-error-actions">${actionHtml}</div>
+            </div>
+        `;
+    }
+
+    function showAIFlowError(error, { stage, prompt, pendingMessage } = {}) {
+        if (pendingMessage) pendingMessage.remove();
+        const flowError = createAIFlowError(error, stage || 'model');
+        latestAIFlowError = flowError;
+        latestAIFlowRetry = {
+            stage: flowError.stage,
+            prompt: prompt || savedPrompt || analysisState.background || ''
+        };
+        addBotMessage(buildAIFlowErrorHtml(flowError));
+        return flowError;
+    }
+
+    function normalizeAITemplateDecision(rawDecision) {
+        if (!rawDecision || typeof rawDecision !== 'object') return null;
+        const templateId = rawDecision.templateId || rawDecision.id || rawDecision.template || null;
+        if (!templateId) return null;
+        const template = TEMPLATE_CATALOG.find(item => item.id === templateId);
+        return {
+            templateId,
+            templateLabel: rawDecision.templateLabel || rawDecision.label || (template ? template.label : templateId),
+            genre: rawDecision.genre || (template ? template.type : ''),
+            confidence: Math.max(0, Math.min(1, Number(rawDecision.confidence) || 0)),
+            supported: rawDecision.supported !== false,
+            reason: rawDecision.reason || rawDecision.matchReason || 'AI template decision.',
+            raw: rawDecision
+        };
+    }
+
+    function normalizeAICapability(rawCapability) {
+        if (!rawCapability || typeof rawCapability !== 'object') {
+            return {
+                supported: true,
+                blockers: [],
+                reason: ''
+            };
+        }
+        const blockers = Array.isArray(rawCapability.blockers)
+            ? rawCapability.blockers.map(item => String(item)).filter(Boolean)
+            : [];
+        return {
+            supported: rawCapability.supported !== false && rawCapability.unsupported !== true && blockers.length === 0,
+            blockers,
+            reason: rawCapability.reason || rawCapability.message || blockers.join(', '),
+            raw: rawCapability
+        };
+    }
+
     async function analyzePromptWithAIIfAvailable(prompt) {
-        if (!hasLiveAIProvider()) return false;
+        if (!hasLiveAIProvider()) throw createModelNotConfiguredError('analysis');
 
         try {
-            const response = await aiService.chat([
+            const response = await aiService.stageChat('/api/ai/analyze-game-request', [
                 {
                     role: 'system',
                     content: `You are a game requirements analyst. Extract only what is present or strongly implied. Return strict JSON only.
@@ -810,9 +1356,27 @@ Use this shape:
     "progressionSystem": { "status": "confirmed|suggested|missing", "value": string|null, "confidence": number },
     "difficultyLevel": { "status": "confirmed|suggested|missing", "value": string|null, "confidence": number }
   },
-  "background": string|null
+  "background": string|null,
+  "missingFields": string[],
+  "templateDecision": {
+    "templateId": "bullet_hell|roguelike_survival|unsupported",
+    "templateLabel": string,
+    "genre": string,
+    "confidence": number,
+    "supported": boolean,
+    "reason": string
+  },
+  "capability": {
+    "supported": boolean,
+    "blockers": string[],
+    "reason": string
+  }
 }
-Treat genre conventions as suggested, not confirmed, unless the user explicitly stated them.`
+Treat genre conventions as suggested, not confirmed, unless the user explicitly stated them.
+Template mapping:
+- Flying shooter, plane shooter, space shooter, vertical shooter, shmup, bullet hell, 飞行射击, 飞机大战, 太空射击, 纵版射击, 竖版打飞机, 弹幕射击 => bullet_hell.
+- Roguelike survival, Vampire Survivors-like, arena survival, auto-attack survival, horde survival, 肉鸽, 割草, 幸存者, 自动攻击, 升级三选一 => roguelike_survival.
+Unsupported P0 capability includes 3D, multiplayer/networked, MMO, open world, native app, blockchain, or complex backend runtime.`
                 },
                 {
                     role: 'user',
@@ -842,6 +1406,9 @@ Prompt: ${prompt}`
             applyExtractedModule('difficultyLevel', modules.difficultyLevel, DIFFICULTY_OPTIONS, 'desc');
 
             analysisState.background = parsed.background || prompt;
+            analysisState.templateDecision = normalizeAITemplateDecision(parsed.templateDecision || parsed.template || parsed.decision);
+            analysisState.capability = normalizeAICapability(parsed.capability);
+            analysisState.missingFields = Array.isArray(parsed.missingFields) ? parsed.missingFields : [];
 
             if (!analysisState.setting && parsed.setting) {
                 setModuleSelection('setting', {
@@ -853,9 +1420,8 @@ Prompt: ${prompt}`
 
             return true;
         } catch (error) {
-            console.warn('AI analysis failed, using local fallback:', error);
-            showSettingsStatus(`AI analysis failed: ${error.message}. Local fallback is active.`, 'warning');
-            return false;
+            console.warn('AI analysis failed:', error);
+            throw error;
         }
     }
 
@@ -889,6 +1455,7 @@ Prompt: ${prompt}`
     function askClarification(step, msgHtml) {
         chatStep = step;
         addBotMessage(msgHtml, () => {
+        regTimeout(() => renderChatOptions(step), 160);
 
         // 娓呯悊涔嬪墠鐨勮鏃跺櫒
         if (analysisTimeout) clearTimeout(analysisTimeout);
@@ -896,7 +1463,7 @@ Prompt: ${prompt}`
         // 3s 寤惰繜鍞よ捣 "Inspire Me" 鎸夐挳閫昏緫 (鍏ㄩ噺鍚屾)
         analysisTimeout = regTimeout(() => {
             // 鍙湁鍦ㄧ敤鎴锋病杈撳叆锛屼笖渚濈劧鍋滅暀鍦ㄥ綋鍓嶆楠ゆ椂鎵嶆樉绀?
-            if (chatInputField.value.trim() === '' && chatStep === step && !analysisState.revisionMode) {
+            if (chatInputField.value.trim() === '' && chatStep === step && !analysisState.revisionMode && chatOptionsList.children.length === 0) {
                 showInspireMePrompt(step);
             }
         }, 3000);
@@ -1184,6 +1751,7 @@ Prompt: ${prompt}`
         const attachmentSummary = getAttachmentPromptSummary(attachments);
         const promptText = [text, attachmentSummary].filter(Boolean).join('\n\n');
         if (!promptText) return;
+        const wizardDefinitionBeforeClear = !analysisState.active ? getWizardFreeTextDefinition() : null;
 
         addUserMessage(text || attachmentSummary, { attachments });
         chatInputField.value = '';
@@ -1253,15 +1821,71 @@ Prompt: ${prompt}`
             if (analysisState.processing) return;
             const nextStep = getNextMissingStep();
             const definition = getStepDefinition(nextStep);
-            if (definition) {
-                setModuleSelection(definition.key, { label: promptText, value: promptText, desc: promptText });
-            }
+            if (definition) handleFreeTextForStep(definition, promptText, selected => setModuleSelection(definition.key, selected));
             continueClarification();
         } else {
-            // 闈炲垎鏋愭祦锛氱敤鎴疯嚜鐢辫緭鍏ユ柊 prompt锛屽惎鍔ㄦ柊涓€杞垎鏋愶紙娑堟伅宸插湪鍑芥暟椤堕儴娣诲姞锛?
-            savedPrompt = promptText;
-            startAnalysisFlow(promptText);
+            const definition = wizardDefinitionBeforeClear || getWizardFreeTextDefinition();
+            if (!definition) {
+                savedPrompt = promptText;
+                startAnalysisFlow(promptText);
+                return;
+            }
+            if (shouldAnalyzeWizardFreeText(promptText, definition)) {
+                savedPrompt = promptText;
+                startAnalysisFlow(promptText);
+                return;
+            }
+            const handled = handleFreeTextForStep(definition, promptText, selected => {
+                chatSelections[definition.key] = selected;
+                if (chatStep < MODULE_STEPS.length - 1) {
+                    chatStep += 1;
+                    addBotMessage(BOT_MESSAGES[chatStep], () => {
+                        regTimeout(() => renderChatOptions(chatStep), 160);
+                    });
+                } else {
+                    askFinalConfirmation();
+                }
+            });
+            if (handled) return;
         }
+    }
+
+    function handleAIErrorAction(action, button) {
+        if (!action) return;
+        if (button) {
+            button.disabled = true;
+            button.classList.add('selected');
+        }
+
+        if (action === 'retry_current_model') {
+            const retry = latestAIFlowRetry || {};
+            if (retry.stage === 'analysis' && retry.prompt) {
+                startAnalysisFlow(retry.prompt);
+                return;
+            }
+            if (retry.stage === 'compile') {
+                composeAndReturn();
+                return;
+            }
+            askFinalConfirmation();
+            return;
+        }
+
+        if (action === 'switch_model') {
+            if (button) button.disabled = false;
+            if (modelDropdown && modelSelector) {
+                modelDropdown.style.display = 'block';
+                modelSelector.setAttribute('aria-expanded', 'true');
+            }
+        }
+    }
+
+    if (chatHistory) {
+        chatHistory.addEventListener('click', event => {
+            const button = event.target.closest('[data-ai-error-action]');
+            if (!button) return;
+            handleAIErrorAction(button.dataset.aiErrorAction, button);
+        });
     }
 
     if (chatInputField) {
@@ -1537,9 +2161,13 @@ Prompt: ${prompt}`
         if (!provider || !meta) return;
         if (!providerEnabled || !providerApiKey || !providerBaseUrl || !providerModel || !providerReasoning) return;
 
-        providerEnabled.checked = provider.enabled;
-        providerApiKey.value = provider.apiKey || '';
+        providerEnabled.checked = hasConfiguredProvider(settingsProviderId);
+        providerEnabled.disabled = true;
+        providerApiKey.value = '';
+        providerApiKey.placeholder = 'Configured on backend .env only';
+        providerApiKey.disabled = true;
         providerBaseUrl.value = provider.baseUrl || meta.defaultBaseUrl;
+        providerBaseUrl.disabled = true;
         providerReasoning.value = provider.reasoningEffort || 'none';
 
         providerModel.innerHTML = '';
@@ -1561,9 +2189,8 @@ Prompt: ${prompt}`
         const provider = aiConfig.providers[settingsProviderId];
         const meta = PROVIDER_META[settingsProviderId];
         if (!provider || !meta || !providerEnabled || !providerApiKey || !providerBaseUrl || !providerModel || !providerReasoning) return;
-        provider.enabled = providerEnabled.checked;
-        provider.apiKey = providerApiKey.value.trim();
-        provider.baseUrl = providerBaseUrl.value.trim() || meta.defaultBaseUrl;
+        provider.apiKey = '';
+        provider.baseUrl = provider.baseUrl || meta.defaultBaseUrl;
         provider.currentModel = providerModel.value;
         provider.reasoningEffort = providerReasoning.value;
         if (settingsProviderId === 'custom') {
@@ -1596,7 +2223,7 @@ Prompt: ${prompt}`
         if (activeModelName) activeModelName.textContent = active.label;
         if (modelSelector) {
             modelSelector.style.setProperty('--model-color', active.color);
-            modelSelector.title = hasLiveAIProvider() ? `Current model: ${active.label}` : 'Platform AI is not configured. Local fallback is active.';
+            modelSelector.title = hasLiveAIProvider() ? `Current model: ${active.label}` : 'Platform AI is not configured.';
         }
         if (settingsBtn) {
             settingsBtn.classList.toggle('is-configured', hasLiveAIProvider());
@@ -1614,45 +2241,17 @@ Prompt: ${prompt}`
         modelDropdownList.innerHTML = '';
 
         if (platformModels.length) {
-            platformModels.forEach(modelConfig => {
-                const meta = PROVIDER_META[modelConfig.providerId] || PROVIDER_META.custom;
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'model-option';
-                btn.style.setProperty('--model-color', meta.color);
-                const active = aiConfig.activeProvider === modelConfig.providerId && getProviderModelId(modelConfig.providerId) === modelConfig.modelId;
-                btn.innerHTML = `
-                    <span>${escapeHtml(modelConfig.label || getModelLabel(modelConfig.providerId, modelConfig.modelId))}</span>
-                    ${active ? '<small>Active</small>' : ''}
-                `;
-                btn.addEventListener('click', () => switchActiveModel(modelConfig.providerId, modelConfig.modelId, modelConfig.reasoningEffort));
-                modelDropdownList.appendChild(btn);
+            const groups = platformModels.reduce((acc, modelConfig) => {
+                if (!acc[modelConfig.providerId]) acc[modelConfig.providerId] = [];
+                acc[modelConfig.providerId].push(modelConfig);
+                return acc;
+            }, {});
+            PROVIDER_ORDER.forEach(providerId => {
+                if (!groups[providerId] || !groups[providerId].length) return;
+                renderModelGroup(providerId, groups[providerId]);
             });
         } else {
-            PROVIDER_ORDER.forEach(providerId => {
-            const provider = aiConfig.providers[providerId];
-            const meta = PROVIDER_META[providerId];
-            if (!provider.enabled) return;
-
-            const modelIds = providerId === 'custom' && provider.customModel
-                ? [provider.customModel]
-                : meta.models.map(model => model.id);
-
-            modelIds.forEach(modelId => {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'model-option';
-                btn.style.setProperty('--model-color', meta.color);
-                const label = getModelLabel(providerId, modelId);
-                const active = aiConfig.activeProvider === providerId && getProviderModelId(providerId) === modelId;
-                btn.innerHTML = `
-                    <span>${escapeHtml(label)}</span>
-                    ${active ? '<small>Active</small>' : ''}
-                `;
-                btn.addEventListener('click', () => switchActiveModel(providerId, modelId));
-                modelDropdownList.appendChild(btn);
-            });
-            });
+            modelDropdownList.innerHTML = '<div class="model-empty">No backend models enabled. Configure .env and restart the backend.</div>';
         }
 
         if (!modelDropdownList.children.length) {
@@ -1664,11 +2263,46 @@ Prompt: ${prompt}`
         }
     }
 
+    function renderModelGroup(providerId, models) {
+        const meta = PROVIDER_META[providerId] || PROVIDER_META.custom;
+        const group = document.createElement('div');
+        group.className = 'model-provider-group';
+        group.style.setProperty('--model-color', meta.color);
+        group.innerHTML = `
+            <div class="model-provider-heading">
+                <span class="model-provider-icon">${escapeHtml(meta.icon)}</span>
+                <span>${escapeHtml(meta.label)}</span>
+            </div>
+        `;
+
+        models.forEach(modelConfig => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'model-option';
+            btn.style.setProperty('--model-color', meta.color);
+            const modelId = modelConfig.modelId;
+            const label = modelConfig.label || getModelLabel(providerId, modelId);
+            const active = aiConfig.activeProvider === providerId && getProviderModelId(providerId) === modelId;
+            btn.innerHTML = `
+                <span>${escapeHtml(label)}</span>
+                ${active ? '<small>Active</small>' : ''}
+            `;
+            btn.addEventListener('click', () => switchActiveModel(providerId, modelId, modelConfig.reasoningEffort));
+            group.appendChild(btn);
+        });
+
+        modelDropdownList.appendChild(group);
+    }
+
     function switchActiveModel(providerId, modelId, reasoningEffort) {
         const previous = getActiveModelMeta();
         aiConfig.activeProvider = providerId;
+        if (!aiConfig.providers[providerId]) return;
+        const meta = PROVIDER_META[providerId];
+        const knownModel = meta && meta.models.find(model => model.id === modelId);
+        aiConfig.providers[providerId].enabled = true;
         aiConfig.providers[providerId].currentModel = modelId;
-        if (reasoningEffort) aiConfig.providers[providerId].reasoningEffort = reasoningEffort;
+        aiConfig.providers[providerId].reasoningEffort = reasoningEffort || (knownModel && knownModel.reasoningEffort) || aiConfig.providers[providerId].reasoningEffort || 'none';
         if (providerId === 'custom') aiConfig.providers[providerId].customModel = modelId;
         saveAIConfig();
         updateModelUI();
@@ -1703,7 +2337,7 @@ Prompt: ${prompt}`
         settingsProviderId = aiConfig.activeProvider;
         renderProviderList();
         syncProviderEditor();
-        showSettingsStatus(message || (hasLiveAIProvider() ? 'Platform AI config is ready.' : 'Add a platform API key before enabling live AI replies.'), hasLiveAIProvider() ? 'success' : 'warning');
+        showSettingsStatus(message || (hasLiveAIProvider() ? 'Platform AI config is ready.' : 'Configure provider API keys in backend .env, then restart the backend.'), hasLiveAIProvider() ? 'success' : 'warning');
         settingsModal.style.display = 'flex';
         settingsModal.offsetWidth;
         settingsModal.classList.add('active');
@@ -1983,46 +2617,132 @@ Prompt: ${prompt}`
     }
 
     async function askFinalConfirmation() {
-        const summaryPromise = buildGamePlanSummaryHtml();
         const pendingMessage = addBotMessage('', null, { pending: true });
-        const summaryHtml = await summaryPromise;
-        if (pendingMessage) pendingMessage.finish(summaryHtml);
-        regTimeout(() => {
-            addBotMessage("I've collected all the basic information. Ready to generate the game! Shall we start?", () => {
-                regTimeout(renderFinalActionButtons, 160);
+        try {
+            const summaryHtml = await buildGamePlanSummaryHtml();
+            if (pendingMessage) pendingMessage.finish(summaryHtml);
+            regTimeout(() => {
+                addBotMessage("I've collected all the basic information. Ready to generate the game! Shall we start?", () => {
+                    regTimeout(renderFinalActionButtons, 160);
+                });
+            }, 500);
+        } catch (error) {
+            showAIFlowError(error, {
+                stage: 'game_plan',
+                prompt: savedPrompt || analysisState.background || '',
+                pendingMessage
             });
-        }, 500);
+        }
     }
 
     async function buildGamePlanSummaryHtml() {
         if (!hasLiveAIProvider()) {
-            analysisState.finalModelMeta = getLocalFallbackMeta();
-            return buildFallbackGamePlanHtml();
+            throw createModelNotConfiguredError('game_plan');
         }
 
         try {
             const responseModelMeta = getActiveModelMeta();
             const spec = getCurrentGameSpec();
-            const response = await aiService.chat([
+            const response = await withTimeout(aiService.stageChat('/api/ai/generate-game-plan', [
                 {
                     role: 'system',
-                    content: 'You are a concise game design assistant. Return only valid JSON with keys title, hook, coreLoop, visualDirection, setting, playerFantasy, risk. Keep every value under 22 words.'
+                    content: 'You are a game design assistant. Return only valid JSON with keys title, hook, storyPremise, coreLoop, momentToMoment, visualDirection, enemyDesign, progressionPlan, playerFantasy, prototypeScope, risk. Avoid repeating the same genre/style words mechanically. Keep every value under 42 words.'
                 },
                 {
                     role: 'user',
                     content: JSON.stringify(spec)
                 }
-            ]);
+            ]), AI_GAME_PLAN_TIMEOUT_MS);
             const jsonMatch = response.content.match(/\{[\s\S]*\}/);
             const plan = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(response.content);
             analysisState.finalModelMeta = responseModelMeta;
             return buildAISummaryHtml(plan);
         } catch (error) {
-            console.warn('AI game plan failed, using fallback summary:', error);
-            showSettingsStatus(`AI game plan failed: ${error.message}. Local fallback is active.`, 'warning');
-            analysisState.finalModelMeta = getLocalFallbackMeta();
-            return buildFallbackGamePlanHtml();
+            console.warn('AI game plan failed:', error);
+            throw error;
         }
+    }
+
+    function parseJsonObjectFromText(text, errorCode = 'MODEL_JSON_PARSE_FAILED') {
+        try {
+            const raw = String(text || '').trim();
+            const jsonMatch = raw.match(/\{[\s\S]*\}/);
+            return jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(raw);
+        } catch (error) {
+            const wrapped = new Error('The selected model did not return valid JSON.');
+            wrapped.code = errorCode;
+            wrapped.cause = error;
+            throw wrapped;
+        }
+    }
+
+    function validateTemplatePatchPlan(plan) {
+        if (!plan || typeof plan !== 'object') {
+            const error = new Error('TemplatePatchPlan is missing.');
+            error.code = 'MODEL_SCHEMA_INVALID';
+            throw error;
+        }
+        if (plan.requiresRuntimeCodePatch === true) {
+            const error = new Error('The AI patch requires runtime code changes, which are outside P0 automatic compile scope.');
+            error.code = 'PATCH_REQUIRES_RUNTIME_CODE';
+            throw error;
+        }
+        const blockedKeys = ['files', 'filePatches', 'runtimePatch', 'codePatch', 'sourcePatch', 'diff', 'patches'];
+        const blocked = blockedKeys.find(key => Object.prototype.hasOwnProperty.call(plan, key));
+        if (blocked) {
+            const error = new Error(`TemplatePatchPlan cannot include direct file patches: ${blocked}.`);
+            error.code = 'PATCH_FILE_NOT_ALLOWED';
+            throw error;
+        }
+        if (!plan.gameName || !plan.userIntentSummary || !plan.settingsPatch || !plan.stylePatch || !plan.contentPatch) {
+            const error = new Error('TemplatePatchPlan must include gameName, userIntentSummary, settingsPatch, stylePatch, and contentPatch.');
+            error.code = 'MODEL_SCHEMA_INVALID';
+            throw error;
+        }
+        return plan;
+    }
+
+    async function generateTemplatePatchPlan(spec, decision) {
+        if (!hasLiveAIProvider()) throw createModelNotConfiguredError('template_patch');
+
+        const response = await withTimeout(aiService.stageChat('/api/ai/generate-template-patch', [
+            {
+                role: 'system',
+                content: `You generate safe TemplatePatchPlan JSON for a P0 HTML5 Canvas game template.
+Return strict JSON only. Do not include markdown.
+Required shape:
+{
+  "gameName": string,
+  "userIntentSummary": string,
+  "settingsPatch": object,
+  "stylePatch": object,
+  "contentPatch": object,
+  "assetPrompts": object,
+  "playabilityChecklist": string[],
+  "requiresRuntimeCodePatch": false
+}
+Never include direct file patches, source code patches, diffs, runtimePatch, files, filePatches, codePatch, sourcePatch, or patches.
+For bullet_hell contentPatch should include waves, bosses, enemyTypes, pickups, and projectilePatterns.
+For roguelike_survival contentPatch should include waves, enemies, weapons, upgrades, pickups, and balance.`
+            },
+            {
+                role: 'user',
+                content: JSON.stringify({
+                    selectedModel: getActiveModelMeta(),
+                    gameSpec: spec,
+                    templateDecision: decision,
+                    aiGamePlan: latestGamePlanDraft
+                }, null, 2)
+            }
+        ]), AI_TEMPLATE_PATCH_TIMEOUT_MS);
+
+        const parsed = validateTemplatePatchPlan(parseJsonObjectFromText(response.content, 'MODEL_JSON_PARSE_FAILED'));
+        latestTemplatePatchPlan = {
+            ...parsed,
+            aiGenerated: true,
+            modelMeta: getActiveModelMeta()
+        };
+        return latestTemplatePatchPlan;
     }
 
     function getCurrentGameSpec() {
@@ -2044,32 +2764,544 @@ Prompt: ${prompt}`
         };
     }
 
+    function getSpecIntentText(spec = getCurrentGameSpec()) {
+        return [
+            spec.gameType,
+            spec.artStyle,
+            spec.gameSetting,
+            spec.background,
+            spec.coreGameplay,
+            spec.playerGoal,
+            spec.mainChallenge,
+            spec.progressionSystem,
+            spec.difficultyLevel
+        ].filter(Boolean).join(' ').toLowerCase();
+    }
+
+    function detectCapabilityExceeded(text) {
+        const intent = String(text || '').toLowerCase();
+        const blockers = [
+            '3d', 'three.js', 'multiplayer', 'online co-op', 'mmo', 'massive open world',
+            'virtual reality', 'augmented reality', 'blockchain', 'nft', 'voice chat', 'networked', 'server authoritative',
+            '多人', '联机', '联网', '大型开放世界', '开放世界大地图', '虚拟现实', '增强现实', '区块链', '链游'
+        ];
+        const hit = blockers.find(term => intent.includes(term));
+        return hit ? {
+            blocked: true,
+            reason: `Capability exceeded: ${hit}`
+        } : {
+            blocked: false,
+            reason: ''
+        };
+    }
+
+    function matchTemplate(spec = getCurrentGameSpec()) {
+        const intent = getSpecIntentText(spec);
+        const capability = detectCapabilityExceeded(intent);
+        const scored = scoreTemplatesForText(intent).map(template => {
+            const hits = template.keywords.filter(keyword => intent.includes(String(keyword).toLowerCase()));
+            const directType = String(spec.gameType || '').toLowerCase();
+            const directHit = directType && (
+                directType.includes(template.type) ||
+                directType.includes(template.id.replace(/_/g, ' ')) ||
+                directType.includes(template.label.toLowerCase())
+            );
+            const confidence = Math.min(0.98, template.confidence + (directHit ? 0.18 : 0));
+            return {
+                ...template,
+                confidence,
+                hits,
+                directHit: Boolean(directHit || template.directHit)
+            };
+        }).sort((a, b) => (b.confidence - a.confidence) || (b.hits.length - a.hits.length) || Number(b.directHit) - Number(a.directHit));
+
+        const aiDecision = analysisState.templateDecision;
+        const aiCapability = analysisState.capability;
+        if (aiDecision) {
+            const aiTemplate = TEMPLATE_CATALOG.find(template => template.id === aiDecision.templateId);
+            const aiBlocked = capability.blocked || (aiCapability && aiCapability.supported === false);
+            const canAutoGenerate = Boolean(
+                !aiBlocked &&
+                aiTemplate &&
+                aiDecision.supported !== false &&
+                aiDecision.confidence >= 0.65
+            );
+            const reason = aiBlocked
+                ? (capability.reason || (aiCapability && aiCapability.reason) || 'Capability exceeded.')
+                : (aiDecision.reason || `AI selected ${aiDecision.templateLabel}.`);
+            return {
+                canAutoGenerate,
+                templateId: aiTemplate ? aiTemplate.id : aiDecision.templateId,
+                templateLabel: aiTemplate ? aiTemplate.label : aiDecision.templateLabel,
+                confidence: aiDecision.confidence,
+                reason,
+                fallbackMessage: canAutoGenerate
+                    ? ''
+                    : (aiBlocked
+                        ? 'This request includes features outside the current P0 HTML5 template whitelist. Please leave an email and we will route it to the manual queue.'
+                        : 'The selected AI model did not map this request to a supported P0 template. Please revise the prompt or leave an email for manual handling.'),
+                candidates: scored.slice(0, 3),
+                source: 'ai',
+                capability: aiCapability || capability
+            };
+        }
+
+        const best = scored[0];
+        const canAutoGenerate = Boolean(!capability.blocked && best && best.confidence >= 0.7);
+        return {
+            canAutoGenerate,
+            templateId: best ? best.id : null,
+            templateLabel: best ? best.label : 'No matching template',
+            confidence: best ? best.confidence : 0,
+            reason: capability.blocked
+                ? capability.reason
+                : (canAutoGenerate
+                ? `Matched ${best.label} from ${best.hits.slice(0, 4).join(', ')}.`
+                : 'No P0 template reached the 70% confidence threshold.'),
+            fallbackMessage: canAutoGenerate
+                ? ''
+                : (capability.blocked
+                    ? 'This request includes features outside the current P0 HTML5 template whitelist. Please leave an email and we will route it to the manual queue.'
+                    : 'This idea is outside the current automatic template coverage. Please leave an email and we will route it to the manual queue.'),
+            candidates: scored.slice(0, 3),
+            source: 'local_safety'
+        };
+    }
+
+    function inferThemePreset(spec = getCurrentGameSpec()) {
+        const text = [spec.artStyle, spec.gameSetting, spec.background].filter(Boolean).join(' ').toLowerCase();
+        const entries = Object.entries(THEME_PRESETS);
+        const matched = entries
+            .map(([id, theme]) => ({
+                id,
+                theme,
+                score: theme.keywords.filter(keyword => text.includes(keyword)).length
+            }))
+            .sort((a, b) => b.score - a.score)[0];
+        if (matched && matched.score > 0) return { id: matched.id, ...matched.theme };
+        return { id: 'cyberpunk_neon', ...THEME_PRESETS.cyberpunk_neon };
+    }
+
+    function buildRuntimeProfile(template) {
+        return {
+            architecture: template.sourceArchitecture || 'p0-local-preview',
+            specMode: template.specMode || 'single-game-spec',
+            bootOrder: ['GameSettings', 'GameSpec', 'AssetManifest', 'ThemeRegistry', 'RuntimeSystems', 'CanvasPreview'],
+            stateMachine: ['boot', 'loading', 'menu', 'playing', 'paused', 'game_over', 'complete'],
+            updateRules: {
+                fixedDeltaTime: true,
+                noDomQueriesInUpdate: true,
+                objectPoolingRequired: true,
+                inputActionsOnly: true
+            },
+            systems: template.systems,
+            collision: {
+                layers: ['player', 'enemy', 'player_projectile', 'enemy_projectile', 'pickup', 'terrain', 'base'],
+                matrix: [
+                    ['player', 'enemy'],
+                    ['player', 'enemy_projectile'],
+                    ['player', 'pickup'],
+                    ['enemy', 'player_projectile'],
+                    ['base', 'enemy']
+                ]
+            }
+        };
+    }
+
+    function buildContentProfile(template, spec, isTowerDefense, isBulletHell) {
+        const primaryWeapon = isTowerDefense ? 'turret_projectile' : (isBulletHell ? 'vulcan_focus_shot' : 'auto_arc_blade');
+        const enemyType = isBulletHell ? 'pattern_drone' : (isTowerDefense ? 'lane_runner' : 'runner');
+        const bossType = isBulletHell ? 'phase_boss' : 'stage_guardian';
+
+        return {
+            modules: template.contentModules || ['game', 'manifest'],
+            map: {
+                width: isBulletHell ? 600 : 1280,
+                height: isBulletHell ? 800 : 720,
+                worldWidth: isBulletHell ? 600 : (isTowerDefense ? 1280 : 4000),
+                worldHeight: isBulletHell ? 800 : (isTowerDefense ? 720 : 4000),
+                camera: isBulletHell ? 'fixed-vertical' : (isTowerDefense ? 'fixed-lane' : 'smooth-follow')
+            },
+            player: {
+                enabled: !isTowerDefense,
+                start: { x: isBulletHell ? 300 : 640, y: isBulletHell ? 700 : 360 },
+                stats: {
+                    maxHp: spec.difficultyLevel === 'Hard' || spec.difficultyLevel === 'Nightmare' ? 85 : 120,
+                    speed: isBulletHell ? 230 : 220,
+                    size: isBulletHell ? 14 : 28,
+                    hitboxSize: isBulletHell ? 4 : 18,
+                    invincibleTime: isBulletHell ? 2 : 0.5
+                },
+                weapons: [primaryWeapon]
+            },
+            weapons: {
+                [primaryWeapon]: {
+                    name: primaryWeapon.replace(/_/g, ' '),
+                    archetype: isTowerDefense ? 'projectile_turret' : (isBulletHell ? 'multi_projectile' : 'melee_arc'),
+                    damage: isTowerDefense ? 18 : (isBulletHell ? 7 : 18),
+                    attackInterval: isBulletHell ? 0.075 : (isTowerDefense ? 0.85 : 1.5),
+                    range: isTowerDefense ? 320 : (isBulletHell ? 720 : 80),
+                    levels: isBulletHell ? 6 : 6,
+                    effects: [{ type: isBulletHell || isTowerDefense ? 'projectile' : 'melee_arc', params: { count: isBulletHell ? 2 : 1 } }]
+                }
+            },
+            enemies: {
+                [enemyType]: {
+                    name: isBulletHell ? 'Pattern Drone' : (isTowerDefense ? 'Lane Runner' : 'Runner'),
+                    hp: isBulletHell ? 26 : 30,
+                    speed: isTowerDefense ? 95 : (isBulletHell ? 56 : 130),
+                    size: isBulletHell ? 13 : 24,
+                    damage: 8,
+                    flags: isBulletHell ? ['shooter'] : []
+                },
+                [bossType]: {
+                    name: isBulletHell ? 'Prism Core' : 'Stage Guardian',
+                    hp: isBulletHell ? 1500 : 800,
+                    speed: isBulletHell ? 30 : 90,
+                    size: isBulletHell ? 42 : 60,
+                    flags: ['boss'],
+                    phases: isBulletHell
+                        ? [
+                            { hpThreshold: 0.66, pattern: 'spiral', fireRate: 0.08 },
+                            { hpThreshold: 0.32, pattern: 'flower', fireRate: 0.16 },
+                            { hpThreshold: 0, pattern: 'burst', fireRate: 0.55 }
+                        ]
+                        : []
+                }
+            },
+            projectiles: isBulletHell
+                ? {
+                    enemyBulletTypes: {
+                        basic: { speed: 170, damage: 10, size: 7 },
+                        fast: { speed: 280, damage: 12, size: 5 },
+                        large: { speed: 115, damage: 16, size: 12 }
+                    },
+                    playerBulletBudget: 220,
+                    enemyBulletBudget: 320
+                }
+                : {},
+            waves: [{
+                id: 'phase1',
+                start: 0,
+                end: isTowerDefense ? 240 : 300,
+                interval: isBulletHell ? 1.05 : (isTowerDefense ? 1.25 : 1.8),
+                types: [enemyType],
+                maxCount: isTowerDefense ? 36 : 60
+            }]
+        };
+    }
+
+    function buildGeneratedGameSpec(spec = getCurrentGameSpec(), decision = matchTemplate(spec)) {
+        throw new Error('Local GameSpec generation is disabled. Use AI TemplatePatchPlan plus backend compile.');
+        const template = TEMPLATE_CATALOG.find(item => item.id === decision.templateId) || TEMPLATE_CATALOG[0];
+        const isTowerDefense = template.id === 'tower_defense';
+        const isBulletHell = template.id === 'bullet_hell';
+        const isRoguelike = template.id === 'roguelike_survival';
+        const duration = isTowerDefense ? 240 : 300;
+        const theme = inferThemePreset(spec);
+        const content = buildContentProfile(template, spec, isTowerDefense, isBulletHell);
+        const primaryWeapon = Object.keys(content.weapons)[0];
+        const enemyType = Object.keys(content.enemies).find(key => !content.enemies[key].flags.includes('boss')) || 'grunt';
+
+        return {
+            meta: {
+                gameName: `${spec.gameSetting || 'Custom'} ${template.label}`,
+                gameType: template.type,
+                version: 'p0-preview',
+                description: spec.background || 'Generated from one natural-language prompt.',
+                templateConfidence: Number(decision.confidence.toFixed(2)),
+                sourceArchitectures: [template.sourceArchitecture || 'p0-local-preview'],
+                generatedAt: new Date().toISOString()
+            },
+            template: {
+                id: template.id,
+                label: template.label,
+                confidence: Number(decision.confidence.toFixed(2)),
+                matchReason: decision.reason,
+                specMode: template.specMode,
+                gameplayPillars: template.gameplayPillars || []
+            },
+            engine: {
+                renderer: 'canvas',
+                fixedDeltaTime: 1 / 60,
+                maxEntityCount: isRoguelike ? 2000 : 800,
+                mapSize: { width: content.map.width, height: content.map.height },
+                runtimeProfile: buildRuntimeProfile(template)
+            },
+            settings: {
+                priority: ['GameSettings', 'GameSpec', 'AssetManifest', 'RuntimeFallbacks'],
+                debug: {
+                    invincibleMode: false,
+                    showHitboxes: false,
+                    showFps: true,
+                    logCollisions: false
+                },
+                coreRules: {
+                    autoAttack: !isBulletHell,
+                    defaultShootMode: isBulletHell ? 'auto' : 'auto',
+                    lives: isBulletHell ? 3 : 1,
+                    maxWeaponLevel: 6,
+                    objectiveSeconds: duration
+                },
+                performance: {
+                    maxEnemies: isRoguelike ? 2000 : 80,
+                    maxPlayerProjectiles: isBulletHell ? 220 : 300,
+                    maxEnemyProjectiles: isBulletHell ? 320 : 120,
+                    maxParticles: 260,
+                    spatialHashCellSize: isRoguelike ? 100 : null,
+                    offscreenMargin: 80
+                }
+            },
+            theme: {
+                id: theme.id,
+                label: theme.label,
+                styleLock: theme.styleLock,
+                uiTokens: theme.uiTokens,
+                audio: {
+                    bgm: { main: '' },
+                    sfx: ['shoot', 'hit', 'pickup', 'level_up', 'boss', 'game_over']
+                },
+                balanceMultipliers: theme.balance,
+                artPromptRules: [
+                    'Reuse the selected style fingerprint for every asset.',
+                    'Generate player, enemy, projectile, pickup, UI, and tile assets from one theme anchor.',
+                    'Fallback canvas rendering is allowed only when assets are missing or still generating.'
+                ]
+            },
+            systems: template.systems,
+            input: {
+                devices: ['keyboard', 'pointer', 'touch'],
+                actions: {
+                    moveLeft: ['ArrowLeft', 'KeyA'],
+                    moveRight: ['ArrowRight', 'KeyD'],
+                    moveUp: ['ArrowUp', 'KeyW'],
+                    moveDown: ['ArrowDown', 'KeyS'],
+                    focus: ['ShiftLeft', 'ShiftRight'],
+                    shoot: isBulletHell ? ['Space', 'KeyZ'] : ['auto'],
+                    bomb: isBulletHell ? ['KeyX'] : [],
+                    pause: ['Escape'],
+                    confirm: ['Enter']
+                }
+            },
+            assets: {
+                manifestPath: 'assets/manifest.json',
+                fallback: 'canvas',
+                requiredGroups: ['player', 'enemies', 'weapons', 'effects', 'ui', 'audio'],
+                namingRules: {
+                    player: 'asset_player_{id}_{state}_{frame}.png',
+                    enemy: 'asset_enemy_{id}_{state}_{frame}.png',
+                    weapon: 'asset_weapon_{id}_lv{level}.png',
+                    effect: 'asset_effect_{id}.png',
+                    ui: 'asset_ui_{component}.png'
+                }
+            },
+            content,
+            player: {
+                enabled: content.player.enabled,
+                components: {
+                    position: content.player.start,
+                    stats: content.player.stats,
+                    input: {
+                        controlScheme: 'wasd',
+                        shootKey: isBulletHell ? 'space' : 'auto'
+                    }
+                },
+                weapons: [{ type: primaryWeapon, config: { level: 1 } }]
+            },
+            enemies: {
+                [enemyType]: {
+                    name: content.enemies[enemyType].name,
+                    components: {
+                        stats: {
+                            hp: content.enemies[enemyType].hp,
+                            speed: content.enemies[enemyType].speed,
+                            size: content.enemies[enemyType].size,
+                            damage: content.enemies[enemyType].damage
+                        },
+                        render: { color: isBulletHell ? '#42a5ff' : theme.uiTokens.colors.danger },
+                        behavior: { type: isTowerDefense ? 'follow_path' : 'chase_player' }
+                    },
+                    spawnWeight: 1
+                }
+            },
+            weapons: content.weapons,
+            flow: {
+                phases: [{
+                    id: 'phase1',
+                    name: spec.playerGoal || 'Clear the prototype run',
+                    duration,
+                    spawnRules: [{ enemyType, interval: content.waves[0].interval, maxCount: content.waves[0].maxCount, weight: 1 }],
+                    nextPhase: 'complete'
+                }],
+                winCondition: {
+                    type: isTowerDefense ? 'protect_base' : (isBulletHell ? 'defeat_boss' : 'survive_timer'),
+                    description: spec.playerGoal || 'Complete the primary objective.'
+                },
+                fallback: {
+                    emailQueueEnabled: true,
+                    maxValidationRetries: 3
+                }
+            },
+            balance: {
+                difficulty: spec.difficultyLevel || 'Normal',
+                progression: spec.progressionSystem || 'Level-up choices',
+                challenge: spec.mainChallenge || 'Escalating enemy pressure',
+                hpScaling: isRoguelike ? { enabled: true, increasePerSecond: 0.01, maxMultiplier: 10 } : { enabled: false },
+                drops: isRoguelike ? { expPickupChance: 0.8, healthPickupChance: 0.05 } : {},
+                themeMultipliers: theme.balance
+            },
+            ui: {
+                hud: [
+                    { type: 'health', position: 'top-left' },
+                    { type: 'objective', position: 'top-center' },
+                    { type: isBulletHell ? 'bomb_energy' : 'level_progress', position: 'bottom-left' }
+                ],
+                theme: {
+                    artStyle: spec.artStyle || theme.label,
+                    tokens: theme.uiTokens
+                }
+            },
+            qualityGates: {
+                schemaValidation: true,
+                manifestValidation: true,
+                canvasPreviewMustBoot: true,
+                inputSmokeTest: ['move', 'pause', isBulletHell ? 'shoot' : 'auto_attack'],
+                fallbackQueueRequired: true,
+                noCrashOnUnmatchedPrompt: true
+            },
+            missingRuntimeLogic: [
+                'Persist generated GameSpec and email queue to backend storage.',
+                'Load and validate external manifest assets before replacing canvas fallbacks.',
+                'Compile common GameSpec into full template folders for bullet hell and roguelike runtimes.',
+                'Apply ThemeRegistry CSS variables, audio routing, and art prompts to generated assets.'
+            ]
+        };
+    }
+
+    function buildGenerationPlan(spec = getCurrentGameSpec()) {
+        throw new Error('Local generation plans are disabled. Use the AI-first backend compile pipeline.');
+    }
+
+    function buildLocalEnhancedPlan(spec = getCurrentGameSpec(), decision = matchTemplate(spec)) {
+        throw new Error('Local enhanced plans are disabled. Use the selected model to generate the game plan.');
+        const templateId = decision.templateId || '';
+        const isBulletHell = templateId === 'bullet_hell';
+        const isRoguelike = templateId === 'roguelike_survival';
+        const isTowerDefense = templateId === 'tower_defense';
+        const settingName = spec.gameSetting || 'Custom World';
+        const artStyle = spec.artStyle || 'Readable arcade';
+        const difficulty = spec.difficultyLevel || 'Normal';
+
+        if (isBulletHell) {
+            return {
+                title: 'Neon Prism Storm',
+                hook: 'A precision dodging shooter where the player cuts through corporate signal swarms and dismantles a boss core phase by phase.',
+                storyPremise: 'The city is controlled by hostile broadcast towers. The pilot enters the aerial grid to break the transmission chain before it locks the district down.',
+                coreLoop: 'Read bullet patterns, slip through narrow lanes, fire focused shots, collect power drops, and spend bomb energy when the screen becomes unsafe.',
+                momentToMoment: 'The player alternates between fast movement for repositioning and focus movement for micro-dodging. Each wave teaches a pattern that returns harder in the boss fight.',
+                visualDirection: `Use ${artStyle} as the rendering style, with dark streets, high-contrast projectile colors, clean silhouettes, and readable warning effects instead of repeated neon decoration.`,
+                enemyDesign: 'Drones use aimed shots, weavers create fan lanes, lotus enemies build ring pressure, and the boss rotates through spiral, flower, and burst phases.',
+                progressionPlan: 'Level-up choices increase shot count, spread control, bomb recharge, graze score, or shield capacity without hiding the player hitbox.',
+                playerFantasy: 'The player should feel like a calm ace pilot surviving impossible traffic through skill, timing, and disciplined resource use.',
+                prototypeScope: `P0 scope: one playable stage in ${settingName}, one enemy wave table, one multi-phase boss, keyboard movement, shooting, pause, win and fail states tuned for ${difficulty}.`
+            };
+        }
+
+        if (isRoguelike) {
+            return {
+                title: 'Signal Run Survivors',
+                hook: 'A compact survival run where automatic weapons evolve while enemies close in from every direction.',
+                storyPremise: `The player is trapped in ${settingName}. Every minute raises pressure, forcing quick upgrade decisions and movement routes through enemy density.`,
+                coreLoop: 'Move to survive, let weapons trigger automatically, collect XP, choose upgrades, recover health when possible, and prepare for elite spikes.',
+                momentToMoment: 'The player kites swarms, cuts through weak edges, risks dives for XP, and repositions before elites or boss pressure collapses the safe area.',
+                visualDirection: `Use ${artStyle} with clear attack telegraphs, bright pickup readability, strong enemy silhouettes, and UI that keeps cooldowns and level progress visible.`,
+                enemyDesign: 'Basic enemies create density, elites force directional movement, and the boss tests the current build with higher health and stronger contact pressure.',
+                progressionPlan: `${spec.progressionSystem || 'Level-up choices'} should offer weapon growth, passive stat boosts, area control, cooldown reduction, and survivability tradeoffs.`,
+                playerFantasy: 'The player should feel like they are building a broken run from small upgrades while barely staying ahead of the swarm.',
+                prototypeScope: `P0 scope: one survival arena, escalating spawn rate, XP pickups, three upgrade choices per level, one elite class, one boss objective, and ${difficulty} tuning.`
+            };
+        }
+
+        if (isTowerDefense) {
+            return {
+                title: 'Last Line Protocol',
+                hook: 'A short defense prototype where the player places towers, reads enemy lanes, and protects a fragile base.',
+                storyPremise: `Enemy waves are pushing through ${settingName}. The player has limited build windows to stabilize lanes before pressure compounds.`,
+                coreLoop: 'Place towers, watch lanes, upgrade weak points, survive wave spikes, and keep the base alive until the final wave ends.',
+                momentToMoment: 'The player reacts to leaks, spends resources on range or damage, and adjusts placement to cover bends and enemy clusters.',
+                visualDirection: `Use ${artStyle} with clear lane contrast, readable tower ranges, distinct projectile colors, and compact HUD feedback.`,
+                enemyDesign: 'Runners test early coverage, armored units punish low damage, and fast units expose path gaps.',
+                progressionPlan: `${spec.progressionSystem || 'Upgrade choices'} should unlock stronger towers, temporary buffs, and repair decisions between waves.`,
+                playerFantasy: 'The player should feel like a tactical operator turning a weak defense into a controlled kill zone.',
+                prototypeScope: `P0 scope: one path, two tower types, several enemy waves, base health, basic upgrades, and ${difficulty} tuning.`
+            };
+        }
+
+        return {
+            title: `${settingName} Prototype`,
+            hook: 'A custom game idea that needs manual production because it falls outside the current automatic template set.',
+            storyPremise: spec.background || `A custom concept set in ${settingName}.`,
+            coreLoop: spec.coreGameplay || 'The core loop still needs manual design clarification.',
+            momentToMoment: 'The team should clarify player verbs, failure pressure, session length, and what makes each decision interesting.',
+            visualDirection: `Use ${artStyle}, but lock the exact asset style before production so characters, UI, effects, and environments stay consistent.`,
+            enemyDesign: spec.mainChallenge || 'Challenge design needs manual breakdown.',
+            progressionPlan: spec.progressionSystem || 'Progression needs manual breakdown.',
+            playerFantasy: 'The desired player fantasy needs a more specific design pass before automatic generation.',
+            prototypeScope: 'Manual queue scope: clarify mechanics, pick a supported runtime or create a new template, then generate a testable prototype.'
+        };
+    }
+
     function buildFallbackGamePlanHtml() {
+        throw new Error('Local fallback game-plan HTML is disabled. Model failures must show recoverable errors.');
         const spec = getCurrentGameSpec();
-        latestGamePlanDraft = buildGamePlanDraftText(null, spec);
+        const decision = matchTemplate(spec);
+        const plan = buildLocalEnhancedPlan(spec, decision);
+        latestGamePlanDraft = buildGamePlanDraftText(plan, spec);
         return [
             '<div class="selection-summary">',
-            '<div class="summary-title">I\'ve finalized your game plan:</div>',
-            buildGameSpecItemsHtml(spec),
+            buildEnhancedPlanHtml(plan),
+            '<div class="summary-title">Recognized GameSpec modules</div>',
+            buildGameSpecItemsHtml(spec, plan),
             '</div>'
         ].join('');
     }
 
-    function buildGameSpecItemsHtml(spec = getCurrentGameSpec()) {
+    function buildEnhancedPlanHtml(plan) {
+        return [
+            '<div class="summary-title">Detailed game concept</div>',
+            `<div class="summary-name">${escapeHtml(plan.title)}</div>`,
+            `<div class="summary-item"><strong>Hook:</strong> ${escapeHtml(plan.hook)}</div>`,
+            `<div class="summary-item"><strong>Story Premise:</strong> ${escapeHtml(plan.storyPremise)}</div>`,
+            `<div class="summary-item"><strong>Core Loop:</strong> ${escapeHtml(plan.coreLoop)}</div>`,
+            `<div class="summary-item"><strong>Moment-to-Moment:</strong> ${escapeHtml(plan.momentToMoment)}</div>`,
+            `<div class="summary-item"><strong>Visual Direction:</strong> ${escapeHtml(plan.visualDirection)}</div>`,
+            `<div class="summary-item"><strong>Enemy / Challenge Design:</strong> ${escapeHtml(plan.enemyDesign)}</div>`,
+            `<div class="summary-item"><strong>Progression Plan:</strong> ${escapeHtml(plan.progressionPlan)}</div>`,
+            `<div class="summary-item"><strong>Player Fantasy:</strong> ${escapeHtml(plan.playerFantasy)}</div>`,
+            `<div class="summary-item"><strong>P0 Prototype Scope:</strong> ${escapeHtml(plan.prototypeScope)}</div>`
+        ].join('');
+    }
+
+    function buildGameSpecItemsHtml(spec = getCurrentGameSpec(), plan = null) {
+        const decision = matchTemplate(spec);
+        const backgroundDisplay = plan && plan.storyPremise ? plan.storyPremise : spec.background;
         return [
             `<div class="summary-item"><strong>Game Type:</strong> ${escapeHtml(spec.gameType)}</div>`,
             `<div class="summary-item"><strong>Art Style:</strong> ${escapeHtml(spec.artStyle)}</div>`,
             `<div class="summary-item"><strong>Game Setting:</strong> ${escapeHtml(spec.gameSetting)}</div>`,
-            `<div class="summary-item"><strong>Background/Story:</strong> ${escapeHtml(spec.background)}</div>`,
+            `<div class="summary-item"><strong>Background/Story:</strong> ${escapeHtml(backgroundDisplay)}</div>`,
             `<div class="summary-item"><strong>Core Gameplay:</strong> ${escapeHtml(spec.coreGameplay)}</div>`,
             `<div class="summary-item"><strong>Player Goal:</strong> ${escapeHtml(spec.playerGoal)}</div>`,
             `<div class="summary-item"><strong>Main Challenge:</strong> ${escapeHtml(spec.mainChallenge)}</div>`,
             `<div class="summary-item"><strong>Progression System:</strong> ${escapeHtml(spec.progressionSystem)}</div>`,
-            `<div class="summary-item"><strong>Difficulty Level:</strong> ${escapeHtml(spec.difficultyLevel)}</div>`
+            `<div class="summary-item"><strong>Difficulty Level:</strong> ${escapeHtml(spec.difficultyLevel)}</div>`,
+            `<div class="summary-item"><strong>P0 Template:</strong> ${escapeHtml(decision.templateLabel)} (${Math.round(decision.confidence * 100)}%)</div>`,
+            `<div class="summary-item"><strong>Decision:</strong> ${decision.canAutoGenerate ? 'Auto generation ready' : 'Manual queue fallback'}</div>`
         ].join('');
     }
 
     function buildGameSpecPlainText(spec = getCurrentGameSpec()) {
+        const decision = matchTemplate(spec);
         return [
             'GameSpec modules',
             `Game Type: ${spec.gameType}`,
@@ -2080,7 +3312,9 @@ Prompt: ${prompt}`
             `Player Goal: ${spec.playerGoal}`,
             `Main Challenge: ${spec.mainChallenge}`,
             `Progression System: ${spec.progressionSystem}`,
-            `Difficulty Level: ${spec.difficultyLevel}`
+            `Difficulty Level: ${spec.difficultyLevel}`,
+            `P0 Template: ${decision.templateLabel} (${Math.round(decision.confidence * 100)}%)`,
+            `Decision: ${decision.canAutoGenerate ? 'Auto generation ready' : 'Manual queue fallback'}`
         ].join('\n');
     }
 
@@ -2091,10 +3325,14 @@ Prompt: ${prompt}`
             'AI game plan',
             `Title: ${plan.title}`,
             `Hook: ${plan.hook}`,
+            `Story Premise: ${plan.storyPremise || plan.setting || ''}`,
             `Core Loop: ${plan.coreLoop}`,
+            `Moment-to-Moment: ${plan.momentToMoment || ''}`,
             `Visual Direction: ${plan.visualDirection}`,
-            `Setting: ${plan.setting}`,
+            `Enemy / Challenge Design: ${plan.enemyDesign || ''}`,
+            `Progression Plan: ${plan.progressionPlan || ''}`,
             `Player Fantasy: ${plan.playerFantasy}`,
+            `P0 Prototype Scope: ${plan.prototypeScope || ''}`,
             '',
             buildGameSpecPlainText(spec)
         ].join('\n');
@@ -2104,24 +3342,22 @@ Prompt: ${prompt}`
         const safePlan = {
             title: plan.title || 'Untitled Game Concept',
             hook: plan.hook || 'A compact game concept ready for generation.',
+            storyPremise: plan.storyPremise || plan.setting || 'A focused premise for the first playable prototype.',
             coreLoop: plan.coreLoop || 'Explore, act, earn feedback, and progress.',
+            momentToMoment: plan.momentToMoment || 'The player should make clear short-cycle decisions every few seconds.',
             visualDirection: plan.visualDirection || (chatSelections.style ? chatSelections.style.label : 'A polished, readable game art direction.'),
-            setting: plan.setting || (chatSelections.setting && chatSelections.setting.label) || 'Custom world',
-            playerFantasy: plan.playerFantasy || 'Step into a clear role and chase a focused goal.'
+            enemyDesign: plan.enemyDesign || plan.challengeDesign || 'Challenge rules should be readable and escalate through the session.',
+            progressionPlan: plan.progressionPlan || 'Progression should create clear power growth and meaningful upgrade choices.',
+            playerFantasy: plan.playerFantasy || 'Step into a clear role and chase a focused goal.',
+            prototypeScope: plan.prototypeScope || 'Build one compact playable loop with win, fail, pause, and restart states.'
         };
         latestGamePlanDraft = buildGamePlanDraftText(safePlan);
 
         return [
             '<div class="selection-summary ai-plan-summary">',
-            '<div class="summary-title">AI game plan</div>',
-            `<div class="summary-name">${escapeHtml(safePlan.title)}</div>`,
-            `<div class="summary-item"><strong>Hook:</strong> ${escapeHtml(safePlan.hook)}</div>`,
-            `<div class="summary-item"><strong>Core Loop:</strong> ${escapeHtml(safePlan.coreLoop)}</div>`,
-            `<div class="summary-item"><strong>Visual Direction:</strong> ${escapeHtml(safePlan.visualDirection)}</div>`,
-            `<div class="summary-item"><strong>Setting:</strong> ${escapeHtml(safePlan.setting)}</div>`,
-            `<div class="summary-item"><strong>Player Fantasy:</strong> ${escapeHtml(safePlan.playerFantasy)}</div>`,
-            '<div class="summary-title">GameSpec modules</div>',
-            buildGameSpecItemsHtml(),
+            buildEnhancedPlanHtml(safePlan),
+            '<div class="summary-title">Recognized GameSpec modules</div>',
+            buildGameSpecItemsHtml(getCurrentGameSpec(), safePlan),
             '</div>'
         ].join('');
     }
@@ -2186,8 +3422,415 @@ Prompt: ${prompt}`
         chatHistory.scrollTop = chatHistory.scrollHeight;
     }
 
-    function composeAndReturn() {
+    function buildGeneratedSpecHtml(plan) {
+        throw new Error('Local generated preview HTML is disabled. Use backend compiled projects.');
+        const generated = plan.generatedSpec;
+        const decision = plan.decision;
+        return [
+            '<div class="generation-result">',
+            '<div class="generation-status">Auto generation path</div>',
+            '<div class="generation-title">P0 GameSpec ready</div>',
+            `<div class="generation-meta"><span>${escapeHtml(decision.templateLabel)}</span><span>${Math.round(decision.confidence * 100)}% match</span></div>`,
+            '<div class="playable-shell">',
+            '<canvas class="game-preview-canvas" width="640" height="360" tabindex="0" aria-label="Playable generated game preview"></canvas>',
+            '<div class="game-preview-panel">',
+            `<strong>${escapeHtml(generated.meta.gameName)}</strong>`,
+            `<span>${escapeHtml(generated.flow.winCondition.description)}</span>`,
+            `<small>${escapeHtml(generated.systems.join(' + '))}</small>`,
+            '<div class="game-preview-actions">',
+            '<button type="button" class="game-preview-btn" data-game-action="restart">Restart</button>',
+            '<button type="button" class="game-preview-btn" data-game-action="pause">Pause</button>',
+            '</div>',
+            '</div>',
+            '</div>',
+            `<pre class="spec-code">${escapeHtml(JSON.stringify(generated, null, 2))}</pre>`,
+            '</div>'
+        ].join('');
+    }
+
+    function showAutoGenerationResult(plan) {
+        throw new Error('Local auto-generation result rendering is disabled. Use backend compiled projects.');
+        addBotMessage(buildGeneratedSpecHtml(plan), msgDiv => {
+            const inputArea = document.querySelector('.chat-input-wrapper');
+            if (inputArea) inputArea.style.display = '';
+            chatHistory.classList.remove('is-generating');
+            mountGeneratedGamePreview(msgDiv, plan);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        });
+    }
+
+    function mountGeneratedGamePreview(container, plan) {
+        throw new Error('Local mounted game preview is disabled. Use backend generated preview iframe.');
+        const canvas = container.querySelector('.game-preview-canvas');
+        if (!canvas || !plan || !plan.generatedSpec) return;
+        const ctx = canvas.getContext('2d');
+        const spec = plan.generatedSpec;
+        const isTowerDefense = spec.meta.gameType === 'tower-defense';
+        const isBulletHell = spec.meta.gameType === 'bullet-hell';
+        const keys = new Set();
+        let rafId = 0;
+        let paused = false;
+        let lastTime = performance.now();
+        let spawnTimer = 0;
+        let attackTimer = 0;
+        let enemyShotTimer = 0;
+
+        const base = { x: canvas.width / 2, y: canvas.height / 2, hp: isTowerDefense ? 160 : 0 };
+        const player = { x: canvas.width / 2, y: canvas.height / 2, r: 12, hp: spec.player.components.stats.maxHp, speed: spec.player.components.stats.speed };
+        const state = { time: 0, score: 0, level: 1, over: false, won: false, enemies: [], bullets: [], enemyBullets: [], towers: [] };
+
+        function resetGame() {
+            player.x = canvas.width / 2;
+            player.y = canvas.height / 2;
+            player.hp = spec.player.components.stats.maxHp;
+            base.hp = isTowerDefense ? 160 : 0;
+            state.time = 0;
+            state.score = 0;
+            state.level = 1;
+            state.over = false;
+            state.won = false;
+            state.enemies = [];
+            state.bullets = [];
+            state.enemyBullets = [];
+            state.towers = isTowerDefense
+                ? [{ x: 220, y: 180, cd: 0 }, { x: 420, y: 180, cd: 0 }]
+                : [];
+            spawnTimer = 0;
+            attackTimer = 0;
+            enemyShotTimer = 0;
+            lastTime = performance.now();
+            paused = false;
+            canvas.focus();
+        }
+
+        function spawnEnemy() {
+            const edge = Math.floor(Math.random() * 4);
+            const pos = [
+                { x: -20, y: Math.random() * canvas.height },
+                { x: canvas.width + 20, y: Math.random() * canvas.height },
+                { x: Math.random() * canvas.width, y: -20 },
+                { x: Math.random() * canvas.width, y: canvas.height + 20 }
+            ][edge];
+            state.enemies.push({
+                x: pos.x,
+                y: pos.y,
+                r: isBulletHell ? 10 : 12,
+                hp: isBulletHell ? 22 : 30,
+                speed: isTowerDefense ? 44 : (isBulletHell ? 70 : 58),
+                cd: Math.random()
+            });
+        }
+
+        function shootFrom(x, y, tx, ty, hostile = false) {
+            const dx = tx - x;
+            const dy = ty - y;
+            const dist = Math.hypot(dx, dy) || 1;
+            const list = hostile ? state.enemyBullets : state.bullets;
+            list.push({
+                x,
+                y,
+                vx: dx / dist * (hostile ? 145 : 260),
+                vy: dy / dist * (hostile ? 145 : 260),
+                r: hostile ? 4 : 5,
+                damage: hostile ? 8 : 18,
+                life: hostile ? 4 : 2.2
+            });
+        }
+
+        function nearestEnemy(x, y, range = 220) {
+            let best = null;
+            let bestDist = range;
+            state.enemies.forEach(enemy => {
+                const dist = Math.hypot(enemy.x - x, enemy.y - y);
+                if (dist < bestDist) {
+                    best = enemy;
+                    bestDist = dist;
+                }
+            });
+            return best;
+        }
+
+        function update(dt) {
+            if (paused || state.over) return;
+            state.time += dt;
+            if (state.time >= 60) {
+                state.over = true;
+                state.won = true;
+            }
+
+            if (!isTowerDefense) {
+                const dx = (keys.has('ArrowRight') || keys.has('KeyD') ? 1 : 0) - (keys.has('ArrowLeft') || keys.has('KeyA') ? 1 : 0);
+                const dy = (keys.has('ArrowDown') || keys.has('KeyS') ? 1 : 0) - (keys.has('ArrowUp') || keys.has('KeyW') ? 1 : 0);
+                const len = Math.hypot(dx, dy) || 1;
+                player.x = Math.max(player.r, Math.min(canvas.width - player.r, player.x + dx / len * player.speed * dt));
+                player.y = Math.max(player.r, Math.min(canvas.height - player.r, player.y + dy / len * player.speed * dt));
+            }
+
+            spawnTimer -= dt;
+            if (spawnTimer <= 0) {
+                spawnEnemy();
+                spawnTimer = Math.max(0.35, isBulletHell ? 0.85 : 1.15 - state.time * 0.006);
+            }
+
+            attackTimer -= dt;
+            if (!isTowerDefense && attackTimer <= 0) {
+                const target = nearestEnemy(player.x, player.y, isBulletHell ? 360 : 160);
+                if (target) {
+                    if (isBulletHell || keys.has('Space')) {
+                        shootFrom(player.x, player.y, target.x, target.y);
+                    } else {
+                        target.hp -= 16;
+                    }
+                }
+                attackTimer = isBulletHell ? 0.22 : 0.55;
+            }
+
+            if (isTowerDefense) {
+                state.towers.forEach(tower => {
+                    tower.cd -= dt;
+                    if (tower.cd <= 0) {
+                        const target = nearestEnemy(tower.x, tower.y, 260);
+                        if (target) {
+                            shootFrom(tower.x, tower.y, target.x, target.y);
+                            tower.cd = 0.45;
+                        }
+                    }
+                });
+            }
+
+            enemyShotTimer -= dt;
+            if (isBulletHell && enemyShotTimer <= 0) {
+                state.enemies.slice(0, 8).forEach(enemy => shootFrom(enemy.x, enemy.y, player.x, player.y, true));
+                enemyShotTimer = 1.2;
+            }
+
+            state.enemies.forEach(enemy => {
+                const tx = isTowerDefense ? base.x : player.x;
+                const ty = isTowerDefense ? base.y : player.y;
+                const dx = tx - enemy.x;
+                const dy = ty - enemy.y;
+                const dist = Math.hypot(dx, dy) || 1;
+                enemy.x += dx / dist * enemy.speed * dt;
+                enemy.y += dy / dist * enemy.speed * dt;
+                if (dist < enemy.r + (isTowerDefense ? 18 : player.r)) {
+                    if (isTowerDefense) {
+                        base.hp -= 14;
+                    } else {
+                        player.hp -= 12;
+                    }
+                    enemy.hp = 0;
+                }
+            });
+
+            [state.bullets, state.enemyBullets].forEach(list => {
+                list.forEach(bullet => {
+                    bullet.x += bullet.vx * dt;
+                    bullet.y += bullet.vy * dt;
+                    bullet.life -= dt;
+                });
+            });
+
+            state.bullets.forEach(bullet => {
+                state.enemies.forEach(enemy => {
+                    if (enemy.hp > 0 && Math.hypot(enemy.x - bullet.x, enemy.y - bullet.y) < enemy.r + bullet.r) {
+                        enemy.hp -= bullet.damage;
+                        bullet.life = 0;
+                    }
+                });
+            });
+
+            state.enemyBullets.forEach(bullet => {
+                if (Math.hypot(player.x - bullet.x, player.y - bullet.y) < player.r + bullet.r) {
+                    player.hp -= bullet.damage;
+                    bullet.life = 0;
+                }
+            });
+
+            const before = state.enemies.length;
+            state.enemies = state.enemies.filter(enemy => enemy.hp > 0);
+            state.score += before - state.enemies.length;
+            state.level = 1 + Math.floor(state.score / 8);
+            state.bullets = state.bullets.filter(bullet => bullet.life > 0);
+            state.enemyBullets = state.enemyBullets.filter(bullet => bullet.life > 0);
+
+            if ((!isTowerDefense && player.hp <= 0) || (isTowerDefense && base.hp <= 0)) {
+                state.over = true;
+                state.won = false;
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#071018';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = 'rgba(120,185,255,0.08)';
+            for (let x = 0; x < canvas.width; x += 32) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += 32) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            }
+
+            if (isTowerDefense) {
+                ctx.fillStyle = '#facc15';
+                ctx.beginPath(); ctx.arc(base.x, base.y, 20, 0, Math.PI * 2); ctx.fill();
+                state.towers.forEach(tower => {
+                    ctx.fillStyle = '#42a5ff';
+                    ctx.fillRect(tower.x - 12, tower.y - 12, 24, 24);
+                });
+            } else {
+                ctx.fillStyle = '#88f3d2';
+                ctx.beginPath(); ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2); ctx.fill();
+            }
+
+            state.enemies.forEach(enemy => {
+                ctx.fillStyle = isBulletHell ? '#42a5ff' : '#ff6b6b';
+                ctx.beginPath(); ctx.arc(enemy.x, enemy.y, enemy.r, 0, Math.PI * 2); ctx.fill();
+            });
+            state.bullets.forEach(bullet => {
+                ctx.fillStyle = '#facc15';
+                ctx.beginPath(); ctx.arc(bullet.x, bullet.y, bullet.r, 0, Math.PI * 2); ctx.fill();
+            });
+            state.enemyBullets.forEach(bullet => {
+                ctx.fillStyle = '#ff5fd2';
+                ctx.beginPath(); ctx.arc(bullet.x, bullet.y, bullet.r, 0, Math.PI * 2); ctx.fill();
+            });
+
+            ctx.fillStyle = 'rgba(5,8,12,0.72)';
+            ctx.fillRect(12, 12, 265, 64);
+            ctx.fillStyle = '#fff';
+            ctx.font = '14px Inter, sans-serif';
+            ctx.fillText(`Time ${Math.floor(state.time)}s / Score ${state.score} / Lv ${state.level}`, 24, 36);
+            ctx.fillText(isTowerDefense ? `Base HP ${Math.max(0, Math.floor(base.hp))}` : `HP ${Math.max(0, Math.floor(player.hp))}`, 24, 58);
+            ctx.fillStyle = 'rgba(255,255,255,0.62)';
+            ctx.font = '12px Inter, sans-serif';
+            ctx.fillText(isTowerDefense ? 'Auto towers defend the base' : 'WASD/Arrows move, Space fires', 360, 30);
+
+            if (state.over) {
+                ctx.fillStyle = 'rgba(0,0,0,0.62)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = state.won ? '#88f3d2' : '#ff8b8b';
+                ctx.font = 'bold 28px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(state.won ? 'Prototype Cleared' : 'Run Failed', canvas.width / 2, canvas.height / 2 - 8);
+                ctx.fillStyle = '#fff';
+                ctx.font = '14px Inter, sans-serif';
+                ctx.fillText('Press Restart to run again', canvas.width / 2, canvas.height / 2 + 24);
+                ctx.textAlign = 'left';
+            }
+        }
+
+        function loop(now) {
+            const dt = Math.min(0.033, (now - lastTime) / 1000);
+            lastTime = now;
+            update(dt);
+            draw();
+            rafId = requestAnimationFrame(loop);
+        }
+
+        const onKeyDown = event => {
+            keys.add(event.code);
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(event.code)) event.preventDefault();
+        };
+        const onKeyUp = event => keys.delete(event.code);
+        const onCanvasClick = event => {
+            canvas.focus();
+            if (isTowerDefense && state.towers.length < 6) {
+                const rect = canvas.getBoundingClientRect();
+                state.towers.push({
+                    x: (event.clientX - rect.left) / rect.width * canvas.width,
+                    y: (event.clientY - rect.top) / rect.height * canvas.height,
+                    cd: 0
+                });
+            }
+        };
+
+        const restartBtn = container.querySelector('[data-game-action="restart"]');
+        const pauseBtn = container.querySelector('[data-game-action="pause"]');
+        if (restartBtn) restartBtn.addEventListener('click', resetGame);
+        if (pauseBtn) pauseBtn.addEventListener('click', () => {
+            paused = !paused;
+            pauseBtn.textContent = paused ? 'Resume' : 'Pause';
+            canvas.focus();
+        });
+        window.addEventListener('keydown', onKeyDown);
+        window.addEventListener('keyup', onKeyUp);
+        canvas.addEventListener('click', onCanvasClick);
+
+        const cleanup = () => {
+            cancelAnimationFrame(rafId);
+            window.removeEventListener('keydown', onKeyDown);
+            window.removeEventListener('keyup', onKeyUp);
+            canvas.removeEventListener('click', onCanvasClick);
+        };
+        activeGameCleanups.push(cleanup);
+        resetGame();
+        rafId = requestAnimationFrame(loop);
+    }
+
+    async function compileTemplateProject(spec, decision, templatePatchPlan) {
+        if (!hasLiveAIProvider()) throw createModelNotConfiguredError('compile');
+
+        const response = await withTimeout(fetch(apiUrl('/api/template-project/compile'), {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                gameSpec: spec,
+                templateDecision: decision,
+                selectedModel: getActiveModelMeta(),
+                aiPlanDraft: latestGamePlanDraft,
+                templatePatchPlan
+            })
+        }), TEMPLATE_COMPILE_TIMEOUT_MS);
+
+        if ([404, 405, 501].includes(response.status)) {
+            throw createTemplateCompileUnavailableError();
+        }
+
+        const data = await parseJsonResponse(response);
+        const project = data.project || data;
+        if (!project || typeof project !== 'object') {
+            const error = new Error('Template compiler did not return a project payload.');
+            error.code = 'TEMPLATE_COMPILE_FAILED';
+            throw error;
+        }
+        if (project.validationReport && project.validationReport.ok === false) {
+            const error = new Error('Template compiler returned a failed validation report.');
+            error.code = 'TEMPLATE_COMPILE_FAILED';
+            error.validationReport = project.validationReport;
+            throw error;
+        }
+        return project;
+    }
+
+    function buildCompiledProjectHtml(project, decision) {
+        const files = Array.isArray(project.files) ? project.files : [];
+        const validation = project.validationReport || {};
+        const checks = Array.isArray(validation.checks) ? validation.checks : [];
+        const previewUrl = resolveBackendUrl(project.previewUrl || project.url || '');
+
+        return [
+            '<div class="generation-result compiled-project-result">',
+            '<div class="generation-status">AI template compile path</div>',
+            `<div class="generation-title">${escapeHtml(project.name || project.gameName || 'Playable project ready')}</div>`,
+            `<div class="generation-meta"><span>${escapeHtml(decision.templateLabel || 'Template')}</span><span>${escapeHtml(getActiveModelMeta().label)}</span></div>`,
+            files.length
+                ? `<div class="summary-title">Generated files</div><div class="compiled-file-list">${files.map(file => `<span>${escapeHtml(String(file))}</span>`).join('')}</div>`
+                : '<div class="summary-item">The compiler did not return a file list.</div>',
+            checks.length
+                ? `<div class="summary-title">Validation report</div>${checks.map(check => `<div class="summary-item"><strong>${escapeHtml(check.ok === false ? 'Needs review' : 'Pass')}:</strong> ${escapeHtml(check.label || check.message || String(check))}</div>`).join('')}`
+                : '',
+            previewUrl
+                ? `<iframe class="compiled-preview-frame" src="${escapeHtml(previewUrl)}" title="Playable generated game preview"></iframe>`
+                : '<div class="summary-item">No preview URL was returned by the compiler.</div>',
+            '</div>'
+        ].join('');
+    }
+
+    async function composeAndReturn() {
         const spec = getCurrentGameSpec();
+        const decision = matchTemplate(spec);
         savedPrompt = `Your Concept: ${spec.background}
 Game Type: ${spec.gameType}
 Art Style: ${spec.artStyle}
@@ -2196,34 +3839,30 @@ Core Gameplay: ${spec.coreGameplay}
 Player Goal: ${spec.playerGoal}
 Main Challenge: ${spec.mainChallenge}
 Progression System: ${spec.progressionSystem}
-Difficulty Level: ${spec.difficultyLevel}`;
+Difficulty Level: ${spec.difficultyLevel}
+P0 Template Decision: ${decision.canAutoGenerate ? 'auto' : 'fallback'}
+Template: ${decision.templateLabel}
+Confidence: ${Math.round(decision.confidence * 100)}%
+Decision Source: ${decision.source || 'unknown'}`;
 
         // 鐩存帴杩涘叆鐢熸垚娴佺▼锛屾枃妗堝凡鍦?askFinalConfirmation 涓睍绀鸿繃
-        regTimeout(() => {
-            // Focus on the final summary by scrolling it to the top
-            const messages = chatHistory.querySelectorAll('.chat-message');
-            const summaryMessage = messages[messages.length - 1];
-            if (summaryMessage) {
-                summaryMessage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const pendingMessage = addBotMessage('', null, { pending: true });
+        try {
+            if (!decision.canAutoGenerate) {
+                const error = new Error(decision.fallbackMessage || 'This request is outside the current automatic template coverage.');
+                error.code = 'TEMPLATE_COMPILE_FAILED';
+                throw error;
             }
-            chatHistory.classList.add('is-generating');
-
-            // UI Transition: hide chat input
-            const inputArea = document.querySelector('.chat-input-wrapper');
-            if (inputArea) inputArea.style.display = 'none';
-
-            // Move progress bar into chat
-            progressContainer.style.display = 'flex';
-            chatHistory.appendChild(progressContainer);
-
-            // Ensure scroll to see the progress bar
-            regTimeout(() => {
-                chatHistory.scrollTop = chatHistory.scrollHeight;
-            }, 100);
-
-            // Start animation
-            runGenerationAnimation();
-        }, 1200);
+            const templatePatchPlan = await generateTemplatePatchPlan(spec, decision);
+            const project = await compileTemplateProject(spec, decision, templatePatchPlan);
+            if (pendingMessage) pendingMessage.finish(buildCompiledProjectHtml(project, decision));
+        } catch (error) {
+            showAIFlowError(error, {
+                stage: 'compile',
+                prompt: savedPrompt,
+                pendingMessage
+            });
+        }
     }
 
     function clearChatTimers() {
@@ -2235,6 +3874,9 @@ Difficulty Level: ${spec.difficultyLevel}`;
         generationTimeouts = [];
         botWorkIntervals.forEach(clearInterval);
         botWorkIntervals = [];
+        activeGameCleanups.forEach(cleanup => cleanup());
+        activeGameCleanups = [];
+        latestTemplatePatchPlan = null;
 
         if (analysisTimeout) {
             clearTimeout(analysisTimeout);
@@ -2590,6 +4232,61 @@ Difficulty Level: ${spec.difficultyLevel}`;
         loadHistory();
     }
 
+    function buildManualQueueContext(email) {
+        const spec = getCurrentGameSpec();
+        const decision = matchTemplate(spec);
+        const visibleMessages = chatHistory
+            ? Array.from(chatHistory.querySelectorAll('.chat-message')).slice(-12).map(item => item.textContent.trim().replace(/\s+/g, ' ').slice(0, 800))
+            : [];
+        return {
+            submittedAt: new Date().toISOString(),
+            email,
+            prompt: savedPrompt,
+            currentModel: getActiveModelMeta(),
+            publicAIConfig: createPublicAIConfigSnapshot(),
+            gameSpec: spec,
+            templateDecision: decision,
+            capability: analysisState.capability,
+            missingFields: analysisState.missingFields,
+            aiGamePlanDraft: latestGamePlanDraft,
+            templatePatchPlan: latestTemplatePatchPlan,
+            lastError: latestAIFlowError,
+            chatTranscript: visibleMessages
+        };
+    }
+
+    async function submitManualQueue(email) {
+        const context = buildManualQueueContext(email);
+        let response;
+        try {
+            response = await fetch(apiUrl('/api/waitlist'), {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email,
+                    prompt: savedPrompt,
+                    context
+                })
+            });
+        } catch (error) {
+            throw new Error('Manual queue backend is unavailable. Please try again after the server is running.');
+        }
+
+        if (response.ok) {
+            return { ok: true, target: 'backend', context };
+        }
+
+        let message = 'Manual queue submission failed.';
+        try {
+            const data = await response.json();
+            message = (data && (data.message || data.error)) || message;
+        } catch (error) {
+            // Keep the generic message when the backend did not return JSON.
+        }
+        throw new Error(message);
+    }
+
     // Initialize History
     loadHistory();
     cleanupChatModelBadges();
@@ -2619,7 +4316,7 @@ Difficulty Level: ${spec.difficultyLevel}`;
 
     // Email Modal Submit Logic
     if (emailSubmitForm) {
-        emailSubmitForm.addEventListener('submit', (e) => {
+        emailSubmitForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = modalEmailInput.value.trim();
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -2631,44 +4328,34 @@ Difficulty Level: ${spec.difficultyLevel}`;
             modalEmailSubmitBtn.disabled = true;
             modalEmailSubmitBtn.textContent = 'Sending...';
 
-            const formData = new FormData();
-            formData.append("access_key", "ad7acb48-28cd-4aca-9a3f-b497205b84b9");
-            formData.append("email", email);
-            formData.append("prompt", savedPrompt);
-            formData.append("subject", "New Droi AI Waitlist Submission (Inspire Me)");
-
-            fetch('https://api.web3forms.com/submit', {
-                method: 'POST',
-                body: formData
-            })
-                .then(async response => {
+            try {
+                    await submitManualQueue(email);
                     modalEmailSubmitBtn.disabled = false;
                     modalEmailSubmitBtn.textContent = 'Send to Email';
 
-                    if (response.status === 200) {
-                        currentJoinedCount++;
-                        const joinedCountEl = document.getElementById('joinedCount');
-                        if (joinedCountEl) joinedCountEl.textContent = `${currentJoinedCount} people`;
-                        localStorage.setItem('droi_ai_joined_count', currentJoinedCount.toString());
+                    currentJoinedCount++;
+                    const joinedCountEl = document.getElementById('joinedCount');
+                    if (joinedCountEl) joinedCountEl.textContent = `${currentJoinedCount} people`;
+                    localStorage.setItem('droi_ai_joined_count', currentJoinedCount.toString());
 
-                        // Hide email modal
-                        emailModal.classList.remove('active');
-                        setTimeout(() => { emailModal.style.display = 'none'; }, 300);
+                    // Hide email modal
+                    emailModal.classList.remove('active');
+                    setTimeout(() => { emailModal.style.display = 'none'; }, 300);
 
-                        // Show success modal
-                        if (successModal) {
-                            successModal.style.display = 'flex';
-                            successModal.offsetWidth;
-                            successModal.classList.add('active');
-                        }
+                    // Show success modal
+                    if (successModal) {
+                        successModal.style.display = 'flex';
+                        successModal.offsetWidth;
+                        successModal.classList.add('active');
+                    }
 
-                        // Append bot messages
-                        addBotMessage("All systems go! Your game assets and logic are finalized. We'll send it to your inbox within 15 working days");
-                        addBotMessage("Would you like to explore another creative spark?");
+                    // Append bot messages
+                    addBotMessage("All systems go! Your game assets and logic are finalized. We'll send it to your inbox within 15 working days");
+                    addBotMessage("Would you like to explore another creative spark?");
 
-                        const msgDiv = document.createElement('div');
-                        msgDiv.className = 'chat-message bot';
-                        msgDiv.innerHTML = `
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = 'chat-message bot';
+                    msgDiv.innerHTML = `
                         <div class="chat-content-wrap">
                             <div class="chat-options-list" style="margin-top: 10px;">
                                 <button type="button" class="chat-action-btn chat-action-exit" id="chatNewIdeaBtn" style="margin-top: 10px; font-size: 0.9rem;">
@@ -2681,20 +4368,16 @@ Difficulty Level: ${spec.difficultyLevel}`;
                             </div>
                         </div>
                     `;
-                        chatHistory.appendChild(msgDiv);
-                        chatHistory.scrollTop = chatHistory.scrollHeight;
+                    chatHistory.appendChild(msgDiv);
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
 
-                        msgDiv.querySelector('#chatNewIdeaBtn').addEventListener('click', resetChat);
-                    } else {
-                        throw new Error("Form submission failed");
-                    }
-                })
-                .catch(error => {
-                    console.error("Error:", error);
-                    alert("Something went wrong with the submission. Please try again.");
-                    modalEmailSubmitBtn.disabled = false;
-                    modalEmailSubmitBtn.textContent = 'Send to Email';
-                });
+                    msgDiv.querySelector('#chatNewIdeaBtn').addEventListener('click', resetChat);
+            } catch (error) {
+                console.error("Error:", error);
+                alert("Something went wrong with the submission. Please try again.");
+                modalEmailSubmitBtn.disabled = false;
+                modalEmailSubmitBtn.textContent = 'Send to Email';
+            }
         });
     }
 
@@ -2878,10 +4561,18 @@ Difficulty Level: ${spec.difficultyLevel}`;
     });
 
     // Animation Sequence Logic with Progress Bar
-    async function runGenerationAnimation() {
+    async function runGenerationAnimation(generationPlan = null) {
+        throw new Error('Legacy local generation animation is disabled. Use AI-first backend compile.');
+        const plan = generationPlan || buildGenerationPlan();
+        const autoPath = Boolean(plan.decision && plan.decision.canAutoGenerate);
         progressContainer.style.display = 'flex';
         statsContainer.style.display = 'none';
         progressMessage.style.display = 'none';
+        if (progressMessage) {
+            progressMessage.textContent = autoPath
+                ? 'Template matched. Building the P0 GameSpec preview now.'
+                : (plan.decision && plan.decision.fallbackMessage) || 'This idea needs manual handling.';
+        }
 
         if (progressBarFill) progressBarFill.style.width = '0%';
         if (progressText) progressText.textContent = '0%';
@@ -2900,12 +4591,18 @@ Difficulty Level: ${spec.difficultyLevel}`;
             stepElement.classList.add('active');
         };
 
+        [step1, step2, step3].forEach(stepElement => {
+            if (!stepElement) return;
+            stepElement.classList.remove('active', 'completed');
+        });
+
         let currentProgress = 0;
-        const targetProgress = Math.floor(Math.random() * (92 - 82 + 1)) + 82;
+        const targetProgress = autoPath ? 100 : Math.floor(Math.random() * (92 - 82 + 1)) + 82;
 
         // Start Progress Bar
         generationInterval = setInterval(() => {
-            currentProgress += 1;
+            currentProgress += autoPath ? 2 : 1;
+            if (currentProgress > targetProgress) currentProgress = targetProgress;
             if (progressBarFill) progressBarFill.style.width = currentProgress + '%';
             if (progressText) progressText.textContent = currentProgress + '%';
 
@@ -2914,19 +4611,22 @@ Difficulty Level: ${spec.difficultyLevel}`;
                 generationInterval = null;
                 if (progressMessage) progressMessage.style.display = 'block';
 
-                // Keep step 3 active (spinning) indefinitely, wait a bit, then switch to email
-                // STAY IN CHAT and trigger email flow
                 generationTimeouts.push(setTimeout(() => {
-                    // Show Email Modal
-                    if (emailModal) {
-                        emailModal.style.display = 'flex';
-                        emailModal.offsetWidth;
-                        emailModal.classList.add('active');
-                        modalEmailInput.focus();
+                    if (autoPath) {
+                        completeStep(step3);
+                        progressContainer.style.display = 'none';
+                        showAutoGenerationResult(plan);
+                    } else {
+                        if (emailModal) {
+                            emailModal.style.display = 'flex';
+                            emailModal.offsetWidth;
+                            emailModal.classList.add('active');
+                            modalEmailInput.focus();
+                        }
                     }
-                }, 2000));
+                }, autoPath ? 650 : 2000));
             }
-        }, 120); // Testing mode: ~10 seconds total to reach ~85%
+        }, autoPath ? 70 : 120);
 
         // Start Steps Sequence asynchronously
         // Step 1: ~3 seconds
