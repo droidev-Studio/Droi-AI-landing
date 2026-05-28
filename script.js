@@ -499,19 +499,27 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadRuntimeConfig() {
         if (window.DROI_API_BASE) {
             API_BASE_URL = normalizeApiBaseUrl(window.DROI_API_BASE);
+            runtimeConfigState = 'inline';
             return;
         }
 
         try {
             const response = await fetch('droi-config.json', { cache: 'no-store' });
-            if (!response.ok) return;
+            if (!response.ok) {
+                runtimeConfigState = API_BASE_URL ? 'local-default' : 'missing';
+                return;
+            }
             const config = await response.json();
             const apiBase = config.apiBaseUrl || config.apiBase || config.backendUrl || '';
             if (apiBase) {
                 API_BASE_URL = normalizeApiBaseUrl(apiBase);
+                runtimeConfigState = 'file';
+            } else {
+                runtimeConfigState = API_BASE_URL ? 'local-default' : 'missing';
             }
         } catch (error) {
             // Static hosting can omit droi-config.json; the UI will show model/backend errors instead of faking generation.
+            runtimeConfigState = API_BASE_URL ? 'local-default' : 'missing';
         }
     }
 
@@ -639,9 +647,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function loadPlatformModels() {
+        platformModelLoadState = 'loading';
+        platformModelLoadMessage = '';
         try {
             const response = await fetch(apiUrl('/api/models'), { credentials: 'include' });
-            if (!response.ok) return;
+            if (!response.ok) {
+                platformAIAvailable = false;
+                platformModelLoadState = 'backend-error';
+                platformModelLoadMessage = `Backend model list returned HTTP ${response.status}.`;
+                updateModelUI();
+                return;
+            }
             const data = await response.json();
             platformAIAvailable = true;
             normalizePublicModels(data.models || data.publicModels || data);
@@ -650,10 +666,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 const defaultId = data.defaultModel || data.defaultModelId;
                 const defaultModel = platformModels.find(item => item.id === defaultId || item.modelId === defaultId) || platformModels[0];
                 applyModelSelection(defaultModel);
+                platformModelLoadState = 'ready';
+                platformModelLoadMessage = '';
+            } else {
+                platformModelLoadState = 'no-models';
+                platformModelLoadMessage = 'Backend is reachable, but no provider API key is enabled.';
             }
             updateModelUI();
         } catch (error) {
-            // Static preview keeps bundled model defaults.
+            platformAIAvailable = false;
+            platformModels = [];
+            platformModelLoadState = runtimeConfigState === 'missing' ? 'config-missing' : 'backend-unreachable';
+            platformModelLoadMessage = runtimeConfigState === 'missing'
+                ? 'Static deployment is missing droi-config.json, so the frontend does not know the backend URL.'
+                : 'Backend is unreachable. Check apiBaseUrl, deployment status, and CORS.';
+            updateModelUI();
         }
     }
 
@@ -764,6 +791,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let adminSession = loadAdminSession();
     let platformAIAvailable = false;
     let platformModels = [];
+    let runtimeConfigState = window.DROI_API_BASE ? 'inline' : (API_BASE_URL ? 'local-default' : 'pending');
+    let platformModelLoadState = 'idle';
+    let platformModelLoadMessage = '';
     let googleAuthConfigured = false;
     const aiService = new AIService(() => aiConfig, recordUsage);
 
@@ -1243,7 +1273,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 stage,
                 title: 'Current model is not available',
                 modelLabel: active.label,
-                message: 'AI generation needs a configured model before it can continue.',
+                message: getBackendModelStatusMessage(),
                 technicalMessage: error && error.message ? error.message : '',
                 actions: ['switch_model']
             };
@@ -1276,7 +1306,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createModelNotConfiguredError(stage) {
         const active = getActiveModelMeta();
-        const error = new Error(`${active.label} is not configured for live AI generation.`);
+        const error = new Error(getBackendModelStatusMessage() || `${active.label} is not configured for live AI generation.`);
         error.code = 'MODEL_NOT_CONFIGURED';
         error.stage = stage;
         return error;
@@ -2247,7 +2277,7 @@ Prompt: ${prompt}`
         if (activeModelName) activeModelName.textContent = active.label;
         if (modelSelector) {
             modelSelector.style.setProperty('--model-color', active.color);
-            modelSelector.title = hasLiveAIProvider() ? `Current model: ${active.label}` : 'Platform AI is not configured.';
+            modelSelector.title = hasLiveAIProvider() ? `Current model: ${active.label}` : getBackendModelStatusMessage();
         }
         if (settingsBtn) {
             settingsBtn.classList.toggle('is-configured', hasLiveAIProvider());
@@ -2258,6 +2288,25 @@ Prompt: ${prompt}`
         renderProviderList();
         renderModelDropdown();
         updateAdminUI();
+    }
+
+    function getBackendModelStatusMessage() {
+        if (platformModelLoadState === 'config-missing') {
+            return 'Static frontend is missing droi-config.json. Deploy the backend and set apiBaseUrl.';
+        }
+        if (platformModelLoadState === 'backend-unreachable') {
+            return 'Backend is unreachable. Check droi-config.json apiBaseUrl, deployment status, and CORS.';
+        }
+        if (platformModelLoadState === 'backend-error') {
+            return platformModelLoadMessage || 'Backend model list failed.';
+        }
+        if (platformModelLoadState === 'no-models') {
+            return 'Backend is connected, but no provider API key is configured.';
+        }
+        if (platformModelLoadState === 'loading') {
+            return 'Loading backend models...';
+        }
+        return 'Platform AI is not configured.';
     }
 
     function renderModelDropdown() {
@@ -2275,7 +2324,7 @@ Prompt: ${prompt}`
                 renderModelGroup(providerId, groups[providerId]);
             });
         } else {
-            modelDropdownList.innerHTML = '<div class="model-empty">No backend models enabled. Configure .env and restart the backend.</div>';
+            modelDropdownList.innerHTML = `<div class="model-empty">${escapeHtml(getBackendModelStatusMessage())}</div>`;
         }
 
         if (!modelDropdownList.children.length) {
