@@ -238,7 +238,9 @@ function testManualQueue() {
     context: {
       currentModel: { label: 'GPT 5.5 High' },
       gameSpec: { gameType: 'space shooter' },
-      lastError: { code: 'MODEL_TIMEOUT' }
+      lastError: { code: 'MODEL_TIMEOUT' },
+      validationReport: { ok: false, checks: [{ ok: false, label: 'compile failed' }] },
+      generationReport: { aiFirst: true, selectedModel: { label: 'GPT 5.5 High' } }
     }
   });
   assert.ok(submission.id.startsWith('manual-'));
@@ -246,6 +248,8 @@ function testManualQueue() {
   const record = JSON.parse(fs.readFileSync(recordPath, 'utf8'));
   assert.strictEqual(record.email, 'player@example.com');
   assert.strictEqual(record.context.lastError.code, 'MODEL_TIMEOUT');
+  assert.strictEqual(record.context.validationReport.checks[0].label, 'compile failed');
+  assert.strictEqual(record.context.generationReport.aiFirst, true);
 
   assert.throws(
     () => saveManualQueueSubmission({ email: 'bad-email', prompt: 'x', context: {} }),
@@ -291,6 +295,10 @@ function testNoClientSecrets() {
   assert.ok(clientScript.includes('Generation trace'));
   assert.ok(clientScript.includes('generationReport'));
   assert.ok(clientScript.includes('AI-first:'));
+  assert.ok(clientScript.includes('compiledProject'));
+  assert.ok(clientScript.includes('generatedFiles'));
+  assert.ok(clientScript.includes('validationReport'));
+  assert.ok(clientScript.includes('ai-error-validation'));
   assert.ok(clientScript.indexOf('TEMPLATE_CATALOG = [') > clientScript.indexOf('let TEMPLATE_CATALOG'));
   assert.ok(clientScript.includes('\\u98de\\u884c\\u5c04\\u51fb'));
   assert.ok(clientScript.includes('\\u8089\\u9e3d'));

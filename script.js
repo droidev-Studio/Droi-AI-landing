@@ -951,6 +951,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeGameCleanups = [];
     let latestGamePlanDraft = '';
     let latestTemplatePatchPlan = null;
+    let latestCompiledProject = null;
     let latestAIFlowRetry = null;
     let latestAIFlowError = null;
 
@@ -1404,6 +1405,8 @@ Do not answer with the field name itself. If the user only repeats the field nam
                 modelLabel: active.label,
                 message: 'The model did not respond in time. Retry this request, or switch to a faster model.',
                 technicalMessage: error && error.message ? error.message : '',
+                validationReport: error && error.validationReport ? error.validationReport : null,
+                generationReport: error && error.generationReport ? error.generationReport : null,
                 actions: ['retry_current_model', 'switch_model']
             };
         }
@@ -1416,6 +1419,8 @@ Do not answer with the field name itself. If the user only repeats the field nam
                 modelLabel: active.label,
                 message: getBackendModelStatusMessage(),
                 technicalMessage: error && error.message ? error.message : '',
+                validationReport: error && error.validationReport ? error.validationReport : null,
+                generationReport: error && error.generationReport ? error.generationReport : null,
                 actions: ['open_deployment_guide', 'retry_current_model', 'switch_model']
             };
         }
@@ -1430,6 +1435,8 @@ Do not answer with the field name itself. If the user only repeats the field nam
                     ? error.message
                     : 'The AI plan is ready, but the game project compiler could not finish this build.',
                 technicalMessage: '',
+                validationReport: error && error.validationReport ? error.validationReport : null,
+                generationReport: error && error.generationReport ? error.generationReport : null,
                 actions: ['retry_current_model']
             };
         }
@@ -1441,6 +1448,8 @@ Do not answer with the field name itself. If the user only repeats the field nam
             modelLabel: active.label,
             message: 'The selected model could not continue this AI generation step.',
             technicalMessage: error && error.message ? error.message : '',
+            validationReport: error && error.validationReport ? error.validationReport : null,
+            generationReport: error && error.generationReport ? error.generationReport : null,
             actions: ['retry_current_model', 'switch_model']
         };
     }
@@ -1480,6 +1489,12 @@ Do not answer with the field name itself. If the user only repeats the field nam
         const technical = flowError.technicalMessage
             ? `<div class="ai-error-tech"><strong>Technical:</strong> ${escapeHtml(flowError.technicalMessage)}</div>`
             : '';
+        const validationChecks = flowError.validationReport && Array.isArray(flowError.validationReport.checks)
+            ? flowError.validationReport.checks
+            : [];
+        const validationHtml = validationChecks.length
+            ? `<div class="ai-error-validation"><strong>Validation:</strong>${validationChecks.map(check => `<div>${escapeHtml(check.ok === false ? 'Needs review' : 'Pass')}: ${escapeHtml(check.label || check.message || String(check))}</div>`).join('')}</div>`
+            : '';
 
         return `
             <div class="ai-error-card" data-error-code="${escapeHtml(flowError.code)}">
@@ -1487,6 +1502,7 @@ Do not answer with the field name itself. If the user only repeats the field nam
                 <div class="ai-error-model"><strong>Current model:</strong> ${escapeHtml(flowError.modelLabel)}</div>
                 <div class="ai-error-message">${escapeHtml(flowError.message)}</div>
                 ${technical}
+                ${validationHtml}
                 <div class="ai-error-actions">${actionHtml}</div>
             </div>
         `;
@@ -4216,8 +4232,10 @@ Use templateCapability.outputFiles as the compile target, but do not emit a file
             const error = new Error('Template compiler returned a failed validation report.');
             error.code = 'TEMPLATE_COMPILE_FAILED';
             error.validationReport = project.validationReport;
+            error.generationReport = project.generationReport || null;
             throw error;
         }
+        latestCompiledProject = project;
         return project;
     }
 
@@ -4306,6 +4324,7 @@ Decision Source: ${decision.source || 'unknown'}`;
         activeGameCleanups.forEach(cleanup => cleanup());
         activeGameCleanups = [];
         latestTemplatePatchPlan = null;
+        latestCompiledProject = null;
 
         if (analysisTimeout) {
             clearTimeout(analysisTimeout);
@@ -4679,6 +4698,22 @@ Decision Source: ${decision.source || 'unknown'}`;
             missingFields: analysisState.missingFields,
             aiGamePlanDraft: latestGamePlanDraft,
             templatePatchPlan: latestTemplatePatchPlan,
+            compiledProject: latestCompiledProject ? {
+                id: latestCompiledProject.id,
+                name: latestCompiledProject.name,
+                templateId: latestCompiledProject.templateId,
+                previewUrl: latestCompiledProject.previewUrl,
+                files: latestCompiledProject.files || [],
+                validationReport: latestCompiledProject.validationReport || null,
+                generationReport: latestCompiledProject.generationReport || null
+            } : null,
+            generatedFiles: latestCompiledProject && Array.isArray(latestCompiledProject.files) ? latestCompiledProject.files : [],
+            validationReport: (latestCompiledProject && latestCompiledProject.validationReport) ||
+                (latestAIFlowError && latestAIFlowError.validationReport) ||
+                null,
+            generationReport: (latestCompiledProject && latestCompiledProject.generationReport) ||
+                (latestAIFlowError && latestAIFlowError.generationReport) ||
+                null,
             lastError: latestAIFlowError,
             chatTranscript: visibleMessages
         };
