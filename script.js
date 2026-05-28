@@ -1471,6 +1471,38 @@ Do not answer with the field name itself. If the user only repeats the field nam
             };
         }
 
+        if (code === 'CAPABILITY_UNSUPPORTED' || code === 'TEMPLATE_NOT_SUPPORTED') {
+            return {
+                code,
+                stage,
+                title: 'Automatic generation is not available for this request',
+                modelLabel: active.label,
+                message: error && error.message
+                    ? error.message
+                    : 'This request is outside the current P0 template coverage. Revise it toward Flying Shooter or Roguelike Survival, or submit an email for manual handling.',
+                technicalMessage: '',
+                validationReport: error && error.validationReport ? error.validationReport : null,
+                generationReport: error && error.generationReport ? error.generationReport : null,
+                actions: ['revise_prompt', 'submit_email']
+            };
+        }
+
+        if (code === 'PATCH_REQUIRES_RUNTIME_CODE' || code === 'PATCH_FILE_NOT_ALLOWED') {
+            return {
+                code,
+                stage,
+                title: 'Template patch needs review',
+                modelLabel: active.label,
+                message: error && error.message
+                    ? error.message
+                    : 'The selected model produced a patch outside the current P0 spec/config/manifest surface. Retry, revise the request, or submit an email for manual handling.',
+                technicalMessage: '',
+                validationReport: error && error.validationReport ? error.validationReport : null,
+                generationReport: error && error.generationReport ? error.generationReport : null,
+                actions: ['retry_current_model', 'revise_prompt', 'submit_email']
+            };
+        }
+
         if (code === 'TEMPLATE_COMPILE_BACKEND_MISSING' || code === 'TEMPLATE_COMPILE_FAILED') {
             return {
                 code,
@@ -1483,7 +1515,7 @@ Do not answer with the field name itself. If the user only repeats the field nam
                 technicalMessage: '',
                 validationReport: error && error.validationReport ? error.validationReport : null,
                 generationReport: error && error.generationReport ? error.generationReport : null,
-                actions: ['retry_current_model']
+                actions: ['retry_current_model', 'revise_prompt', 'submit_email']
             };
         }
 
@@ -1520,13 +1552,15 @@ Do not answer with the field name itself. If the user only repeats the field nam
         if (action === 'switch_model' && flowError && flowError.code === 'MODEL_TIMEOUT') return 'Switch faster model';
         if (action === 'switch_model') return 'Switch model';
         if (action === 'open_deployment_guide') return 'Deployment guide';
+        if (action === 'revise_prompt') return 'Modify request';
+        if (action === 'submit_email') return 'Submit email';
         return action;
     }
 
     function buildAIFlowErrorHtml(flowError) {
         const actionHtml = flowError.actions.map(action => {
             const label = getAIErrorActionLabel(action, flowError);
-            const className = (action === 'retry_current_model' || action === 'open_deployment_guide')
+            const className = (action === 'retry_current_model' || action === 'open_deployment_guide' || action === 'submit_email')
                 ? 'ai-error-action ai-error-action-primary'
                 : 'ai-error-action ai-error-action-secondary';
             return `<button type="button" class="${className}" data-ai-error-action="${action}">${escapeHtml(label)}</button>`;
@@ -2243,6 +2277,35 @@ Keep the selected template aligned with broad genre intent, not only exact words
             if (modelDropdown && modelSelector) {
                 modelDropdown.style.display = 'block';
                 modelSelector.setAttribute('aria-expanded', 'true');
+            }
+            return;
+        }
+
+        if (action === 'revise_prompt') {
+            if (button) button.disabled = false;
+            analysisState.revisionMode = true;
+            const retry = latestAIFlowRetry || {};
+            const editableText = latestGamePlanDraft || retry.prompt || savedPrompt || buildGameSpecPlainText();
+            if (chatInputField) {
+                chatInputField.value = editableText;
+                chatInputField.style.height = 'auto';
+                chatInputField.style.height = chatInputField.scrollHeight + 'px';
+                chatInputField.dispatchEvent(new Event('input'));
+                chatInputField.focus();
+                const len = chatInputField.value.length;
+                chatInputField.setSelectionRange(len, len);
+            }
+            addBotMessage('I put the current request back into the input box. Adjust it and send again.');
+            return;
+        }
+
+        if (action === 'submit_email') {
+            if (button) button.disabled = false;
+            if (emailModal) {
+                emailModal.style.display = 'flex';
+                emailModal.offsetWidth;
+                emailModal.classList.add('active');
+                if (modalEmailInput) modalEmailInput.focus();
             }
             return;
         }

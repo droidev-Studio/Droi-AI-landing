@@ -166,6 +166,12 @@ The compiler validates template-specific `contentPatch` modules before emitting 
 
 Invalid model output or patch schema failures return `422 MODEL_SCHEMA_INVALID` or another typed 4xx error, not a generic server failure.
 
+The frontend must map typed generation failures to concrete recovery actions:
+
+- Capability or template unsupported: modify request or submit email.
+- Patch requires runtime code or writes outside the allowed patch surface: retry, modify request, or submit email.
+- Template compile failure: retry, modify request, or submit email.
+
 ### `POST /api/template-project/compile`
 
 Compiles a playable HTML5 Canvas preview from the selected template and AI-generated `TemplatePatchPlan`. The compiler uses `templateDecision.templateId` as the authoritative template selection and rejects anything outside the P0 allowlist (`bullet_hell`, `roguelike_survival`). It validates that the patch was AI-generated and that `TemplatePatchPlan.modelMeta.providerId/modelId` exactly matches the current `selectedModel.providerId/modelId`. It returns generated files, validation checks, and a preview URL.

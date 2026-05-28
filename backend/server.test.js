@@ -397,7 +397,17 @@ function testNoClientSecrets() {
   assert.ok(clientScript.includes('MODEL_AUTH_FAILED'));
   assert.ok(clientScript.includes('MODEL_RATE_LIMITED'));
   assert.ok(clientScript.includes('MODEL_SCHEMA_INVALID'));
+  assert.ok(clientScript.includes('CAPABILITY_UNSUPPORTED'));
+  assert.ok(clientScript.includes('TEMPLATE_NOT_SUPPORTED'));
+  assert.ok(clientScript.includes('PATCH_REQUIRES_RUNTIME_CODE'));
+  assert.ok(clientScript.includes('PATCH_FILE_NOT_ALLOWED'));
   assert.ok(clientScript.includes('Current model returned invalid structure'));
+  assert.ok(clientScript.includes('Automatic generation is not available for this request'));
+  assert.ok(clientScript.includes('Template patch needs review'));
+  assert.ok(clientScript.includes("actions: ['revise_prompt', 'submit_email']"));
+  assert.ok(clientScript.includes("actions: ['retry_current_model', 'revise_prompt', 'submit_email']"));
+  assert.ok(clientScript.includes("if (action === 'revise_prompt')"));
+  assert.ok(clientScript.includes("if (action === 'submit_email')"));
   assert.ok(clientScript.includes('validateAnalysisResponse(parseJsonObjectFromText'));
   assert.ok(clientScript.includes('validateGamePlanSummary(parseJsonObjectFromText'));
   assert.ok(clientScript.includes('AI analysis response must include templateDecision.'));
