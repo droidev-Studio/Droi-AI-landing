@@ -97,7 +97,7 @@ function testCompilerOutput() {
       background: 'A flying shooter with boss phases.'
     },
     templateDecision: { templateId: 'bullet_hell', templateLabel: 'Bullet Hell / Flying Shooter' },
-    selectedModel: { label: 'GPT 5.5 High' },
+    selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
     aiPlanDraft: 'AI generated plan',
     templatePatchPlan: makePatchPlan()
   });
@@ -152,9 +152,10 @@ function testCompilerOutput() {
       background: 'Auto-attack survival with level-up choices.'
     },
     templateDecision: { templateId: 'roguelike_survival', templateLabel: 'Roguelike Survival' },
-    selectedModel: { label: 'Gemini 3.5 Flash' },
+    selectedModel: { providerId: 'gemini', modelId: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash' },
     aiPlanDraft: 'AI generated roguelike plan',
     templatePatchPlan: makePatchPlan({
+      modelMeta: { providerId: 'gemini', modelId: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash' },
       gameName: 'AI Patched Cathedral Run',
       contentPatch: {
         waves: [{ t: 0, enemy: 'ghoul', interval: 0.9 }],
@@ -177,7 +178,7 @@ function testCompilerOutput() {
     () => compileTemplateProject({
       gameSpec: { gameType: 'space shooter' },
       templateDecision: { templateId: 'bullet_hell' },
-      selectedModel: { label: 'GPT 5.5 High' }
+      selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' }
     }),
     /AI-generated game plan/
   );
@@ -186,7 +187,7 @@ function testCompilerOutput() {
     () => compileTemplateProject({
       gameSpec: { gameType: 'space shooter' },
       templateDecision: { templateId: 'bullet_hell' },
-      selectedModel: { label: 'GPT 5.5 High' },
+      selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
       aiPlanDraft: 'AI generated plan'
     }),
     /TemplatePatchPlan/
@@ -196,11 +197,22 @@ function testCompilerOutput() {
     () => compileTemplateProject({
       gameSpec: { gameType: 'space shooter' },
       templateDecision: { templateId: 'bullet_hell' },
-      selectedModel: { label: 'GPT 5.5 High' },
+      selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
       aiPlanDraft: 'AI generated plan',
       templatePatchPlan: makePatchPlan({ aiGenerated: false })
     }),
     /selected AI model/
+  );
+
+  assert.throws(
+    () => compileTemplateProject({
+      gameSpec: { gameType: 'space shooter' },
+      templateDecision: { templateId: 'bullet_hell' },
+      selectedModel: { providerId: 'gemini', modelId: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash' },
+      aiPlanDraft: 'AI generated plan',
+      templatePatchPlan: makePatchPlan()
+    }),
+    /does not match the selected model/
   );
 }
 
@@ -354,7 +366,7 @@ async function testGeneratedStaticServing() {
       background: 'A flying shooter with boss phases.'
     },
     templateDecision: { templateId: 'bullet_hell', templateLabel: 'Bullet Hell / Flying Shooter' },
-    selectedModel: { label: 'GPT 5.5 High' },
+    selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
     aiPlanDraft: 'AI generated plan',
     templatePatchPlan: makePatchPlan()
   });

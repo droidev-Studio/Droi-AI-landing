@@ -474,6 +474,34 @@ function detectTemplateId(decision, spec) {
   return 'unsupported';
 }
 
+function normalizeModelRef(model = {}) {
+  return {
+    providerId: String(model.providerId || model.provider || '').trim(),
+    modelId: String(model.modelId || model.model || '').trim(),
+    label: String(model.label || model.modelLabel || '').trim()
+  };
+}
+
+function validatePatchModelMatchesSelectedModel(plan, selectedModel) {
+  const patchModel = normalizeModelRef(plan.modelMeta || {});
+  const activeModel = normalizeModelRef(selectedModel || {});
+  if (!activeModel.providerId || !activeModel.modelId) {
+    const error = new Error('Template compile requires the selected model provider and model id.');
+    error.code = 'MODEL_SCHEMA_INVALID';
+    throw error;
+  }
+  if (!patchModel.providerId || !patchModel.modelId) {
+    const error = new Error('TemplatePatchPlan modelMeta must include providerId and modelId.');
+    error.code = 'MODEL_SCHEMA_INVALID';
+    throw error;
+  }
+  if (patchModel.providerId !== activeModel.providerId || patchModel.modelId !== activeModel.modelId) {
+    const error = new Error('TemplatePatchPlan modelMeta does not match the selected model.');
+    error.code = 'MODEL_SCHEMA_INVALID';
+    throw error;
+  }
+}
+
 function compileTemplateProject(payload) {
   if (!payload.aiPlanDraft || typeof payload.aiPlanDraft !== 'string') {
     const error = new Error('Template compile requires an AI-generated game plan draft.');
@@ -481,6 +509,7 @@ function compileTemplateProject(payload) {
     throw error;
   }
   const templatePatchPlan = validateTemplatePatchPlan(payload.templatePatchPlan);
+  validatePatchModelMatchesSelectedModel(templatePatchPlan, payload.selectedModel);
 
   const spec = payload.gameSpec || {};
   const decision = payload.templateDecision || {};
