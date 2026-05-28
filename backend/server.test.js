@@ -174,6 +174,24 @@ function testCompilerOutput() {
   assert.strictEqual(rogueWeapons[0].id, 'auto_orbit_blade');
   assert.strictEqual(rogueEnemies[1].id, 'abbot_boss');
 
+  const authoritativeDecisionProject = compileTemplateProject({
+    gameSpec: {
+      gameType: 'space shooter',
+      background: 'This prompt mentions flying shooter and boss bullets, but the AI decision is roguelike_survival.'
+    },
+    templateDecision: { templateId: 'roguelike_survival', templateLabel: 'Roguelike Survival' },
+    selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+    aiPlanDraft: 'AI generated authoritative template decision plan',
+    templatePatchPlan: makePatchPlan({
+      contentPatch: {
+        waves: [{ t: 0, enemy: 'ghoul', interval: 0.9 }],
+        enemies: [{ id: 'ghoul', hp: 18 }],
+        weapons: [{ id: 'auto_orbit_blade', cadence: 0.6 }]
+      }
+    })
+  });
+  assert.strictEqual(authoritativeDecisionProject.templateId, 'roguelike_survival');
+
   assert.throws(
     () => compileTemplateProject({
       gameSpec: { gameType: 'space shooter' },
@@ -213,6 +231,17 @@ function testCompilerOutput() {
       templatePatchPlan: makePatchPlan()
     }),
     /does not match the selected model/
+  );
+
+  assert.throws(
+    () => compileTemplateProject({
+      gameSpec: { gameType: 'space shooter', background: 'vertical shmup with boss bullets' },
+      templateDecision: { templateId: 'unsupported' },
+      selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+      aiPlanDraft: 'AI generated plan',
+      templatePatchPlan: makePatchPlan()
+    }),
+    /supported AI templateDecision/
   );
 }
 

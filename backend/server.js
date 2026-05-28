@@ -12,6 +12,7 @@ const AI_STAGE_PROMPTS = {
   'generate-game-plan': 'Generate a complete P0 HTML5 Canvas game plan from the structured GameSpec and selected template. Return strict JSON.',
   'generate-template-patch': 'Generate a safe TemplatePatchPlan JSON for the selected template. Do not include runtime source code patches.'
 };
+const SUPPORTED_TEMPLATE_IDS = new Set(['bullet_hell', 'roguelike_survival']);
 
 const PROVIDERS = {
   openai: {
@@ -485,6 +486,16 @@ function detectTemplateId(decision, spec) {
   return 'unsupported';
 }
 
+function resolveCompileTemplateId(decision = {}) {
+  const templateId = String(decision.templateId || '').trim();
+  if (!SUPPORTED_TEMPLATE_IDS.has(templateId)) {
+    const error = new Error('Template compile requires a supported AI templateDecision.templateId.');
+    error.code = 'TEMPLATE_NOT_SUPPORTED';
+    throw error;
+  }
+  return templateId;
+}
+
 function normalizeModelRef(model = {}) {
   return {
     providerId: String(model.providerId || model.provider || '').trim(),
@@ -524,12 +535,7 @@ function compileTemplateProject(payload) {
 
   const spec = payload.gameSpec || {};
   const decision = payload.templateDecision || {};
-  const templateId = detectTemplateId(decision, spec);
-  if (templateId === 'unsupported') {
-    const error = new Error('No P0 template supports this request yet.');
-    error.code = 'TEMPLATE_NOT_SUPPORTED';
-    throw error;
-  }
+  const templateId = resolveCompileTemplateId(decision);
 
   const projectId = `${templateId}-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
   const projectDir = path.join(GENERATED_DIR, projectId);
@@ -542,7 +548,7 @@ function compileTemplateProject(payload) {
     checks: [
       { ok: true, label: 'Current model was used before compile' },
       { ok: true, label: 'TemplatePatchPlan validated as AI-generated' },
-      { ok: true, label: `${templateId} P0 template selected` },
+      { ok: true, label: `AI templateDecision selected ${templateId}` },
       { ok: true, label: 'HTML5 Canvas preview files emitted' },
       { ok: true, label: 'GameSpec, split spec modules, template config, and manifest emitted' },
       { ok: true, label: 'Generation trace report emitted' }

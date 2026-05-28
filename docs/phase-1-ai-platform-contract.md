@@ -161,7 +161,7 @@ Only these three `/api/ai/*` stages are valid. Unknown AI stage paths must retur
 
 ### `POST /api/template-project/compile`
 
-Compiles a playable HTML5 Canvas preview from the selected template and AI-generated `TemplatePatchPlan`. The compiler validates that the patch was AI-generated and that `TemplatePatchPlan.modelMeta.providerId/modelId` exactly matches the current `selectedModel.providerId/modelId`. It returns generated files, validation checks, and a preview URL.
+Compiles a playable HTML5 Canvas preview from the selected template and AI-generated `TemplatePatchPlan`. The compiler uses `templateDecision.templateId` as the authoritative template selection and rejects anything outside the P0 allowlist (`bullet_hell`, `roguelike_survival`). It validates that the patch was AI-generated and that `TemplatePatchPlan.modelMeta.providerId/modelId` exactly matches the current `selectedModel.providerId/modelId`. It returns generated files, validation checks, and a preview URL.
 
 ### `POST /api/waitlist`
 
