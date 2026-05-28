@@ -6,6 +6,14 @@ This project needs a deployed Node backend for AI-first generation. GitHub Pages
 
 Deploy this repository as a Node service or Docker service.
 
+Render Blueprint:
+
+```text
+render.yaml
+```
+
+Import the repository in Render, use the blueprint, then fill provider API keys in the Render environment variable UI. The blueprint marks provider keys as `sync: false`, so secrets are not committed.
+
 Node start command:
 
 ```bash
@@ -63,7 +71,23 @@ GET https://your-backend.example.com/api/ready
 
 `/api/ready` must return `200` before the static frontend can generate games. If it returns `503 MODEL_NOT_CONFIGURED`, configure at least one provider API key.
 
-## 4. Connect GitHub Pages
+## 4. Verify Repository CI
+
+GitHub Actions runs on pushes and pull requests to `main`:
+
+```text
+.github/workflows/ci.yml
+```
+
+It runs:
+
+```bash
+npm ci
+npm run check
+npm run test:backend
+```
+
+## 5. Connect GitHub Pages
 
 Create `droi-config.json` in the static frontend deployment:
 
@@ -75,7 +99,7 @@ Create `droi-config.json` in the static frontend deployment:
 
 The frontend loads this file before calling `/api/models`. Without it, GitHub Pages will only show recoverable backend/model errors and will not fake generation.
 
-## 5. Expected P0 Runtime
+## 6. Expected P0 Runtime
 
 After configuration:
 

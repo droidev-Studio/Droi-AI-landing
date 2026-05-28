@@ -90,6 +90,12 @@ Deploy the backend as a Node service with `npm start` or build the included Dock
 
 Use [docs/backend-deployment.md](docs/backend-deployment.md) as the deployment checklist.
 
+The repository includes:
+
+- `Dockerfile` for container deployment.
+- `render.yaml` for Render Blueprint deployment.
+- `.github/workflows/ci.yml` for syntax and backend tests on `main`.
+
 For cross-origin static hosting, set `FRONTEND_ORIGIN` to the deployed frontend origin, for example:
 
 ```text

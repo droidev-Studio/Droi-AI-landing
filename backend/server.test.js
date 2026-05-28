@@ -202,6 +202,8 @@ function testNoClientSecrets() {
   const envExample = fs.readFileSync(path.join(__dirname, '..', '.env.example'), 'utf8');
   const phaseContract = fs.readFileSync(path.join(__dirname, '..', 'docs', 'phase-1-ai-platform-contract.md'), 'utf8');
   const deploymentDoc = fs.readFileSync(path.join(__dirname, '..', 'docs', 'backend-deployment.md'), 'utf8');
+  const renderBlueprint = fs.readFileSync(path.join(__dirname, '..', 'render.yaml'), 'utf8');
+  const ciWorkflow = fs.readFileSync(path.join(__dirname, '..', '.github', 'workflows', 'ci.yml'), 'utf8');
   const runtimeConfigExample = fs.readFileSync(path.join(__dirname, '..', 'droi-config.example.json'), 'utf8');
   assert.ok(!clientScript.includes('access_key'));
   assert.ok(!clientScript.includes('web3forms.com'));
@@ -223,6 +225,11 @@ function testNoClientSecrets() {
   assert.ok(deploymentDoc.includes('/api/ready'));
   assert.ok(deploymentDoc.includes('droi-config.json'));
   assert.ok(deploymentDoc.includes('FRONTEND_ORIGIN=https://droidev-studio.github.io'));
+  assert.ok(renderBlueprint.includes('healthCheckPath: /api/health'));
+  assert.ok(renderBlueprint.includes('sync: false'));
+  assert.ok(!renderBlueprint.includes('sk-'));
+  assert.ok(ciWorkflow.includes('npm run check'));
+  assert.ok(ciWorkflow.includes('npm run test:backend'));
 }
 
 testTemplateDetection();
