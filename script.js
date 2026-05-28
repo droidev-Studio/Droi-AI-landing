@@ -1126,19 +1126,69 @@ document.addEventListener('DOMContentLoaded', () => {
         return Boolean(best && best.confidence >= 0.7 && best.hits.length > 0);
     }
 
-    function handleFreeTextForStep(definition, promptText, onAccepted) {
+    async function handleFreeTextForStepWithAI(definition, promptText, onAccepted) {
         if (!definition) return false;
-        const reservedReason = getInvalidAnswerReason(promptText, definition);
-        const matchedChoice = reservedReason ? null : matchChoice(definition.pool, promptText, 'desc');
-        const invalidReason = reservedReason || (matchedChoice ? '' : getInvalidAnswerReason(promptText, definition));
+        const invalidReason = getInvalidAnswerReason(promptText, definition);
         if (invalidReason) {
             addBotMessage(buildClarificationRetryMessage(definition, invalidReason), () => {
                 regTimeout(() => renderChatOptions(getStepByKey(definition.key)), 160);
             });
             return true;
         }
-        const selected = matchedChoice || { label: promptText, value: promptText, desc: promptText };
-        onAccepted(selected);
+        if (!hasLiveAIProvider()) throw createModelNotConfiguredError('clarification');
+
+        const response = await withTimeout(aiService.stageChat('/api/ai/analyze-game-request', [
+            {
+                role: 'system',
+                content: `You classify one user answer for a single GameSpec field.
+Return strict JSON only:
+{
+  "fieldKey": "${definition.key}",
+  "label": string|null,
+  "value": string|null,
+  "status": "confirmed|suggested|missing",
+  "confidence": number,
+  "reason": string
+}
+Do not answer with the field name itself. If the user only repeats the field name, return status "missing".`
+            },
+            {
+                role: 'user',
+                content: JSON.stringify({
+                    selectedModel: getActiveModelMeta(),
+                    targetField: {
+                        key: definition.key,
+                        specKey: definition.specKey,
+                        title: definition.title,
+                        prompt: definition.prompt
+                    },
+                    answer: promptText,
+                    currentGameSpec: getCurrentGameSpec(),
+                    options: (definition.pool || []).map(item => ({
+                        label: item.label,
+                        value: item.value,
+                        desc: item.desc || item.mechanic || ''
+                    }))
+                }, null, 2)
+            }
+        ]), AI_ANALYSIS_TIMEOUT_MS);
+
+        const parsed = parseJsonObjectFromText(response.content, 'MODEL_JSON_PARSE_FAILED');
+        const value = parsed.value || parsed.label;
+        if (!value || parsed.status === 'missing') {
+            addBotMessage(buildClarificationRetryMessage(definition, parsed.reason || 'Please enter a concrete answer.'), () => {
+                regTimeout(() => renderChatOptions(getStepByKey(definition.key)), 160);
+            });
+            return true;
+        }
+
+        const selected = matchChoice(definition.pool, value, 'desc') || {
+            label: value,
+            value,
+            desc: value
+        };
+        const confidence = Number.isFinite(Number(parsed.confidence)) ? Number(parsed.confidence) : 0.72;
+        onAccepted(selected, parsed.status === 'confirmed' ? 'confirmed' : 'suggested', confidence);
         return true;
     }
 
@@ -1442,13 +1492,15 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    function showAIFlowError(error, { stage, prompt, pendingMessage } = {}) {
+    function showAIFlowError(error, { stage, prompt, pendingMessage, definitionKey, clarificationMode } = {}) {
         if (pendingMessage) pendingMessage.remove();
         const flowError = createAIFlowError(error, stage || 'model');
         latestAIFlowError = flowError;
         latestAIFlowRetry = {
             stage: flowError.stage,
-            prompt: prompt || savedPrompt || analysisState.background || ''
+            prompt: prompt || savedPrompt || analysisState.background || '',
+            definitionKey: definitionKey || '',
+            clarificationMode: clarificationMode || ''
         };
         addBotMessage(buildAIFlowErrorHtml(flowError));
         return flowError;
@@ -1898,6 +1950,59 @@ Prompt: ${prompt}`
         }
     }
 
+    async function processActiveClarification(definition, promptText, pendingMessage = null) {
+        try {
+            analysisState.processing = true;
+            await handleFreeTextForStepWithAI(definition, promptText, (selected, status, confidence) => {
+                setModuleSelection(definition.key, selected, status, confidence);
+            });
+            analysisState.processing = false;
+            if (pendingMessage) pendingMessage.remove();
+            continueClarification();
+        } catch (error) {
+            analysisState.processing = false;
+            showAIFlowError(error, {
+                stage: 'clarification',
+                prompt: promptText,
+                pendingMessage,
+                definitionKey: definition && definition.key,
+                clarificationMode: 'active'
+            });
+        }
+    }
+
+    async function processWizardClarification(definition, promptText, pendingMessage = null) {
+        try {
+            analysisState.processing = true;
+            await handleFreeTextForStepWithAI(definition, promptText, selected => {
+                chatSelections[definition.key] = selected;
+            });
+            analysisState.processing = false;
+            if (pendingMessage) pendingMessage.remove();
+            if (chatStep < MODULE_STEPS.length - 1) {
+                chatStep += 1;
+                addBotMessage(BOT_MESSAGES[chatStep], () => {
+                    regTimeout(() => renderChatOptions(chatStep), 160);
+                });
+            } else {
+                askFinalConfirmation();
+            }
+        } catch (error) {
+            analysisState.processing = false;
+            showAIFlowError(error, {
+                stage: 'clarification',
+                prompt: promptText,
+                pendingMessage,
+                definitionKey: definition && definition.key,
+                clarificationMode: 'wizard'
+            });
+        }
+    }
+
+    function getStepDefinitionByKey(key) {
+        return MODULE_STEPS.find(step => step && step.key === key) || null;
+    }
+
     function handleChatSubmit() {
         const text = chatInputField.value.trim();
         const attachments = chatAttachments.slice();
@@ -1974,7 +2079,11 @@ Prompt: ${prompt}`
             if (analysisState.processing) return;
             const nextStep = getNextMissingStep();
             const definition = getStepDefinition(nextStep);
-            if (definition) handleFreeTextForStep(definition, promptText, selected => setModuleSelection(definition.key, selected));
+            if (definition) {
+                const pendingMessage = addBotMessage('', null, { pending: true });
+                processActiveClarification(definition, promptText, pendingMessage);
+                return;
+            }
             continueClarification();
         } else {
             const definition = wizardDefinitionBeforeClear || getWizardFreeTextDefinition();
@@ -1988,18 +2097,9 @@ Prompt: ${prompt}`
                 startAnalysisFlow(promptText);
                 return;
             }
-            const handled = handleFreeTextForStep(definition, promptText, selected => {
-                chatSelections[definition.key] = selected;
-                if (chatStep < MODULE_STEPS.length - 1) {
-                    chatStep += 1;
-                    addBotMessage(BOT_MESSAGES[chatStep], () => {
-                        regTimeout(() => renderChatOptions(chatStep), 160);
-                    });
-                } else {
-                    askFinalConfirmation();
-                }
-            });
-            if (handled) return;
+            const pendingMessage = addBotMessage('', null, { pending: true });
+            processWizardClarification(definition, promptText, pendingMessage);
+            return;
         }
     }
 
@@ -2014,6 +2114,16 @@ Prompt: ${prompt}`
             const retry = latestAIFlowRetry || {};
             if (retry.stage === 'analysis' && retry.prompt) {
                 startAnalysisFlow(retry.prompt);
+                return;
+            }
+            if (retry.stage === 'clarification' && retry.prompt && retry.definitionKey) {
+                const definition = getStepDefinitionByKey(retry.definitionKey);
+                const pendingMessage = addBotMessage('', null, { pending: true });
+                if (retry.clarificationMode === 'wizard') {
+                    processWizardClarification(definition, retry.prompt, pendingMessage);
+                } else {
+                    processActiveClarification(definition, retry.prompt, pendingMessage);
+                }
                 return;
             }
             if (retry.stage === 'compile') {
