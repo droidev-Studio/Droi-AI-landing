@@ -266,6 +266,14 @@ function testNoClientSecrets() {
   assert.ok(clientScript.includes('Static frontend is missing droi-config.json'));
   assert.ok(clientScript.includes('Backend is unreachable. Check droi-config.json apiBaseUrl'));
   assert.ok(clientScript.includes('Backend is connected, but no provider API key is configured.'));
+  assert.ok(clientScript.includes('getTemplateCapabilitySummary'));
+  assert.ok(clientScript.includes('templateCapability'));
+  assert.ok(clientScript.includes('expectedGeneratedFiles'));
+  assert.ok(clientScript.includes('templateUsage'));
+  assert.ok(clientScript.includes('patchTargets'));
+  assert.ok(clientScript.includes('spec/waves.json'));
+  assert.ok(clientScript.includes('spec/enemies.json'));
+  assert.ok(clientScript.includes('spec/weapons.json'));
   assert.ok(!clientScript.includes('check_config'));
   assert.ok(!clientScript.includes('manual_queue'));
   assert.ok(envExample.includes('WEB3FORMS_ACCESS_KEY='));
