@@ -277,6 +277,9 @@ function testNoClientSecrets() {
   assert.ok(clientScript.includes('targetField'));
   assert.ok(clientScript.includes('processActiveClarification'));
   assert.ok(clientScript.includes('processWizardClarification'));
+  assert.ok(clientScript.includes('processRevisionWithAI'));
+  assert.ok(clientScript.includes('editedPlanningText'));
+  assert.ok(clientScript.includes("stage: 'revision'"));
   assert.ok(clientScript.indexOf('TEMPLATE_CATALOG = [') > clientScript.indexOf('let TEMPLATE_CATALOG'));
   assert.ok(clientScript.includes('\\u98de\\u884c\\u5c04\\u51fb'));
   assert.ok(clientScript.includes('\\u8089\\u9e3d'));

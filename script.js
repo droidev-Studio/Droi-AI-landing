@@ -2003,6 +2003,90 @@ Prompt: ${prompt}`
         return MODULE_STEPS.find(step => step && step.key === key) || null;
     }
 
+    async function processRevisionWithAI(promptText, pendingMessage = null) {
+        try {
+            if (!hasLiveAIProvider()) throw createModelNotConfiguredError('revision');
+            analysisState.processing = true;
+            const response = await withTimeout(aiService.stageChat('/api/ai/analyze-game-request', [
+                {
+                    role: 'system',
+                    content: `You revise an existing GameSpec from the user's edited planning text.
+Use the edited text as the newest source of truth.
+Return strict JSON only with this shape:
+{
+  "modules": {
+    "gameType": { "status": "confirmed|suggested|missing", "value": string|null, "confidence": number },
+    "artStyle": { "status": "confirmed|suggested|missing", "value": string|null, "confidence": number },
+    "gameSetting": { "status": "confirmed|suggested|missing", "value": string|null, "confidence": number },
+    "coreGameplay": { "status": "confirmed|suggested|missing", "value": string|null, "confidence": number },
+    "playerGoal": { "status": "confirmed|suggested|missing", "value": string|null, "confidence": number },
+    "mainChallenge": { "status": "confirmed|suggested|missing", "value": string|null, "confidence": number },
+    "progressionSystem": { "status": "confirmed|suggested|missing", "value": string|null, "confidence": number },
+    "difficultyLevel": { "status": "confirmed|suggested|missing", "value": string|null, "confidence": number }
+  },
+  "background": string|null,
+  "missingFields": string[],
+  "templateDecision": {
+    "templateId": "bullet_hell|roguelike_survival|unsupported",
+    "templateLabel": string,
+    "genre": string,
+    "confidence": number,
+    "supported": boolean,
+    "reason": string
+  },
+  "capability": {
+    "supported": boolean,
+    "blockers": string[],
+    "reason": string
+  }
+}
+Keep the selected template aligned with broad genre intent, not only exact words.`
+                },
+                {
+                    role: 'user',
+                    content: JSON.stringify({
+                        selectedModel: getActiveModelMeta(),
+                        currentGameSpec: getCurrentGameSpec(),
+                        editedPlanningText: promptText,
+                        allowedTemplates: TEMPLATE_CATALOG.map(template => ({
+                            id: template.id,
+                            label: template.label,
+                            keywords: template.keywords,
+                            gameplayPillars: template.gameplayPillars
+                        }))
+                    }, null, 2)
+                }
+            ]), AI_ANALYSIS_TIMEOUT_MS);
+
+            const parsed = parseJsonObjectFromText(response.content, 'MODEL_JSON_PARSE_FAILED');
+            const modules = parsed.modules || parsed;
+            applyExtractedModule('type', modules.gameType || parsed.gameType, GAME_TYPES, 'mechanic');
+            applyExtractedModule('style', modules.artStyle || parsed.artStyle, ART_STYLES);
+            applyExtractedModule('setting', modules.gameSetting || parsed.setting, SETTINGS, 'desc');
+            applyExtractedModule('coreGameplay', modules.coreGameplay, CORE_GAMEPLAY_OPTIONS, 'desc');
+            applyExtractedModule('playerGoal', modules.playerGoal, PLAYER_GOAL_OPTIONS, 'desc');
+            applyExtractedModule('mainChallenge', modules.mainChallenge, MAIN_CHALLENGE_OPTIONS, 'desc');
+            applyExtractedModule('progressionSystem', modules.progressionSystem, PROGRESSION_OPTIONS, 'desc');
+            applyExtractedModule('difficultyLevel', modules.difficultyLevel, DIFFICULTY_OPTIONS, 'desc');
+            analysisState.background = parsed.background || promptText;
+            analysisState.templateDecision = normalizeAITemplateDecision(parsed.templateDecision || parsed.template || parsed.decision);
+            analysisState.capability = normalizeAICapability(parsed.capability);
+            analysisState.missingFields = Array.isArray(parsed.missingFields) ? parsed.missingFields : [];
+            analysisState.revisionMode = false;
+            analysisState.active = true;
+            analysisState.processing = false;
+            if (pendingMessage) pendingMessage.remove();
+            askFinalConfirmation();
+        } catch (error) {
+            analysisState.processing = false;
+            showAIFlowError(error, {
+                stage: 'revision',
+                prompt: promptText,
+                pendingMessage
+            });
+        }
+    }
+
     function handleChatSubmit() {
         const text = chatInputField.value.trim();
         const attachments = chatAttachments.slice();
@@ -2024,54 +2108,8 @@ Prompt: ${prompt}`
 
         if (analysisState.revisionMode) {
             if (analysisState.processing) return;
-            // 淇妯″紡锛氳В鏋愮敤鎴峰彲鑳界殑鏀瑰姩
-            const lines = promptText.split('\n');
-            let customBackground = [];
-
-            lines.forEach(line => {
-                const l = line.trim();
-                if (!l) return;
-                const lowerLine = l.toLowerCase();
-                if (lowerLine === 'ai game plan' || lowerLine === 'gamespec modules') return;
-                if (/^(title|hook|core loop|visual direction|setting|player fantasy):/i.test(l)) return;
-
-                if (l.startsWith('Game Type:')) {
-                    const val = l.replace('Game Type:', '').trim();
-                    setModuleSelection('type', { label: val, value: val, mechanic: val });
-                } else if (l.startsWith('Art Style:')) {
-                    const val = l.replace('Art Style:', '').trim();
-                    setModuleSelection('style', { label: val, value: val });
-                } else if (l.startsWith('Game Setting:')) {
-                    const val = l.replace('Game Setting:', '').trim();
-                    setModuleSelection('setting', { label: val, value: val, desc: val });
-                } else if (l.startsWith('Core Gameplay:')) {
-                    const val = l.replace('Core Gameplay:', '').trim();
-                    setModuleSelection('coreGameplay', { label: val, value: val, desc: val });
-                } else if (l.startsWith('Player Goal:')) {
-                    const val = l.replace('Player Goal:', '').trim();
-                    setModuleSelection('playerGoal', { label: val, value: val, desc: val });
-                } else if (l.startsWith('Main Challenge:')) {
-                    const val = l.replace('Main Challenge:', '').trim();
-                    setModuleSelection('mainChallenge', { label: val, value: val, desc: val });
-                } else if (l.startsWith('Progression System:')) {
-                    const val = l.replace('Progression System:', '').trim();
-                    setModuleSelection('progressionSystem', { label: val, value: val, desc: val });
-                } else if (l.startsWith('Difficulty Level:')) {
-                    const val = l.replace('Difficulty Level:', '').trim();
-                    setModuleSelection('difficultyLevel', { label: val, value: val, desc: val });
-                } else if (l.startsWith('Background/Story:')) {
-                    customBackground.push(l.replace('Background/Story:', '').trim());
-                } else {
-                    // 娌℃湁浠讳綍鏍囩鐨勮锛岃涓鸿儗鏅ˉ鍏?
-                    customBackground.push(l);
-                }
-            });
-
-            analysisState.background = customBackground.join(' ').trim();
-            analysisState.revisionMode = false;
-            // 纭繚 active 鐘舵€佷緷鐒朵负 true锛岀淮鎸佸湪鍒嗘瀽娴佷腑
-            analysisState.active = true;
-            askFinalConfirmation();
+            const pendingMessage = addBotMessage('', null, { pending: true });
+            processRevisionWithAI(promptText, pendingMessage);
             return;
         }
 
@@ -2114,6 +2152,11 @@ Prompt: ${prompt}`
             const retry = latestAIFlowRetry || {};
             if (retry.stage === 'analysis' && retry.prompt) {
                 startAnalysisFlow(retry.prompt);
+                return;
+            }
+            if (retry.stage === 'revision' && retry.prompt) {
+                const pendingMessage = addBotMessage('', null, { pending: true });
+                processRevisionWithAI(retry.prompt, pendingMessage);
                 return;
             }
             if (retry.stage === 'clarification' && retry.prompt && retry.definitionKey) {
