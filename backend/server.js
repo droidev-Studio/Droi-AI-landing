@@ -595,6 +595,8 @@ function compileTemplateProject(payload) {
     templatePatchPlan,
     aiPlanDraft: payload.aiPlanDraft,
     aiPlanJson: payload.aiPlanJson,
+    analysisModelMeta: payload.analysisModelMeta,
+    gamePlanModelMeta: payload.gamePlanModelMeta,
     validationReport
   });
   projectFiles['generation-report.json'] = JSON.stringify(generationReport, null, 2);
@@ -893,6 +895,14 @@ function buildGeneratedProjectFiles(gameSpec) {
   };
 }
 
+function normalizeTraceModelMeta(meta = {}, fallback = {}) {
+  return {
+    providerId: meta.providerId || meta.provider || fallback.providerId || fallback.provider || '',
+    modelId: meta.modelId || meta.model || fallback.modelId || fallback.model || '',
+    label: meta.label || meta.modelLabel || fallback.label || fallback.modelLabel || 'Selected model'
+  };
+}
+
 function buildGenerationReport({
   projectId,
   generatedSpec,
@@ -901,6 +911,8 @@ function buildGenerationReport({
   templatePatchPlan,
   aiPlanDraft,
   aiPlanJson,
+  analysisModelMeta,
+  gamePlanModelMeta,
   validationReport
 }) {
   const structuredGamePlan = aiPlanJson && typeof aiPlanJson === 'object' && !Array.isArray(aiPlanJson)
@@ -925,10 +937,15 @@ function buildGenerationReport({
       label: selectedModel.label || selectedModel.modelLabel || 'Selected model'
     },
     stages: {
-      analysis: { required: true, modelRequired: true },
+      analysis: {
+        required: true,
+        modelRequired: true,
+        modelMeta: normalizeTraceModelMeta(analysisModelMeta, selectedModel)
+      },
       gamePlan: {
         required: true,
         modelRequired: true,
+        modelMeta: normalizeTraceModelMeta(gamePlanModelMeta, selectedModel),
         draftLength: String(aiPlanDraft || '').length,
         ...structuredGamePlan
       },

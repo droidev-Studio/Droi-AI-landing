@@ -683,6 +683,18 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+    function buildStageModelMeta(response = {}, fallback = getActiveModelMeta()) {
+        const providerId = response.providerId || response.provider || fallback.providerId || fallback.provider || '';
+        const modelId = response.model || response.modelId || fallback.modelId || fallback.model || '';
+        return {
+            providerId,
+            provider: providerId,
+            modelId,
+            model: modelId,
+            label: getModelLabel(providerId, modelId) || fallback.label || fallback.modelLabel || modelId || 'Selected model'
+        };
+    }
+
     function hasConfiguredProvider(providerId = aiConfig.activeProvider) {
         const modelId = getProviderModelId(providerId);
         return platformModels.some(model => model.providerId === providerId && model.modelId === modelId && model.enabled !== false);
@@ -939,6 +951,8 @@ document.addEventListener('DOMContentLoaded', () => {
         processing: false,
         revisionMode: false,
         finalModelMeta: null,
+        analysisModelMeta: null,
+        gamePlanModelMeta: null,
         workStartedAt: 0,
         templateDecision: null,
         capability: null,
@@ -953,6 +967,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeGameCleanups = [];
     let latestGamePlanDraft = '';
     let latestGamePlanJson = null;
+    let latestGamePlanModelMeta = null;
     let latestTemplatePatchPlan = null;
     let latestCompiledProject = null;
     let latestAIFlowRetry = null;
@@ -1211,6 +1226,8 @@ Do not answer with the field name itself. If the user only repeats the field nam
         analysisState.templateDecision = null;
         analysisState.capability = null;
         analysisState.missingFields = [];
+        analysisState.analysisModelMeta = null;
+        analysisState.gamePlanModelMeta = null;
 
         const analysisMessage = addBotMessage('', null, { pending: true });
 
@@ -1602,6 +1619,7 @@ Unsupported P0 capability includes 3D, multiplayer/networked, MMO, open world, n
             analysisState.templateDecision = normalizeAITemplateDecision(parsed.templateDecision || parsed.template || parsed.decision);
             analysisState.capability = normalizeAICapability(parsed.capability);
             analysisState.missingFields = Array.isArray(parsed.missingFields) ? parsed.missingFields : [];
+            analysisState.analysisModelMeta = buildStageModelMeta(response);
 
             if (!analysisState.setting && parsed.setting) {
                 setModuleSelection('setting', {
@@ -2071,6 +2089,7 @@ Keep the selected template aligned with broad genre intent, not only exact words
             analysisState.templateDecision = normalizeAITemplateDecision(parsed.templateDecision || parsed.template || parsed.decision);
             analysisState.capability = normalizeAICapability(parsed.capability);
             analysisState.missingFields = Array.isArray(parsed.missingFields) ? parsed.missingFields : [];
+            analysisState.analysisModelMeta = buildStageModelMeta(response);
             analysisState.revisionMode = false;
             analysisState.active = true;
             analysisState.processing = false;
@@ -3029,7 +3048,9 @@ Keep every value under 54 words.`
                 }
             ]), AI_GAME_PLAN_TIMEOUT_MS);
             const plan = validateGamePlanSummary(parseJsonObjectFromText(response.content, 'MODEL_JSON_PARSE_FAILED'));
-            analysisState.finalModelMeta = responseModelMeta;
+            latestGamePlanModelMeta = buildStageModelMeta(response, responseModelMeta);
+            analysisState.gamePlanModelMeta = latestGamePlanModelMeta;
+            analysisState.finalModelMeta = latestGamePlanModelMeta;
             return buildAISummaryHtml(plan);
         } catch (error) {
             console.warn('AI game plan failed:', error);
@@ -3151,10 +3172,11 @@ Use templateCapability.outputFiles as the compile target, but do not emit a file
         ]), AI_TEMPLATE_PATCH_TIMEOUT_MS);
 
         const parsed = validateTemplatePatchPlan(parseJsonObjectFromText(response.content, 'MODEL_JSON_PARSE_FAILED'));
+        const patchModelMeta = buildStageModelMeta(response);
         latestTemplatePatchPlan = {
             ...parsed,
             aiGenerated: true,
-            modelMeta: getActiveModelMeta()
+            modelMeta: patchModelMeta
         };
         return latestTemplatePatchPlan;
     }
@@ -3893,6 +3915,8 @@ Use templateCapability.outputFiles as the compile target, but do not emit a file
                 gameSpec: spec,
                 templateDecision: decision,
                 selectedModel: getActiveModelMeta(),
+                analysisModelMeta: analysisState.analysisModelMeta,
+                gamePlanModelMeta: latestGamePlanModelMeta,
                 aiPlanDraft: latestGamePlanDraft,
                 aiPlanJson: latestGamePlanJson,
                 templatePatchPlan
@@ -3940,6 +3964,15 @@ Use templateCapability.outputFiles as the compile target, but do not emit a file
                     '<div class="summary-title">Generation trace</div>',
                     `<div class="summary-item"><strong>AI-first:</strong> ${trace.aiGenerated ? 'true' : 'false'}</div>`,
                     `<div class="summary-item"><strong>Selected model:</strong> ${escapeHtml(traceModel.label || getActiveModelMeta().label)}</div>`,
+                    traceStages.analysis && traceStages.analysis.modelMeta
+                        ? `<div class="summary-item"><strong>Analysis model:</strong> ${escapeHtml(traceStages.analysis.modelMeta.label || '')}</div>`
+                        : '',
+                    traceStages.gamePlan && traceStages.gamePlan.modelMeta
+                        ? `<div class="summary-item"><strong>Game plan model:</strong> ${escapeHtml(traceStages.gamePlan.modelMeta.label || '')}</div>`
+                        : '',
+                    traceStages.templatePatch && traceStages.templatePatch.modelMeta
+                        ? `<div class="summary-item"><strong>Patch model:</strong> ${escapeHtml(traceStages.templatePatch.modelMeta.label || '')}</div>`
+                        : '',
                     `<div class="summary-item"><strong>Template:</strong> ${escapeHtml(trace.templateId || decision.templateId || '')}</div>`,
                     `<div class="summary-item"><strong>Stages:</strong> ${['analysis', 'gamePlan', 'templatePatch', 'compile'].filter(stage => traceStages[stage]).join(' -> ')}</div>`
                 ].join('')
@@ -4007,6 +4040,7 @@ Decision Source: ${decision.source || 'unknown'}`;
         activeGameCleanups = [];
         latestTemplatePatchPlan = null;
         latestCompiledProject = null;
+        latestGamePlanModelMeta = null;
 
         if (analysisTimeout) {
             clearTimeout(analysisTimeout);
@@ -4047,6 +4081,7 @@ Decision Source: ${decision.source || 'unknown'}`;
         chatCurrent = createChatTracking(() => []);
         latestGamePlanDraft = '';
         latestGamePlanJson = null;
+        latestGamePlanModelMeta = null;
         analysisState = {
             active: false,
             ...createEmptySelections(),
@@ -4054,6 +4089,8 @@ Decision Source: ${decision.source || 'unknown'}`;
             processing: false,
             revisionMode: false,
             finalModelMeta: null,
+            analysisModelMeta: null,
+            gamePlanModelMeta: null,
             workStartedAt: 0,
             modules: createModuleStates()
         };
@@ -4381,6 +4418,8 @@ Decision Source: ${decision.source || 'unknown'}`;
             missingFields: analysisState.missingFields,
             aiGamePlanDraft: latestGamePlanDraft,
             aiGamePlanJson: latestGamePlanJson,
+            analysisModelMeta: analysisState.analysisModelMeta,
+            gamePlanModelMeta: latestGamePlanModelMeta,
             templatePatchPlan: latestTemplatePatchPlan,
             compiledProject: latestCompiledProject ? {
                 id: latestCompiledProject.id,

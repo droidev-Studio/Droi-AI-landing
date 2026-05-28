@@ -100,6 +100,8 @@ function testCompilerOutput() {
     },
     templateDecision: { templateId: 'bullet_hell', templateLabel: 'Bullet Hell / Flying Shooter' },
     selectedModel: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+    analysisModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
+    gamePlanModelMeta: { providerId: 'openai', modelId: 'gpt-5.5-high', label: 'GPT 5.5 High' },
     aiPlanDraft: 'AI generated plan',
     aiPlanJson: {
       title: 'AI Patched Skybreak',
@@ -124,7 +126,9 @@ function testCompilerOutput() {
   assert.strictEqual(project.generationReport.aiFirst, true);
   assert.strictEqual(project.generationReport.aiGenerated, true);
   assert.strictEqual(project.generationReport.selectedModel.label, 'GPT 5.5 High');
+  assert.strictEqual(project.generationReport.stages.analysis.modelMeta.modelId, 'gpt-5.5-high');
   assert.strictEqual(project.generationReport.stages.gamePlan.structured, true);
+  assert.strictEqual(project.generationReport.stages.gamePlan.modelMeta.modelId, 'gpt-5.5-high');
   assert.strictEqual(project.generationReport.stages.gamePlan.title, 'AI Patched Skybreak');
   assert.deepStrictEqual(project.generationReport.stages.gamePlan.patchTargets, ['waves', 'enemyTypes', 'bosses', 'projectilePatterns']);
   assert.strictEqual(project.generationReport.stages.templatePatch.aiGenerated, true);
@@ -140,6 +144,7 @@ function testCompilerOutput() {
   assert.strictEqual(generationReport.projectId, project.id);
   assert.strictEqual(generationReport.outputs.preview, project.previewUrl);
   assert.strictEqual(generationReport.stages.gamePlan.structured, true);
+  assert.strictEqual(generationReport.stages.analysis.modelMeta.label, 'GPT 5.5 High');
   assert.strictEqual(generatedSpec.content.bosses[0].id, 'patched_boss');
   assert.strictEqual(wavesSpec[0].enemy, 'patched_drone');
   assert.strictEqual(enemiesSpec[0].id, 'patched_drone');
@@ -390,6 +395,11 @@ function testNoClientSecrets() {
   assert.ok(clientScript.includes('templateCapability'));
   assert.ok(clientScript.includes('latestGamePlanJson'));
   assert.ok(clientScript.includes('aiPlanJson: latestGamePlanJson'));
+  assert.ok(clientScript.includes('analysisModelMeta: analysisState.analysisModelMeta'));
+  assert.ok(clientScript.includes('gamePlanModelMeta: latestGamePlanModelMeta'));
+  assert.ok(clientScript.includes('Analysis model:'));
+  assert.ok(clientScript.includes('Game plan model:'));
+  assert.ok(clientScript.includes('Patch model:'));
   assert.ok(clientScript.includes('getRecentChatTranscript'));
   assert.ok(clientScript.includes('chatTranscript: getRecentChatTranscript()'));
   assert.ok(clientScript.includes('Readable alias note'));
