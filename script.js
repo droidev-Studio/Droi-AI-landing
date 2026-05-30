@@ -1016,7 +1016,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ADMIN_SESSION_KEY = 'droi_ai_admin_session';
     const PAGE_DIAGNOSTIC_KEY = 'droi_page_diagnostics_v1';
     const PAGE_DIAGNOSTIC_WINDOW_MS = 5 * 60 * 1000;
-    const APP_SCRIPT_BUILD = '20260530-inspire-timer';
+    const APP_SCRIPT_BUILD = '20260530-json-repair';
     const ADMIN_EMAIL_ALLOWLIST = ['liyilin199976@gmail.com'];
     const AI_ANALYSIS_TIMEOUT_MS = 60000;
     const AI_PROFILE_TIMEOUT_MS = 60000;
@@ -1646,11 +1646,73 @@ document.addEventListener('DOMContentLoaded', () => {
         return value;
     }
 
+    function extractBalancedJsonObject(text) {
+        const source = String(text || '');
+        const start = source.indexOf('{');
+        if (start < 0) return '';
+        let depth = 0;
+        let inString = false;
+        let escaped = false;
+        for (let i = start; i < source.length; i += 1) {
+            const char = source[i];
+            if (inString) {
+                if (escaped) {
+                    escaped = false;
+                } else if (char === '\\') {
+                    escaped = true;
+                } else if (char === '"') {
+                    inString = false;
+                }
+                continue;
+            }
+            if (char === '"') {
+                inString = true;
+            } else if (char === '{') {
+                depth += 1;
+            } else if (char === '}') {
+                depth -= 1;
+                if (depth === 0) return source.slice(start, i + 1);
+            }
+        }
+        return source.slice(start);
+    }
+
+    function repairCommonJsonFormatting(text) {
+        return String(text || '')
+            .replace(/^\uFEFF/, '')
+            .replace(/^```(?:json)?\s*/i, '')
+            .replace(/```$/i, '')
+            .replace(/,\s*([}\]])/g, '$1')
+            .replace(/([}\]"0-9])\s*\n\s*("[$A-Za-z0-9_.-]+"\s*:)/g, '$1,\n$2')
+            .replace(/\b(true|false|null)\s*\n\s*("[$A-Za-z0-9_.-]+"\s*:)/g, '$1,\n$2')
+            .replace(/([}\]"0-9])\s*\n\s*([{\[])/g, '$1,\n$2')
+            .trim();
+    }
+
     function extractModelJsonObject(content, phase) {
+        const raw = String(content || '').trim();
+        const fencedMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+        const balanced = extractBalancedJsonObject(fencedMatch ? fencedMatch[1] : raw);
+        const candidates = [
+            fencedMatch ? fencedMatch[1].trim() : '',
+            balanced,
+            raw
+        ].filter(Boolean);
         try {
-            const jsonMatch = String(content || '').match(/\{[\s\S]*\}/);
-            const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(content);
-            return assertPlainObject(parsed, phase);
+            let lastError = null;
+            for (const candidate of candidates) {
+                try {
+                    return assertPlainObject(JSON.parse(candidate), phase);
+                } catch (error) {
+                    lastError = error;
+                }
+                try {
+                    return assertPlainObject(JSON.parse(repairCommonJsonFormatting(candidate)), phase);
+                } catch (error) {
+                    lastError = error;
+                }
+            }
+            throw lastError || new Error('No JSON object found.');
         } catch (error) {
             if (error && error.aiFlow) throw error;
             throw createAIFlowError('MODEL_JSON_PARSE_FAILED', 'schema_failure', 'AI response is not valid JSON', `${phase} returned content that could not be parsed as strict JSON.`, error.message || String(error), ['retry', 'switch_model', 'manual_queue']);
@@ -4450,6 +4512,11 @@ Treat genre conventions as suggested, not confirmed, unless the user explicitly 
                 button.addEventListener('click', () => {
                     const action = button.getAttribute('data-ai-error-action');
                     if (action === 'retry' && typeof options.onRetry === 'function') {
+                        msgDiv.querySelectorAll('[data-ai-error-action]').forEach(actionButton => {
+                            actionButton.disabled = true;
+                            actionButton.style.pointerEvents = 'none';
+                        });
+                        msgDiv.remove();
                         options.onRetry();
                     } else if (action === 'switch_model') {
                         if (modelSelector) modelSelector.click();
@@ -6222,6 +6289,52 @@ Lock Game Type to "Bullet Hell / Flying Shooter" and genre to "bullet-hell".`
 
     async function generateTemplatePatchPlan(spec, decision, productionPlan = null) {
         const promptSeed = buildTemplatePatchPromptSeed(spec, decision, productionPlan);
+        const parseAndValidateTemplatePatch = content => validateTemplatePatchPlan(extractModelJsonObject(content, 'Template patch generation'), decision);
+        const repairTemplatePatchResponse = async (badContent, parseError, providerId, modelId) => {
+            const repairResponse = await withTimeout(aiService.stageChat('/api/ai/generate-template-patch', [
+                {
+                    role: 'system',
+                    content: `You repair malformed JSON for a TemplatePatchPlan. Return one valid JSON object only. No markdown, no prose, no code fences.
+Required top-level keys: templateId, userIntentSummary, gameName, settingsPatch, specPatches, manifestPatch, stylePatch, assetPrompts, requiresRuntimeCodePatch, runtimePatchReason, playabilityChecklist.
+Rules:
+- Preserve the user's game intent and the previous patch content where possible.
+- Fix missing commas, invalid quotes, trailing commas, and any non-JSON text.
+- Do not output direct file patches, runtime patches, code patches, diffs, or source edits.
+- Do not put raw line breaks inside JSON string values; keep strings concise.
+- Output must parse with JSON.parse.`
+                },
+                {
+                    role: 'user',
+                    content: JSON.stringify({
+                        templateId: decision.templateId,
+                        parseError: parseError && (parseError.technicalMessage || parseError.message || String(parseError)),
+                        invalidOutput: String(badContent || '').slice(0, 18000),
+                        requiredSpecModules: decision.templateId === 'bullet_hell'
+                            ? ['coreRules', 'enemyTypes', 'enemyBulletTypes', 'bosses', 'waves', 'difficultyTuning']
+                            : ['waves', 'enemies', 'weapons', 'balance', 'effects'],
+                        suggestedStructure: {
+                            settingsPatch: promptSeed.settingsPatch,
+                            specPatches: promptSeed.specPatches,
+                            manifestPatch: promptSeed.manifestPatch,
+                            stylePatch: promptSeed.stylePatch,
+                            assetPrompts: promptSeed.assetPrompts,
+                            playabilityChecklist: promptSeed.playabilityChecklist
+                        }
+                    })
+                }
+            ], {
+                provider: providerId,
+                model: modelId,
+                maxTokens: 3200,
+                phase: 'Template patch JSON repair'
+            }), AI_TEMPLATE_PATCH_TIMEOUT_MS, 'Template patch JSON repair');
+            recordDiagnostic('ai-json-repair', {
+                phase: 'Template patch generation',
+                provider: providerId,
+                model: modelId
+            });
+            return parseAndValidateTemplatePatch(repairResponse.content);
+        };
         try {
             const activeModel = requireActiveAIModel('Template patch generation');
             const providerId = activeModel.providerId;
@@ -6238,6 +6351,9 @@ Rules:
 - For roguelike_survival, specPatches must include waves, enemies, weapons, balance, and effects. Keep wave, XP, upgrades, boss pressure, pause/restart/result runtime inherited.
 - Do not output direct file patches, runtime patches, code patches, diffs, or source edits. Only use settingsPatch, specPatches, manifestPatch, stylePatch, assetPrompts.
 - assets must be described through manifestPatch or assetPrompts, never direct paths in game.js.
+- No markdown, no explanations, no code fences, no comments.
+- Do not put raw line breaks inside string values. Keep every string concise and JSON-escaped.
+- Every object property and array item must be comma-separated. Output must parse with JSON.parse.
 - playabilityChecklist must include waves/progression, enemies/bosses, win/fail/restart, input actions, collision/object limits. ${getLanguageInstruction()}`
                 },
                 {
@@ -6263,8 +6379,22 @@ Rules:
                         }
                     })
                 }
-            ], { provider: providerId, model: modelId }), AI_TEMPLATE_PATCH_TIMEOUT_MS, 'Template patch generation');
-            const parsed = validateTemplatePatchPlan(extractModelJsonObject(response.content, 'Template patch generation'), decision);
+            ], {
+                provider: providerId,
+                model: modelId,
+                maxTokens: 3600,
+                phase: 'Template patch generation'
+            }), AI_TEMPLATE_PATCH_TIMEOUT_MS, 'Template patch generation');
+            let parsed;
+            try {
+                parsed = parseAndValidateTemplatePatch(response.content);
+            } catch (parseError) {
+                if (parseError && parseError.code === 'MODEL_JSON_PARSE_FAILED') {
+                    parsed = await repairTemplatePatchResponse(response.content, parseError, providerId, modelId);
+                } else {
+                    throw parseError;
+                }
+            }
             return {
                 ...parsed,
                 templateId: decision.templateId,
