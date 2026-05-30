@@ -1228,6 +1228,45 @@ body.is-in-detail .floating-roll-btn {
     align-self: center;
 }
 
+.detail-play-panel {
+    grid-column: 1 / -1;
+    align-self: stretch;
+    border: 1px solid rgba(120, 180, 255, 0.22);
+    border-radius: 20px;
+    background:
+        linear-gradient(180deg, rgba(16, 22, 47, 0.68), rgba(6, 11, 24, 0.72));
+    box-shadow: 0 22px 72px rgba(0, 0, 0, 0.28);
+    overflow: hidden;
+}
+
+.detail-play-heading {
+    min-height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0 1rem;
+    color: rgba(245, 247, 255, 0.92);
+    font-size: 0.74rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.detail-play-heading a {
+    color: #74E5FF;
+    text-decoration: none;
+}
+
+.detail-play-panel iframe {
+    display: block;
+    width: 100%;
+    height: min(72vh, 720px);
+    min-height: 520px;
+    border: 0;
+    background: #050816;
+}
+
 .focus-card {
     position: relative;
     min-height: clamp(560px, 83vh, 640px);
@@ -1525,6 +1564,10 @@ body.is-in-detail .floating-roll-btn {
     .detail-image-frame {
         min-height: 520px;
     }
+
+    .detail-play-panel {
+        grid-column: auto;
+    }
 }
 
 @media (max-width: 760px) {
@@ -1550,6 +1593,10 @@ body.is-in-detail .floating-roll-btn {
         min-height: auto;
         padding: 1.6rem 1rem 2.5rem;
         gap: 1.5rem;
+    }
+
+    .detail-play-panel iframe {
+        min-height: 420px;
     }
 
     .roll-title {

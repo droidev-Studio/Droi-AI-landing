@@ -130,6 +130,77 @@ document.addEventListener('DOMContentLoaded', () => {
         { label: 'Nightmare', value: 'nightmare', desc: 'High pressure for expert players.' }
     ];
 
+    const OPTION_I18N = {
+        zh: {
+            type: {
+                RPG: { label: '角色扮演', value: '角色扮演' },
+                Puzzle: { label: '解谜', value: '解谜' },
+                Action: { label: '动作平台', value: '动作平台' },
+                Roguelike: { label: '肉鸽', value: '肉鸽' },
+                'Bullet Hell': { label: '弹幕射击', value: '弹幕射击' },
+                Simulation: { label: '模拟经营', value: '模拟经营' },
+                Horror: { label: '恐怖生存', value: '恐怖生存' },
+                Rhythm: { label: '节奏战斗', value: '节奏战斗' },
+                Strategy: { label: '策略', value: '策略' },
+                Survival: { label: '开放世界生存', value: '开放世界生存' }
+            },
+            style: {
+                'Pixel Art': { label: '像素风', value: '像素风' },
+                'Dark Gothic': { label: '暗黑哥特', value: '暗黑哥特' },
+                'Anime / Cartoon': { label: '动漫卡通', value: '动漫卡通' },
+                Minimalist: { label: '极简风', value: '极简风' },
+                Cyberpunk: { label: '赛博朋克', value: '赛博朋克' },
+                'Fantasy Illustration': { label: '奇幻插画', value: '奇幻插画' },
+                'Retro / Lo-Fi': { label: '复古低保真', value: '复古低保真' },
+                Realistic: { label: '写实 3D', value: '写实 3D' }
+            },
+            setting: {
+                'Fantasy Medieval': { label: '中世纪奇幻', value: '中世纪奇幻世界', desc: '穿越充满魔法、骑士和传说巨龙的王国。' },
+                'Cyberpunk City': { label: '赛博朋克城市', value: '赛博朋克都市', desc: '穿梭在被公司和高科技反抗者控制的霓虹街道。' },
+                'Outer Space': { label: '外太空', value: '深空宇宙', desc: '探索遥远星系、异星行星和寂静宇宙谜团。' },
+                'Post-Apocalyptic': { label: '末日废土', value: '末日废土', desc: '在文明崩塌后被自然重新占领的世界中求生。' },
+                'Underwater World': { label: '海底世界', value: '神秘海底王国', desc: '发现发光城市和深海生物。' },
+                'Ancient East': { label: '古东方', value: '古东方帝国', desc: '体验浮空寺庙、樱花与东方神话。' },
+                'Arctic / Ice World': { label: '极地冰原', value: '冰封极地荒野', desc: '在永恒暴雪笼罩的世界中抵御严寒。' },
+                'Haunted Realm': { label: '幽灵领域', value: '被诅咒的幽灵领域', desc: '在阴影会动起来的维度里揭开黑暗秘密。' }
+            },
+            coreGameplay: {
+                'Auto-attack survival': { label: '自动攻击生存', value: '移动求生，武器自动攻击。', desc: '最适合类吸血鬼幸存者游戏。' },
+                'Manual action combat': { label: '手动动作战斗', value: '移动、瞄准、闪避并手动攻击。', desc: '最适合动作和 Boss 战游戏。' },
+                'Tower placement': { label: '放置防御塔', value: '沿敌人路径放置并升级防御设施。', desc: '适合塔防类游戏。' },
+                'Build and survive': { label: '建造并生存', value: '收集资源、建造基地并承受压力。', desc: '适合生存模拟类游戏。' },
+                'Puzzle exploration': { label: '解谜探索', value: '探索空间并解决连锁谜题。', desc: '适合悬疑或解谜游戏。' }
+            },
+            playerGoal: {
+                'Survive a timer': { label: '限时生存', value: '在固定时间内存活并抵达撤离点。', desc: '适合波次生存的清晰胜利条件。' },
+                'Defeat final boss': { label: '击败最终 Boss', value: '击败最终 Boss 战。', desc: '适合动作或肉鸽流程的高潮目标。' },
+                'Clear all waves': { label: '清完所有波次', value: '在基地不被摧毁的情况下击败所有敌人波次。', desc: '适合防守类游戏的清晰目标。' },
+                'Reach destination': { label: '抵达终点', value: '抵达最终地点或逃离点。', desc: '适合冒险和平台跳跃游戏。' },
+                'Endless high score': { label: '无尽高分', value: '无限游玩并追逐最高分。', desc: '适合强调重复游玩的街机体验。' }
+            },
+            mainChallenge: {
+                'Enemy swarm pressure': { label: '敌群压迫', value: '敌人数量随时间增加。', desc: '最适合生存和肉鸽压力。' },
+                'Elite enemies': { label: '精英敌人', value: '特殊敌人迫使玩家移动和做战术选择。', desc: '增加可读的战术压力点。' },
+                'Boss phases': { label: 'Boss 阶段变化', value: 'Boss 会在不同阶段改变攻击方式。', desc: '适合制造令人记住的高潮。' },
+                'Environmental hazards': { label: '环境危险', value: '危险区域、陷阱或地形影响决策。', desc: '增加空间层面的挑战。' },
+                'Resource limits': { label: '资源限制', value: '有限弹药、能量、金币或物资带来取舍。', desc: '适合策略和生存玩法。' }
+            },
+            progressionSystem: {
+                'Level-up choices': { label: '升级三选一', value: '获得 XP，升级时选择强化。', desc: '适合肉鸽游戏的可靠成长方式。' },
+                'Skill tree': { label: '技能树', value: '获得点数并逐步解锁能力。', desc: '适合长期成长构筑。' },
+                'Equipment drops': { label: '装备掉落', value: '敌人掉落会改变属性和玩法的装备。', desc: '适合 RPG 式循环。' },
+                'Permanent unlocks': { label: '永久解锁', value: '每局解锁持久角色、武器或天赋。', desc: '适合提升重复游玩动力。' },
+                'Crafting upgrades': { label: '制作升级', value: '收集材料并制作更强工具或武器。', desc: '适合生存和建造游戏。' }
+            },
+            difficultyLevel: {
+                Easy: { label: '简单', value: '简单', desc: '轻松节奏，适合新手。' },
+                Normal: { label: '普通', value: '普通', desc: '平衡的默认难度。' },
+                Hard: { label: '困难', value: '困难', desc: '压力更强，容错更低。' },
+                Nightmare: { label: '噩梦', value: '噩梦', desc: '面向高手的高压挑战。' }
+            }
+        }
+    };
+
     const MODULE_STEPS = [
         null,
         { key: 'type', specKey: 'gameType', title: 'Game Type', pool: GAME_TYPES, prompt: 'What kind of game should this be?' },
@@ -164,6 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
             noIdea: 'No idea? Just',
             create: 'Create',
             addMore: 'Add More in Chat',
+            moreOptions: 'More options',
             exitNewIdea: 'Exit & New Idea',
             editFilled: "Sure! I've filled the summary into the input box. Feel free to edit or add more details!",
             promptFallback: 'What should we define next?',
@@ -221,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
             webPreview: 'Web preview',
             openPreview: 'Open preview',
             generatedFiles: 'Generated files',
-            generatedJsNote: 'Playable runtime, GameSpec, and local fallback logic are bundled here.',
+            generatedJsNote: 'Playable runtime, GameSpec, and template preview logic are bundled here.',
             landscapeTip: 'Mobile preview starts in portrait. Rotate your phone for a wider playfield.',
             mainPlaceholder: 'Enter your creative prompt~',
             stepAnalyze: 'Analyzing your prompt...',
@@ -686,6 +758,7 @@ document.addEventListener('DOMContentLoaded', () => {
         p0Template: 'P0 模板',
         decision: '决策'
     });
+    CHAT_I18N.zh.moreOptions = '更多选项';
     Object.assign(PLAN_FIELD_LABELS.zh, {
         hook: '亮点',
         storyPremise: '故事前提',
@@ -846,6 +919,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     ];
 
+    const TEMPLATE_KEYWORD_PATCHES = {
+        roguelike_survival: ['roguelite', 'survivors', '肉鸽', '肉鸽生存', '类吸血鬼幸存者', '吸血鬼幸存者', '生存', '割草', '波次', '自动攻击', '升级', '三选一'],
+        bullet_hell: ['plane shooter', '飞行射击', '飞机大战', '太空射击', '纵版射击', '竖版打飞机', '横版射击', '弹幕', '弹幕射击', '躲子弹', 'Boss 弹幕战']
+    };
+
+    TEMPLATE_CATALOG.forEach(template => {
+        const extraKeywords = TEMPLATE_KEYWORD_PATCHES[template.id] || [];
+        template.keywords = [...new Set([...(template.keywords || []), ...extraKeywords])];
+        if (template.id === 'bullet_hell') {
+            template.intentAliases = [...new Set([...(template.intentAliases || []), ...extraKeywords])];
+        }
+    });
+
     const AUTO_GENERATION_TEMPLATE_IDS = new Set(['roguelike_survival', 'bullet_hell']);
 
     const THEME_PRESETS = {
@@ -928,8 +1014,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const AI_STORAGE_KEY = 'droi_ai_model_config';
     const ADMIN_SESSION_KEY = 'droi_ai_admin_session';
+    const PAGE_DIAGNOSTIC_KEY = 'droi_page_diagnostics_v1';
+    const PAGE_DIAGNOSTIC_WINDOW_MS = 5 * 60 * 1000;
+    const APP_SCRIPT_BUILD = '20260530-inspire-timer';
     const ADMIN_EMAIL_ALLOWLIST = ['liyilin199976@gmail.com'];
-    const AI_ANALYSIS_TIMEOUT_MS = 6000;
+    const AI_ANALYSIS_TIMEOUT_MS = 60000;
+    const AI_PROFILE_TIMEOUT_MS = 60000;
+    const AI_GAME_PLAN_TIMEOUT_MS = 45000;
+    const AI_BULLET_PLAN_TIMEOUT_MS = 45000;
+    const AI_TEMPLATE_PATCH_TIMEOUT_MS = 60000;
     const isLocalHost = ['127.0.0.1', 'localhost'].includes(window.location.hostname);
     const DEFAULT_LOCAL_API_PORT = window.DROI_API_PORT || '3000';
     const API_BASE_URL = window.DROI_API_BASE || (
@@ -937,6 +1030,16 @@ document.addEventListener('DOMContentLoaded', () => {
             ? `http://127.0.0.1:${DEFAULT_LOCAL_API_PORT}`
             : ''
     );
+    function isLocalRuntimeApiBase() {
+        if (!isLocalHost) return false;
+        if (!API_BASE_URL) return true;
+        try {
+            const base = new URL(API_BASE_URL, window.location.origin);
+            return ['127.0.0.1', 'localhost'].includes(base.hostname);
+        } catch (error) {
+            return false;
+        }
+    }
     const PROVIDER_ORDER = ['qwen', 'openai', 'gemini', 'anthropic', 'groq'];
     const PROVIDER_META = {
         qwen: {
@@ -1104,6 +1207,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function configureRollEmbedApiBase() {
+        if (!rollEmbedFrame || !API_BASE_URL) return;
+        try {
+            const nextUrl = new URL(rollEmbedFrame.getAttribute('src') || rollEmbedFrame.src, window.location.href);
+            if (nextUrl.searchParams.get('apiBase') === API_BASE_URL) return;
+            nextUrl.searchParams.set('apiBase', API_BASE_URL);
+            rollEmbedFrame.src = nextUrl.toString();
+        } catch (error) {
+            // Keep the static iframe source if URL mutation is not available.
+        }
+    }
+
     function getRollEmbedOrigin() {
         if (!rollEmbedFrame) return window.location.origin;
         try {
@@ -1121,11 +1236,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }, getRollEmbedOrigin());
     }
 
-    function scrollToRollPage(pageIndex) {
+    function scrollToRollPage(pageIndex, offset) {
         if (!rollEmbedSection) return;
         const top = rollEmbedSection.getBoundingClientRect().top + window.scrollY;
+        const targetOffset = Number.isFinite(Number(offset))
+            ? Math.max(0, Number(offset))
+            : Math.max(0, pageIndex) * window.innerHeight;
         window.scrollTo({
-            top: top + Math.max(0, pageIndex) * window.innerHeight,
+            top: top + targetOffset,
             behavior: 'smooth'
         });
     }
@@ -1144,12 +1262,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         if (data.type === 'droi-roll-scroll-to') {
-            scrollToRollPage(Number(data.pageIndex) || 0);
+            scrollToRollPage(Number(data.pageIndex) || 0, data.offset);
         }
     });
 
     window.addEventListener('resize', syncRollEmbedViewport);
     if (rollEmbedFrame) {
+        configureRollEmbedApiBase();
         if (rollEmbedSection) {
             rollEmbedSection.style.setProperty('--roll-embed-page-count', '2');
         }
@@ -1210,6 +1329,229 @@ document.addEventListener('DOMContentLoaded', () => {
         return `${API_BASE_URL}${path}`;
     }
 
+    function shouldEnablePageDiagnostics() {
+        const params = new URLSearchParams(window.location.search);
+        return isLocalHost || params.get('debug') === '1' || localStorage.getItem('droi_debug_enabled') === '1';
+    }
+
+    function readDiagnostics() {
+        try {
+            const records = JSON.parse(localStorage.getItem(PAGE_DIAGNOSTIC_KEY) || '[]');
+            return Array.isArray(records) ? records : [];
+        } catch (error) {
+            return [];
+        }
+    }
+
+    function writeDiagnostics(records) {
+        const cutoff = Date.now() - PAGE_DIAGNOSTIC_WINDOW_MS;
+        const next = records
+            .filter(item => item && Number(item.ts) >= cutoff)
+            .slice(-240);
+        localStorage.setItem(PAGE_DIAGNOSTIC_KEY, JSON.stringify(next));
+        return next;
+    }
+
+    function scrubDiagnosticUrl(value) {
+        try {
+            const url = new URL(String(value || ''), window.location.href);
+            ['code', 'state', 'key', 'token', 'api_key'].forEach(key => {
+                if (url.searchParams.has(key)) url.searchParams.set(key, '...');
+            });
+            return url.pathname.startsWith('/api') ? `${url.origin}${url.pathname}` : url.href;
+        } catch (error) {
+            return String(value || '').slice(0, 220);
+        }
+    }
+
+    function recordDiagnostic(type, detail = {}) {
+        if (!window.droiDiagnosticsEnabled) return;
+        const records = readDiagnostics();
+        const entry = {
+            ts: Date.now(),
+            type,
+            build: APP_SCRIPT_BUILD,
+            path: window.location.pathname,
+            detail
+        };
+        records.push(entry);
+        const next = writeDiagnostics(records);
+        window.dispatchEvent(new CustomEvent('droi-diagnostics-updated', { detail: { entry, records: next } }));
+    }
+
+    function formatDiagnosticTime(ts) {
+        return new Date(ts).toLocaleTimeString([], { hour12: false });
+    }
+
+    function renderDiagnosticsPanel() {
+        const panel = document.getElementById('droiDiagnosticsPanel');
+        const list = document.getElementById('droiDiagnosticsList');
+        if (!panel || !list) return;
+        const records = writeDiagnostics(readDiagnostics());
+        list.innerHTML = records.slice(-80).reverse().map(item => {
+            const detail = item.detail || {};
+            const title = detail.phase || detail.label || detail.url || detail.message || item.type;
+            const meta = [
+                detail.method,
+                detail.status ? `HTTP ${detail.status}` : '',
+                detail.ms != null ? `${detail.ms}ms` : '',
+                detail.provider || '',
+                detail.model || ''
+            ].filter(Boolean).join(' | ');
+            return `
+                <div class="droi-diagnostic-row droi-diagnostic-${escapeHtml(item.type)}">
+                    <strong>${escapeHtml(formatDiagnosticTime(item.ts))} ${escapeHtml(item.type)}</strong>
+                    <span>${escapeHtml(String(title || '').slice(0, 180))}</span>
+                    ${meta ? `<small>${escapeHtml(meta)}</small>` : ''}
+                </div>
+            `;
+        }).join('') || '<div class="droi-diagnostic-empty">No events in the last 5 minutes.</div>';
+    }
+
+    function installDiagnosticsPanel() {
+        if (document.getElementById('droiDiagnosticsPanel')) return;
+        const style = document.createElement('style');
+        style.textContent = `
+            .droi-diagnostic-toggle{position:fixed;right:14px;bottom:14px;z-index:99990;border:1px solid rgba(47,124,246,.35);border-radius:999px;background:#111827;color:#fff;padding:9px 12px;font:12px/1.2 Inter,system-ui,sans-serif;box-shadow:0 10px 32px rgba(0,0,0,.28);cursor:pointer}
+            .droi-diagnostic-panel{position:fixed;right:14px;bottom:58px;z-index:99991;width:min(520px,calc(100vw - 28px));max-height:min(680px,calc(100vh - 86px));display:none;grid-template-rows:auto auto 1fr;border:1px solid #d7deea;border-radius:8px;background:#fff;color:#1f2a3d;box-shadow:0 22px 70px rgba(22,30,46,.28);font:12px/1.4 Inter,system-ui,sans-serif;overflow:hidden}
+            .droi-diagnostic-panel.open{display:grid}
+            .droi-diagnostic-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid #e4e9f2;background:#f7faff}
+            .droi-diagnostic-head strong{font-size:13px}
+            .droi-diagnostic-head button,.droi-diagnostic-actions button{border:1px solid #d7e5ff;background:#fff;color:#2f7cf6;border-radius:4px;min-height:28px;padding:0 8px;cursor:pointer}
+            .droi-diagnostic-actions{display:flex;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid #e4e9f2}
+            .droi-diagnostic-actions span{color:#6b778c;margin-left:auto}
+            .droi-diagnostic-list{overflow:auto;padding:8px;display:grid;gap:6px}
+            .droi-diagnostic-row{display:grid;gap:3px;border:1px solid #e4e9f2;border-radius:6px;background:#fff;padding:8px;overflow-wrap:anywhere}
+            .droi-diagnostic-error,.droi-diagnostic-unhandledrejection,.droi-diagnostic-ai-error{border-color:#ffd0cc;background:#fff7f6}
+            .droi-diagnostic-fetch-error,.droi-diagnostic-timeout{border-color:#ffe0a3;background:#fffaf0}
+            .droi-diagnostic-row small,.droi-diagnostic-empty{color:#6b778c}
+        `;
+        document.head.appendChild(style);
+
+        const toggle = document.createElement('button');
+        toggle.id = 'droiDiagnosticsToggle';
+        toggle.className = 'droi-diagnostic-toggle';
+        toggle.type = 'button';
+        toggle.textContent = 'Diagnostics';
+        document.body.appendChild(toggle);
+
+        const panel = document.createElement('section');
+        panel.id = 'droiDiagnosticsPanel';
+        panel.className = 'droi-diagnostic-panel';
+        panel.innerHTML = `
+            <div class="droi-diagnostic-head">
+                <strong>Droi Diagnostics</strong>
+                <button type="button" data-diagnostics-close>Close</button>
+            </div>
+            <div class="droi-diagnostic-actions">
+                <button type="button" data-diagnostics-refresh>Refresh</button>
+                <button type="button" data-diagnostics-copy>Copy</button>
+                <button type="button" data-diagnostics-clear>Clear</button>
+                <span>Last 5 min | ${escapeHtml(APP_SCRIPT_BUILD)}</span>
+            </div>
+            <div class="droi-diagnostic-list" id="droiDiagnosticsList"></div>
+        `;
+        document.body.appendChild(panel);
+        toggle.addEventListener('click', () => {
+            panel.classList.toggle('open');
+            renderDiagnosticsPanel();
+        });
+        panel.querySelector('[data-diagnostics-close]').addEventListener('click', () => panel.classList.remove('open'));
+        panel.querySelector('[data-diagnostics-refresh]').addEventListener('click', renderDiagnosticsPanel);
+        panel.querySelector('[data-diagnostics-clear]').addEventListener('click', () => {
+            localStorage.removeItem(PAGE_DIAGNOSTIC_KEY);
+            renderDiagnosticsPanel();
+        });
+        panel.querySelector('[data-diagnostics-copy]').addEventListener('click', async () => {
+            await navigator.clipboard.writeText(JSON.stringify(writeDiagnostics(readDiagnostics()), null, 2));
+            recordDiagnostic('operation', { label: 'Diagnostics copied' });
+        });
+        window.addEventListener('droi-diagnostics-updated', () => {
+            if (panel.classList.contains('open')) renderDiagnosticsPanel();
+        });
+    }
+
+    function installPageDiagnostics() {
+        window.droiDiagnosticsEnabled = shouldEnablePageDiagnostics();
+        if (!window.droiDiagnosticsEnabled || window.droiDiagnosticsInstalled) return;
+        window.droiDiagnosticsInstalled = true;
+        writeDiagnostics(readDiagnostics());
+
+        const originalFetch = window.fetch.bind(window);
+        window.fetch = async (input, init = {}) => {
+            const startedAt = performance.now();
+            const url = typeof input === 'string' ? input : input?.url;
+            const method = init.method || input?.method || 'GET';
+            try {
+                const response = await originalFetch(input, init);
+                const ms = Math.round(performance.now() - startedAt);
+                if (String(url || '').includes('/api/') || ms > 1500 || !response.ok) {
+                    recordDiagnostic(response.ok ? 'fetch' : 'fetch-error', {
+                        method,
+                        url: scrubDiagnosticUrl(url),
+                        status: response.status,
+                        ms
+                    });
+                }
+                return response;
+            } catch (error) {
+                recordDiagnostic('fetch-error', {
+                    method,
+                    url: scrubDiagnosticUrl(url),
+                    ms: Math.round(performance.now() - startedAt),
+                    message: error.message || String(error)
+                });
+                throw error;
+            }
+        };
+
+        ['warn', 'error'].forEach(level => {
+            const original = console[level].bind(console);
+            console[level] = (...args) => {
+                recordDiagnostic(level, {
+                    message: args.map(arg => arg && arg.message ? arg.message : String(arg)).join(' ').slice(0, 500)
+                });
+                original(...args);
+            };
+        });
+
+        window.addEventListener('error', event => {
+            recordDiagnostic('error', {
+                message: event.message,
+                url: scrubDiagnosticUrl(event.filename),
+                line: event.lineno,
+                column: event.colno
+            });
+        });
+        window.addEventListener('unhandledrejection', event => {
+            const reason = event.reason || {};
+            recordDiagnostic('unhandledrejection', {
+                message: reason.message || String(reason),
+                code: reason.code || '',
+                category: reason.category || ''
+            });
+        });
+        document.addEventListener('click', event => {
+            const target = event.target.closest('button,a,[role="button"],input,textarea,select');
+            if (!target) return;
+            const label = target.getAttribute('aria-label') || target.textContent || target.id || target.className || target.tagName;
+            recordDiagnostic('operation', {
+                label: String(label).trim().slice(0, 160),
+                tag: target.tagName,
+                id: target.id || ''
+            });
+        }, true);
+        document.addEventListener('DOMContentLoaded', installDiagnosticsPanel);
+        if (document.readyState !== 'loading') installDiagnosticsPanel();
+        recordDiagnostic('page-load', {
+            url: scrubDiagnosticUrl(window.location.href),
+            apiBase: API_BASE_URL || window.location.origin,
+            build: APP_SCRIPT_BUILD
+        });
+    }
+
+    installPageDiagnostics();
+
     async function parseJsonResponse(response) {
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
@@ -1222,6 +1564,202 @@ document.addEventListener('DOMContentLoaded', () => {
             throw error;
         }
         return data;
+    }
+
+    function createAIFlowError(code, category, title, message, technicalMessage = '', actions = ['retry', 'switch_model', 'check_config', 'manual_queue']) {
+        const error = new Error(message || title || code);
+        error.aiFlow = true;
+        error.code = code;
+        error.category = category;
+        error.title = title || 'AI generation failed';
+        error.message = message || title || code;
+        error.technicalMessage = technicalMessage || '';
+        error.retryable = ['recoverable_model_failure', 'model_config_failure', 'schema_failure'].includes(category);
+        error.manualQueueRecommended = ['capability_unsupported', 'template_compile_failure'].includes(category);
+        error.actions = actions;
+        return error;
+    }
+
+    function classifyAIFlowError(error, phase = 'AI generation') {
+        if (error && error.aiFlow) return error;
+        const status = error && error.status;
+        const backendError = error && error.data && error.data.error && typeof error.data.error === 'object'
+            ? error.data.error
+            : null;
+        if (backendError && backendError.code) {
+            return createAIFlowError(
+                backendError.code,
+                backendError.category || 'recoverable_model_failure',
+                backendError.title || `${phase} failed`,
+                backendError.message || (error && error.message) || `${phase} failed`,
+                backendError.technicalMessage || '',
+                backendError.actions || ['retry', 'switch_model', 'check_config', 'manual_queue']
+            );
+        }
+        const backendCode = error && error.data && error.data.code;
+        if (backendCode) {
+            const backendCategory = error.data.category || (backendCode === 'PATCH_FILE_NOT_ALLOWED' || backendCode === 'PATCH_REQUIRES_RUNTIME_CODE' ? 'template_compile_failure' : 'recoverable_model_failure');
+            return createAIFlowError(
+                backendCode,
+                backendCategory,
+                error.data.title || `${phase} failed`,
+                error.data.message || (error && error.message) || `${phase} failed`,
+                error.data.technicalMessage || error.data.runtimePatchReason || '',
+                error.data.actions || ['retry', 'switch_model', 'check_config', 'manual_queue']
+            );
+        }
+        const message = String((error && error.message) || error || 'Unknown AI error');
+        const lower = message.toLowerCase();
+        if (status === 401 || status === 403 || /api key|auth|permission|unauthorized|forbidden/i.test(message)) {
+            return createAIFlowError('MODEL_AUTH_FAILED', 'model_config_failure', 'Current model is not available', 'The selected model cannot be used. Check API key, model access, base URL, or provider settings.', message, ['switch_model', 'check_config', 'manual_queue']);
+        }
+        if (status === 404 || /not configured|not found|not supported|no configured models/i.test(message)) {
+            return createAIFlowError('MODEL_NOT_CONFIGURED', 'model_config_failure', 'Current model is not configured', 'The selected model is not configured or enabled. Switch model or check model configuration.', message, ['switch_model', 'check_config', 'manual_queue']);
+        }
+        if (status === 429 || /rate limit|quota/i.test(message)) {
+            return createAIFlowError('MODEL_RATE_LIMITED', 'recoverable_model_failure', 'Current model is rate limited', 'The selected model is temporarily rate limited or out of quota. Retry later or switch model.', message, ['retry', 'switch_model', 'manual_queue']);
+        }
+        if (/timeout|timed out/i.test(message)) {
+            return createAIFlowError('MODEL_TIMEOUT', 'recoverable_model_failure', 'Current model timed out', 'The request matched the generation flow, but the selected model did not respond in time. Please retry.', message, ['retry']);
+        }
+        if (status >= 500 || /timeout|timed out|network|fetch failed|econn|dns|503|502/i.test(lower)) {
+            return createAIFlowError('MODEL_NETWORK_ERROR', 'recoverable_model_failure', 'Current model call failed', 'Network, VPN, proxy, or provider service may be unavailable. Retry or switch model.', message, ['retry', 'switch_model', 'check_config', 'manual_queue']);
+        }
+        if (/json|schema|parse/i.test(lower)) {
+            return createAIFlowError('MODEL_SCHEMA_INVALID', 'schema_failure', 'AI response format is invalid', 'The model response could not be parsed as the required JSON schema. Retry generation or switch model.', message, ['retry', 'switch_model', 'manual_queue']);
+        }
+        return createAIFlowError('MODEL_CALL_FAILED', 'recoverable_model_failure', `${phase} failed`, message, message, ['retry', 'switch_model', 'check_config', 'manual_queue']);
+    }
+
+    function requireActiveAIModel(phase = 'AI generation') {
+        const active = getActiveModelMeta();
+        if (!active.providerId || !active.modelId || !hasLiveAIProvider(active.providerId)) {
+            throw createAIFlowError('MODEL_NOT_CONFIGURED', 'model_config_failure', 'Current model is not configured', `${phase} requires the currently selected model API. Switch to a configured model or check model settings.`, active.label || '', ['switch_model', 'check_config', 'manual_queue']);
+        }
+        return active;
+    }
+
+    function assertPlainObject(value, phase, fieldName = 'response') {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) {
+            throw createAIFlowError('MODEL_SCHEMA_INVALID', 'schema_failure', 'AI response format is invalid', `${phase} must return a JSON object for ${fieldName}.`, fieldName, ['retry', 'switch_model', 'manual_queue']);
+        }
+        return value;
+    }
+
+    function extractModelJsonObject(content, phase) {
+        try {
+            const jsonMatch = String(content || '').match(/\{[\s\S]*\}/);
+            const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(content);
+            return assertPlainObject(parsed, phase);
+        } catch (error) {
+            if (error && error.aiFlow) throw error;
+            throw createAIFlowError('MODEL_JSON_PARSE_FAILED', 'schema_failure', 'AI response is not valid JSON', `${phase} returned content that could not be parsed as strict JSON.`, error.message || String(error), ['retry', 'switch_model', 'manual_queue']);
+        }
+    }
+
+    function validateAnalysisResponse(parsed) {
+        assertPlainObject(parsed.modules || parsed, 'Game request analysis', 'modules');
+        if (!parsed.templateDecision || typeof parsed.templateDecision !== 'object') {
+            throw createAIFlowError('MODEL_SCHEMA_INVALID', 'schema_failure', 'AI analysis is missing templateDecision', 'The selected model must decide whether the request maps to bullet_hell, roguelike_survival, unsupported, or null.', '', ['retry', 'switch_model', 'manual_queue']);
+        }
+        if (!parsed.capability || typeof parsed.capability !== 'object' || typeof parsed.capability.supported !== 'boolean') {
+            throw createAIFlowError('MODEL_SCHEMA_INVALID', 'schema_failure', 'AI analysis is missing capability', 'The selected model must return capability.supported and blockedReasons.', '', ['retry', 'switch_model', 'manual_queue']);
+        }
+        const templateId = parsed.templateDecision.templateId;
+        const allowedTemplateIds = ['bullet_hell', 'roguelike_survival', 'unsupported', null, ''];
+        if (!allowedTemplateIds.includes(templateId)) {
+            throw createAIFlowError('TEMPLATE_NOT_SUPPORTED', 'capability_unsupported', 'Template is not supported', `The model selected unsupported templateId "${templateId}".`, templateId, ['manual_queue']);
+        }
+        return parsed;
+    }
+
+    function validateGamePlanResponse(plan) {
+        assertPlainObject(plan, 'Game plan summary', 'game plan');
+        const required = ['title', 'hook', 'storyPremise', 'coreLoop', 'momentToMoment', 'visualDirection', 'enemyDesign', 'progressionPlan', 'playerFantasy', 'prototypeScope', 'risk'];
+        const missing = required.filter(key => typeof plan[key] !== 'string');
+        if (missing.length) {
+            throw createAIFlowError('MODEL_SCHEMA_INVALID', 'schema_failure', 'AI game plan is incomplete', `The selected model omitted required GamePlan fields: ${missing.join(', ')}.`, missing.join(', '), ['retry', 'switch_model', 'manual_queue']);
+        }
+        return plan;
+    }
+
+    function validateBulletHellProductPlanResponse(plan) {
+        assertPlainObject(plan, 'Bullet Hell product plan', 'Bullet Hell product plan');
+        const requiredStrings = ['gameName', 'setting', 'story', 'coreGameplay', 'winCondition', 'progression', 'prototypeSummary'];
+        const missingStrings = requiredStrings.filter(key => typeof plan[key] !== 'string' || !plan[key].trim());
+        const meta = assertPlainObject(plan.meta, 'Bullet Hell product plan', 'meta');
+        const artDirection = assertPlainObject(plan.artDirection, 'Bullet Hell product plan', 'artDirection');
+        const bossConfig = assertPlainObject(plan.bossConfig, 'Bullet Hell product plan', 'bossConfig');
+        const difficultyTuning = assertPlainObject(plan.difficultyTuning, 'Bullet Hell product plan', 'difficultyTuning');
+        const missingNested = [];
+        if (typeof meta.description !== 'string' || !meta.description.trim()) missingNested.push('meta.description');
+        ['summary', 'backgroundVisual', 'uiToken'].forEach(key => {
+            if (typeof artDirection[key] !== 'string' || !artDirection[key].trim()) missingNested.push(`artDirection.${key}`);
+        });
+        ['bulletColors', 'enemyPalette'].forEach(key => {
+            if (!Array.isArray(artDirection[key]) || !artDirection[key].length) missingNested.push(`artDirection.${key}`);
+        });
+        if (typeof bossConfig.name !== 'string' || !bossConfig.name.trim()) missingNested.push('bossConfig.name');
+        if (typeof bossConfig.hp !== 'number') missingNested.push('bossConfig.hp');
+        if (!Array.isArray(bossConfig.phases) || !bossConfig.phases.length) missingNested.push('bossConfig.phases');
+        if (!Array.isArray(plan.waves) || !plan.waves.length) missingNested.push('waves');
+        if (!Array.isArray(plan.enemyTypes) || !plan.enemyTypes.length) missingNested.push('enemyTypes');
+        if (!Array.isArray(plan.bossPhases) || !plan.bossPhases.length) missingNested.push('bossPhases');
+        ['level', 'enemyHpMultiplier', 'bulletSpeedMultiplier', 'waveInterval', 'bossHp', 'lives', 'shield'].forEach(key => {
+            if (difficultyTuning[key] === undefined || difficultyTuning[key] === null || difficultyTuning[key] === '') missingNested.push(`difficultyTuning.${key}`);
+        });
+        const missing = [...missingStrings, ...missingNested];
+        if (missing.length) {
+            throw createAIFlowError('MODEL_SCHEMA_INVALID', 'schema_failure', 'Bullet Hell product plan is incomplete', `The selected model omitted required Bullet Hell fields: ${missing.join(', ')}.`, missing.join(', '), ['retry', 'switch_model', 'manual_queue']);
+        }
+        return plan;
+    }
+
+    function validateTemplatePatchPlan(plan, decision) {
+        assertPlainObject(plan, 'Template patch generation', 'TemplatePatchPlan');
+        if (plan.templateId && plan.templateId !== decision.templateId) {
+            throw createAIFlowError('MODEL_SCHEMA_INVALID', 'schema_failure', 'TemplatePatchPlan template mismatch', `The model returned templateId "${plan.templateId}" but the selected template is "${decision.templateId}".`, plan.templateId, ['retry', 'switch_model', 'manual_queue']);
+        }
+        ['userIntentSummary', 'gameName'].forEach(key => {
+            if (typeof plan[key] !== 'string' || !plan[key].trim()) {
+                throw createAIFlowError('MODEL_SCHEMA_INVALID', 'schema_failure', 'TemplatePatchPlan is incomplete', `The model omitted required TemplatePatchPlan field: ${key}.`, key, ['retry', 'switch_model', 'manual_queue']);
+            }
+        });
+        const forbiddenKeys = ['files', 'filePatches', 'runtimePatch', 'codePatch', 'sourcePatch', 'diff', 'patches'];
+        const forbidden = forbiddenKeys.filter(key => Object.prototype.hasOwnProperty.call(plan, key));
+        if (forbidden.length) {
+            throw createAIFlowError('PATCH_FILE_NOT_ALLOWED', 'template_compile_failure', 'Template patch targets are not allowed', `TemplatePatchPlan must not contain direct file/runtime patches: ${forbidden.join(', ')}.`, forbidden.join(', '), ['retry', 'manual_queue']);
+        }
+        const specPatches = plan.specPatches || {};
+        assertPlainObject(specPatches, 'Template patch generation', 'specPatches');
+        assertPlainObject(plan.settingsPatch, 'Template patch generation', 'settingsPatch');
+        assertPlainObject(plan.manifestPatch, 'Template patch generation', 'manifestPatch');
+        assertPlainObject(plan.stylePatch, 'Template patch generation', 'stylePatch');
+        assertPlainObject(plan.assetPrompts, 'Template patch generation', 'assetPrompts');
+        const allowedSpecKeys = decision.templateId === 'roguelike_survival'
+            ? ['meta', 'flow', 'waves', 'enemies', 'weapons', 'balance', 'effects', 'spec/waves.json', 'spec/enemies.json', 'spec/weapons.json', 'spec/balance.json', 'spec/effects.json']
+            : ['meta', 'flow', 'game', 'coreRules', 'enemyTypes', 'enemyBulletTypes', 'bosses', 'waves', 'difficultyTuning'];
+        const invalid = Object.keys(specPatches).filter(key => !allowedSpecKeys.includes(key));
+        if (invalid.length) {
+            throw createAIFlowError('PATCH_FILE_NOT_ALLOWED', 'template_compile_failure', 'Template patch module is not allowed', `TemplatePatchPlan contains modules outside ${decision.templateId}: ${invalid.join(', ')}.`, invalid.join(', '), ['retry', 'manual_queue']);
+        }
+        const requiredModules = decision.templateId === 'roguelike_survival'
+            ? ['waves', 'enemies', 'weapons', 'balance', 'effects']
+            : ['coreRules', 'enemyTypes', 'enemyBulletTypes', 'bosses', 'waves', 'difficultyTuning'];
+        const missingModules = requiredModules.filter(key => !specPatches[key] && !specPatches[`spec/${key}.json`]);
+        if (missingModules.length) {
+            throw createAIFlowError('MODEL_SCHEMA_INVALID', 'schema_failure', 'TemplatePatchPlan is missing required template modules', `The selected model must patch these ${decision.templateId} modules: ${missingModules.join(', ')}.`, missingModules.join(', '), ['retry', 'switch_model', 'manual_queue']);
+        }
+        if (!Object.keys(plan.assetPrompts).length) {
+            throw createAIFlowError('MODEL_SCHEMA_INVALID', 'schema_failure', 'TemplatePatchPlan is missing asset prompts', 'The model must return assetPrompts for generated visual direction, player, enemies, effects, and UI.', '', ['retry', 'switch_model', 'manual_queue']);
+        }
+        if (!Array.isArray(plan.playabilityChecklist) || plan.playabilityChecklist.length < 5) {
+            throw createAIFlowError('MODEL_SCHEMA_INVALID', 'schema_failure', 'TemplatePatchPlan playability checklist is incomplete', 'The model must include at least five playability checklist items covering systems, progression, enemies/bosses, win/fail, and inputs.', '', ['retry', 'switch_model', 'manual_queue']);
+        }
+        if (typeof plan.requiresRuntimeCodePatch !== 'boolean') {
+            throw createAIFlowError('MODEL_SCHEMA_INVALID', 'schema_failure', 'TemplatePatchPlan is missing requiresRuntimeCodePatch', 'The model must explicitly state whether runtime code changes are required.', '', ['retry', 'switch_model', 'manual_queue']);
+        }
+        return plan;
     }
 
     function getProviderModelId(providerId) {
@@ -1288,10 +1826,6 @@ document.addEventListener('DOMContentLoaded', () => {
             reasoning,
             label: modelLabel
         };
-    }
-
-    function getLocalFallbackMeta() {
-        return { icon: 'LF', label: 'Local Fallback', color: '#6b6972' };
     }
 
     function hasConfiguredProvider(providerId = aiConfig.activeProvider) {
@@ -1376,6 +1910,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function loadPlatformTemplates() {
+        try {
+            const response = await fetch(apiUrl('/api/templates/status'), {
+                credentials: 'include',
+                cache: 'no-store'
+            });
+            if (!response.ok) return;
+            platformTemplateStatus = await response.json();
+        } catch (error) {
+            platformTemplateStatus = {
+                bucketConfigured: false,
+                bucketName: '',
+                templates: []
+            };
+        } finally {
+            platformTemplatesLoaded = true;
+        }
+    }
+
+    function getPublishedTemplateStatus(templateId) {
+        const id = String(templateId || '').trim();
+        return (platformTemplateStatus.templates || []).find(template => template.id === id) || null;
+    }
+
+    function isPublishedRuntimeTemplate(templateId) {
+        const status = getPublishedTemplateStatus(templateId);
+        return Boolean(status && status.published);
+    }
+
+    function getTemplateAvailabilityError(decision) {
+        if (!decision || !decision.templateId || !AUTO_GENERATION_TEMPLATE_IDS.has(decision.templateId)) return '';
+        if (isLocalRuntimeApiBase()) return '';
+        if (!platformTemplatesLoaded) return 'Template registry is still loading. Please retry in a moment.';
+        const status = getPublishedTemplateStatus(decision.templateId);
+        if (!status) return `Template "${decision.templateId}" is not registered by the backend.`;
+        if (!status.published) {
+            return `${status.label || decision.templateLabel || decision.templateId} has no published backend template yet. Upload and publish it in /admin before automatic generation.`;
+        }
+        return '';
+    }
+
     function escapeHtml(value) {
         return String(value)
             .replace(/&/g, '&amp;')
@@ -1383,6 +1958,15 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
+    }
+
+    function compactPlainText(value, maxLength = 1200) {
+        const container = document.createElement('div');
+        container.innerHTML = String(value || '');
+        const text = (container.textContent || container.innerText || String(value || ''))
+            .replace(/\s+/g, ' ')
+            .trim();
+        return text.slice(0, maxLength);
     }
 
     function t(key, vars = {}) {
@@ -1442,6 +2026,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function getLocalizedStepTitle(key) {
         return t(`titles.${key}`);
+    }
+
+    function getOptionLocaleEntry(item, step) {
+        const definition = typeof step === 'object' && step ? step : getStepDefinition(step);
+        const key = definition && definition.key;
+        if (!key) return null;
+        const localeMap = OPTION_I18N[chatLanguage] && OPTION_I18N[chatLanguage][key];
+        if (!localeMap) return null;
+        return localeMap[item && item.label] || null;
+    }
+
+    function getLocalizedOptionLabel(item, step) {
+        const entry = getOptionLocaleEntry(item, step);
+        return (entry && entry.label) || (item && (item.label || item.value || item.desc)) || '';
+    }
+
+    function getLocalizedOptionDesc(item, step) {
+        const entry = getOptionLocaleEntry(item, step);
+        return (entry && entry.desc) || (item && item.desc) || '';
+    }
+
+    function getLocalizedOptionValueForDisplay(item, step) {
+        const entry = getOptionLocaleEntry(item, step);
+        return (entry && (entry.value || entry.label)) || (item && (item.value || item.label || item.desc)) || '';
     }
 
     function getBotMessage(step) {
@@ -1601,6 +2209,11 @@ document.addEventListener('DOMContentLoaded', () => {
             chatSend.title = t('send');
             chatSend.setAttribute('aria-label', t('send'));
         }
+        if (chatMoreBtn) {
+            const moreTextNode = Array.from(chatMoreBtn.childNodes).find(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+            if (moreTextNode) moreTextNode.textContent = ` ${t('moreOptions')}`;
+            else chatMoreBtn.appendChild(document.createTextNode(` ${t('moreOptions')}`));
+        }
         if (chatMic) chatMic.title = 'Voice input';
         setTextIfFound('#step1 .step-text', t('stepAnalyze'));
         setTextIfFound('#step2 .step-text', t('stepAssets'));
@@ -1622,6 +2235,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         async chat(messages, options = {}) {
+            return this.stageChat('/api/chat', messages, options);
+        }
+
+        async stageChat(endpoint, messages, options = {}) {
             const config = this.getConfig();
             const providerId = options.provider || config.activeProvider;
             const provider = config.providers[providerId];
@@ -1630,7 +2247,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!provider || !meta) throw new Error(`Provider ${providerId} is not supported.`);
             const model = options.model || getProviderModelId(providerId);
 
-            const platformResult = await this.tryPlatformChat(providerId, model, messages);
+            const platformResult = await this.tryPlatformChat(providerId, model, messages, endpoint, options);
             if (platformResult) {
                 this.onUsage(providerId, model, platformResult.usage || {});
                 return {
@@ -1640,12 +2257,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
             }
 
-            throw new Error(`Platform API for ${meta.label} is not configured yet.`);
+            throw createAIFlowError(
+                'MODEL_NOT_CONFIGURED',
+                'model_config_failure',
+                'Current model is not configured',
+                `Platform API for ${meta.label} is not configured yet.`,
+                providerId,
+                ['switch_model', 'check_config', 'manual_queue']
+            );
         }
 
-        async tryPlatformChat(providerId, model, messages) {
+        async tryPlatformChat(providerId, model, messages, endpoint = '/api/chat', options = {}) {
             try {
-                const response = await fetch(apiUrl('/api/chat'), {
+                const startedAt = performance.now();
+                const response = await fetch(apiUrl(endpoint), {
                     method: 'POST',
                     credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
@@ -1653,19 +2278,31 @@ document.addEventListener('DOMContentLoaded', () => {
                         provider: providerId,
                         model,
                         modelId: model,
-                        messages
+                        messages,
+                        maxTokens: options.maxTokens
                     })
                 });
 
-                if (response.status === 404) return null;
+                if (response.status === 404) {
+                    throw createAIFlowError('MODEL_NOT_CONFIGURED', 'model_config_failure', 'Current model is not configured', 'The platform chat endpoint or selected model is not available.', `HTTP ${response.status}`, ['switch_model', 'check_config', 'manual_queue']);
+                }
                 const data = await this.parseResponse(response);
                 platformAIAvailable = true;
+                recordDiagnostic('ai-call', {
+                    phase: options.phase || endpoint,
+                    provider: providerId,
+                    model,
+                    status: response.status,
+                    ms: Math.round(performance.now() - startedAt),
+                    totalTokens: data.usage?.total_tokens || data.usage?.totalTokens || 0,
+                    completionTokens: data.usage?.completion_tokens || 0
+                });
                 return {
                     content: data.content || data.message || data.text || '',
                     usage: data.usage || {}
                 };
             } catch (error) {
-                return null;
+                throw classifyAIFlowError(error, 'Model call');
             }
         }
 
@@ -1681,6 +2318,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let platformAIAvailable = false;
     let platformModelsLoaded = false;
     let platformModels = [];
+    let platformTemplatesLoaded = false;
+    let platformTemplateStatus = {
+        bucketConfigured: false,
+        bucketName: '',
+        templates: []
+    };
     let googleAuthConfigured = false;
     const aiService = new AIService(() => aiConfig, recordUsage);
 
@@ -1732,6 +2375,9 @@ document.addEventListener('DOMContentLoaded', () => {
         background: null,
         processing: false,
         revisionMode: false,
+        templateDecision: null,
+        capability: null,
+        analysisModelMeta: null,
         finalModelMeta: null,
         workStartedAt: 0,
         modules: createModuleStates()
@@ -1759,6 +2405,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeGameCleanups = [];
     let latestGamePlanDraft = '';
     let latestGamePlan = null;
+    let latestGenerationPlan = null;
+    let latestAIFlowError = null;
+    let chatTranscript = [];
     let bulletHellPlanState = {
         active: false,
         confirmed: false,
@@ -1775,6 +2424,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let analysisTimeout = null;
+
+    function clearInspirePromptTimer() {
+        if (analysisTimeout) {
+            clearTimeout(analysisTimeout);
+            analysisTimeout = null;
+        }
+        const promptContainer = document.getElementById('inspirePromptContainer');
+        if (promptContainer) promptContainer.remove();
+    }
+
+    function isWaitingForInspirePrompt(step) {
+        if (!chatInputField || !chatOptionsList) return false;
+        if (chatInputField.value.trim() !== '') return false;
+        if (chatStep !== step) return false;
+        if (analysisState.processing || analysisState.revisionMode) return false;
+        if (bulletHellPlanState.active) return false;
+        if (chatOptionsList.children.length > 0) return false;
+        if (document.querySelector('.ai-work-card')) return false;
+        return true;
+    }
 
     function getStepDefinition(step) {
         return MODULE_STEPS[step] || null;
@@ -1916,7 +2585,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function buildClarificationRetryMessage(definition, reason) {
-        const examples = (definition.pool || []).slice(0, 3).map(item => item.label).join(', ');
+        const step = getStepByKey(definition.key);
+        const examples = (definition.pool || []).slice(0, 3).map(item => getLocalizedOptionLabel(item, step)).join(', ');
         return `${escapeHtml(reason)}<br><span style="opacity:0.72">Try: ${escapeHtml(examples)}</span>`;
     }
 
@@ -1976,7 +2646,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function startAnalysisFlow(prompt) {
         if (analysisState.active && analysisState.processing) return;
-        if (analysisTimeout) clearTimeout(analysisTimeout);
+        clearInspirePromptTimer();
         resetBulletHellPlanState();
 
         analysisState.active = true;
@@ -1986,6 +2656,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         analysisState.modules = createModuleStates();
         analysisState.background = prompt;
+        analysisState.templateDecision = null;
+        analysisState.capability = null;
+        analysisState.analysisModelMeta = null;
         analysisState.workStartedAt = Date.now();
 
         const analysisMessage = addBotMessage('', null, { pending: true });
@@ -1994,17 +2667,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function runPromptAnalysis(prompt, runStartedAt, pendingMessage) {
-        applyLocalPromptAnalysis(prompt);
-
-        if (getNextMissingStep() !== null) {
-            try {
-                await withTimeout(analyzePromptWithAIIfAvailable(prompt), AI_ANALYSIS_TIMEOUT_MS);
-            } catch (error) {
-                console.warn('AI analysis timed out, using local extraction:', error);
-            }
+        try {
+            requireActiveAIModel('Game request analysis');
+            await withTimeout(analyzePromptWithAIIfAvailable(prompt), AI_ANALYSIS_TIMEOUT_MS, 'Game request analysis');
+        } catch (error) {
+            if (!analysisState.active || analysisState.workStartedAt !== runStartedAt) return;
+            analysisState.processing = false;
+            if (pendingMessage) pendingMessage.remove();
+            showAIFlowError(error, {
+                phase: 'Game request analysis',
+                onRetry: () => {
+                    if (!analysisState.active) startAnalysisFlow(prompt);
+                    else {
+                        analysisState.processing = true;
+                        analysisState.workStartedAt = Date.now();
+                        const retryMessage = addBotMessage('', null, { pending: true, workType: 'thinking' });
+                        runPromptAnalysis(prompt, analysisState.workStartedAt, retryMessage);
+                    }
+                }
+            });
+            return;
         }
-
-        applyP0ClosureDefaults(prompt);
 
         if (!analysisState.active || analysisState.workStartedAt !== runStartedAt) return;
         analysisState.processing = false;
@@ -2186,20 +2869,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (found) setModuleSelection(key, found, 'confirmed', 0.8, false);
     }
 
-    function withTimeout(promise, timeoutMs) {
+    function withTimeout(promise, timeoutMs, phase = 'Model call') {
+        let timeoutId = null;
         return Promise.race([
-            promise,
+            Promise.resolve(promise).finally(() => {
+                if (timeoutId) clearTimeout(timeoutId);
+            }),
             new Promise((_, reject) => {
-                setTimeout(() => reject(new Error(`Timed out after ${timeoutMs}ms`)), timeoutMs);
+                timeoutId = setTimeout(() => {
+                    recordDiagnostic('timeout', { phase, ms: timeoutMs });
+                    reject(new Error(`${phase} timed out after ${timeoutMs}ms`));
+                }, timeoutMs);
             })
         ]);
     }
 
     async function analyzePromptWithAIIfAvailable(prompt) {
-        if (!hasLiveAIProvider()) return false;
-
-        try {
-            const response = await aiService.chat([
+        const activeModel = requireActiveAIModel('Game request analysis');
+        const response = await aiService.stageChat('/api/ai/analyze-game-request', [
                 {
                     role: 'system',
                     content: `You are a game requirements analyst. Extract only what is present or strongly implied. Return strict JSON only.
@@ -2215,53 +2902,69 @@ Use this shape:
     "progressionSystem": { "status": "confirmed|suggested|missing", "value": string|null, "confidence": number },
     "difficultyLevel": { "status": "confirmed|suggested|missing", "value": string|null, "confidence": number }
   },
-  "background": string|null
+  "background": string|null,
+  "missingFields": string[],
+  "confidence": number,
+  "templateDecision": {"templateId": "bullet_hell|roguelike_survival|unsupported|null", "confidence": number, "reason": string},
+  "capability": {"supported": boolean, "blockedReasons": string[]}
 }
-Treat genre conventions as suggested, not confirmed, unless the user explicitly stated them.`
+Template mapping:
+- flying shooter, plane shooter, space shooter, vertical shooter, shmup, bullet hell, dodge bullets, boss bullet fight => bullet_hell.
+- roguelike, roguelite, Vampire Survivors, survivor-like, auto attack, wave survival, level-up choices => roguelike_survival.
+Treat genre conventions as suggested, not confirmed, unless the user explicitly stated them. Do not invent complete plans in this step.`
                 },
                 {
                     role: 'user',
-                    content: `Game types: ${GAME_TYPES.map(item => item.value).join(', ')}
-Art styles: ${ART_STYLES.map(item => item.value).join(', ')}
-Settings: ${SETTINGS.map(item => item.value).join(', ')}
-Core gameplay options: ${CORE_GAMEPLAY_OPTIONS.map(item => item.value).join(', ')}
-Player goal options: ${PLAYER_GOAL_OPTIONS.map(item => item.value).join(', ')}
-Main challenge options: ${MAIN_CHALLENGE_OPTIONS.map(item => item.value).join(', ')}
-Progression options: ${PROGRESSION_OPTIONS.map(item => item.value).join(', ')}
-Difficulty options: ${DIFFICULTY_OPTIONS.map(item => item.value).join(', ')}
-Prompt: ${prompt}`
+                    content: JSON.stringify({
+                        availableOptions: {
+                            gameTypes: GAME_TYPES.map(item => item.value),
+                            artStyles: ART_STYLES.map(item => item.value),
+                            settings: SETTINGS.map(item => item.value),
+                            coreGameplay: CORE_GAMEPLAY_OPTIONS.map(item => item.value),
+                            playerGoals: PLAYER_GOAL_OPTIONS.map(item => item.value),
+                            mainChallenges: MAIN_CHALLENGE_OPTIONS.map(item => item.value),
+                            progression: PROGRESSION_OPTIONS.map(item => item.value),
+                            difficulty: DIFFICULTY_OPTIONS.map(item => item.value)
+                        },
+                        requestContext: buildAIRequestContext(prompt)
+                    })
                 }
-            ]);
+        ], {
+            provider: activeModel.providerId,
+            model: activeModel.modelId,
+            maxTokens: 900,
+            phase: 'Game request analysis'
+        });
 
-            const jsonMatch = response.content.match(/\{[\s\S]*\}/);
-            const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(response.content);
-            const modules = parsed.modules || parsed;
+        const parsed = validateAnalysisResponse(extractModelJsonObject(response.content, 'Game request analysis'));
+        const modules = parsed.modules || parsed;
 
-            applyExtractedModule('type', modules.gameType || parsed.gameType, GAME_TYPES, 'mechanic');
-            applyExtractedModule('style', modules.artStyle || parsed.artStyle, ART_STYLES);
-            applyExtractedModule('setting', modules.gameSetting || parsed.setting, SETTINGS, 'desc');
-            applyExtractedModule('coreGameplay', modules.coreGameplay, CORE_GAMEPLAY_OPTIONS, 'desc');
-            applyExtractedModule('playerGoal', modules.playerGoal, PLAYER_GOAL_OPTIONS, 'desc');
-            applyExtractedModule('mainChallenge', modules.mainChallenge, MAIN_CHALLENGE_OPTIONS, 'desc');
-            applyExtractedModule('progressionSystem', modules.progressionSystem, PROGRESSION_OPTIONS, 'desc');
-            applyExtractedModule('difficultyLevel', modules.difficultyLevel, DIFFICULTY_OPTIONS, 'desc');
+        applyExtractedModule('type', modules.gameType || parsed.gameType, GAME_TYPES, 'mechanic');
+        applyExtractedModule('style', modules.artStyle || parsed.artStyle, ART_STYLES);
+        applyExtractedModule('setting', modules.gameSetting || parsed.setting, SETTINGS, 'desc');
+        applyExtractedModule('coreGameplay', modules.coreGameplay, CORE_GAMEPLAY_OPTIONS, 'desc');
+        applyExtractedModule('playerGoal', modules.playerGoal, PLAYER_GOAL_OPTIONS, 'desc');
+        applyExtractedModule('mainChallenge', modules.mainChallenge, MAIN_CHALLENGE_OPTIONS, 'desc');
+        applyExtractedModule('progressionSystem', modules.progressionSystem, PROGRESSION_OPTIONS, 'desc');
+        applyExtractedModule('difficultyLevel', modules.difficultyLevel, DIFFICULTY_OPTIONS, 'desc');
 
-            analysisState.background = parsed.background || prompt;
+        analysisState.background = parsed.background || prompt;
+        analysisState.templateDecision = parsed.templateDecision || null;
+        analysisState.capability = parsed.capability || null;
+        analysisState.analysisModelMeta = {
+            ...activeModel,
+            responseModel: response.model || activeModel.modelId
+        };
 
-            if (!analysisState.setting && parsed.setting) {
-                setModuleSelection('setting', {
-                    label: parsed.setting,
-                    value: parsed.setting,
-                    desc: parsed.background || parsed.setting
-                }, 'suggested', 0.6, false);
-            }
-
-            return true;
-        } catch (error) {
-            console.warn('AI analysis failed, using local fallback:', error);
-            showSettingsStatus(`AI analysis failed: ${error.message}. Local fallback is active.`, 'warning');
-            return false;
+        if (!analysisState.setting && parsed.setting) {
+            setModuleSelection('setting', {
+                label: parsed.setting,
+                value: parsed.setting,
+                desc: parsed.background || parsed.setting
+            }, 'suggested', 0.6, false);
         }
+
+        return true;
     }
 
     function matchChoice(pool, value, extraKey) {
@@ -2281,6 +2984,19 @@ Prompt: ${prompt}`
     let typingTimeout = null;
 
     function continueClarification() {
+        if (analysisState.active && (
+            (analysisState.templateDecision && analysisState.templateDecision.templateId === 'unsupported') ||
+            (analysisState.capability && analysisState.capability.supported === false)
+        )) {
+            clearInspirePromptTimer();
+            const decision = matchTemplate(getCurrentGameSpec());
+            showAIFlowError(buildUnsupportedTemplateError(decision), {
+                phase: 'Template capability',
+                onEditRequest: () => prepareP0RewriteRequest(decision)
+            });
+            return;
+        }
+
         const nextStep = getNextMissingStep();
         if (nextStep) {
             askClarification(nextStep, getModulePrompt(nextStep));
@@ -2296,12 +3012,12 @@ Prompt: ${prompt}`
         regTimeout(() => renderChatOptions(step), 160);
 
         // 娓呯悊涔嬪墠鐨勮鏃跺櫒
-        if (analysisTimeout) clearTimeout(analysisTimeout);
+        clearInspirePromptTimer();
 
         // 3s 寤惰繜鍞よ捣 "Inspire Me" 鎸夐挳閫昏緫 (鍏ㄩ噺鍚屾)
         analysisTimeout = regTimeout(() => {
             // 鍙湁鍦ㄧ敤鎴锋病杈撳叆锛屼笖渚濈劧鍋滅暀鍦ㄥ綋鍓嶆楠ゆ椂鎵嶆樉绀?
-            if (chatInputField.value.trim() === '' && chatStep === step && !analysisState.revisionMode && chatOptionsList.children.length === 0) {
+            if (isWaitingForInspirePrompt(step)) {
                 showInspireMePrompt(step);
             }
         }, 3000);
@@ -2309,6 +3025,7 @@ Prompt: ${prompt}`
     }
 
     function showInspireMePrompt(step) {
+        if (!isWaitingForInspirePrompt(step)) return;
         if (document.getElementById('inspirePromptContainer')) return;
 
         const msgDiv = document.createElement('div');
@@ -2327,6 +3044,10 @@ Prompt: ${prompt}`
 
         regTimeout(() => {
             if (!document.getElementById('inspirePromptContainer')) return;
+            if (!isWaitingForInspirePrompt(step)) {
+                clearInspirePromptTimer();
+                return;
+            }
             const bubble = msgDiv.querySelector('#inspireBubble');
             if (bubble) {
                 // Remove bubble styling so it looks exactly like the external button
@@ -2351,11 +3072,7 @@ Prompt: ${prompt}`
 
                 const btn = bubble.querySelector('#chatInspireBtn');
                 btn.addEventListener('click', () => {
-                    if (analysisTimeout) {
-                        clearTimeout(analysisTimeout);
-                        analysisTimeout = null;
-                    }
-                    msgDiv.remove();
+                    clearInspirePromptTimer();
                     renderInspireModeChoice(step);
                 });
             }
@@ -2530,7 +3247,20 @@ Prompt: ${prompt}`
             inspireProfileState.recommendations = await generateProfileRecommendations(getProfilePayload());
         } catch (error) {
             console.warn('Profile recommendation failed:', error);
-            inspireProfileState.recommendations = buildLocalProfileRecommendations(getProfilePayload());
+            recordDiagnostic('ai-error', {
+                phase: 'Inspiration profile recommendation',
+                message: error.message || String(error),
+                code: error.code || '',
+                category: error.category || ''
+            });
+            inspireProfileState.recommendations = [];
+            if (pendingMessage) pendingMessage.remove();
+            showAIFlowError(error, {
+                phase: 'Inspiration profile recommendation',
+                onRetry: () => finishInspireProfileSelection()
+            });
+            renderInspireProfileSidebar(true);
+            return;
         }
 
         const remainingWorkTime = Math.max(0, 1600 - (Date.now() - researchStartedAt));
@@ -2603,37 +3333,35 @@ Prompt: ${prompt}`
     }
 
     async function generateProfileRecommendations(profile) {
-        if (hasLiveAIProvider()) {
-            try {
-                const response = await withTimeout(aiService.chat([
-                    {
-                        role: 'system',
-                        content: `You recommend browser game concepts from a user mood profile. Return strict JSON only: {"recommendations":[{"direction":"stable|surprise|contrast","title":string,"description":string,"reason":string,"gameType":string,"artStyle":string,"gameSetting":string,"coreGameplay":string}]}. Return exactly 3 items in this order: stable, surprise, contrast. Keep each field concise. ${getLanguageInstruction()}`
-                    },
-                    {
-                        role: 'user',
-                        content: JSON.stringify({
-                            profile,
-                            allowedGameTypes: ['Roguelike Survival', 'Bullet Hell / Flying Shooter', 'Puzzle Adventure', 'Tower Defense', 'Platform Adventure'],
-                            note: 'If the idea is flying shooter, use Game Type "Bullet Hell / Flying Shooter".'
-                        })
-                    }
-                ]), AI_ANALYSIS_TIMEOUT_MS);
-                const jsonMatch = response.content.match(/\{[\s\S]*\}/);
-                const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(response.content);
-                const recommendations = Array.isArray(parsed.recommendations) ? parsed.recommendations : parsed;
-                if (Array.isArray(recommendations) && recommendations.length) {
-                    return INSPIRE_PROFILE_DIRECTIONS.map((direction, index) => normalizeRecommendation({
-                        ...(recommendations[index] || {}),
-                        direction
-                    }, index));
-                }
-            } catch (error) {
-                console.warn('AI profile recommendation failed, using local fallback:', error);
+        const activeModel = requireActiveAIModel('Inspiration profile recommendation');
+        const response = await withTimeout(aiService.chat([
+            {
+                role: 'system',
+                content: `You recommend browser game concepts from a user mood profile. Return strict JSON only: {"recommendations":[{"direction":"stable|surprise|contrast","title":string,"description":string,"reason":string,"gameType":string,"artStyle":string,"gameSetting":string,"coreGameplay":string}]}. Return exactly 3 items in this order: stable, surprise, contrast. Keep each field concise. ${getLanguageInstruction()}`
+            },
+            {
+                role: 'user',
+                content: JSON.stringify({
+                    profile,
+                    allowedGameTypes: ['Roguelike Survival', 'Bullet Hell / Flying Shooter', 'Puzzle Adventure', 'Tower Defense', 'Platform Adventure'],
+                    note: 'If the idea is flying shooter, use Game Type "Bullet Hell / Flying Shooter".'
+                })
             }
+        ], {
+            provider: activeModel.providerId,
+            model: activeModel.modelId,
+            maxTokens: 700,
+            phase: 'Inspiration profile recommendation'
+        }), AI_PROFILE_TIMEOUT_MS, 'Inspiration profile recommendation');
+        const parsed = extractModelJsonObject(response.content, 'Inspiration profile recommendation');
+        const recommendations = Array.isArray(parsed.recommendations) ? parsed.recommendations : parsed;
+        if (Array.isArray(recommendations) && recommendations.length) {
+            return INSPIRE_PROFILE_DIRECTIONS.map((direction, index) => normalizeRecommendation({
+                ...(recommendations[index] || {}),
+                direction
+            }, index));
         }
-
-        return buildLocalProfileRecommendations(profile);
+        throw createAIFlowError('MODEL_SCHEMA_INVALID', 'schema_failure', 'AI profile recommendation is incomplete', 'The selected model must return exactly three recommendations.', '', ['retry', 'switch_model']);
     }
 
     function hasProfileValue(profile, key, candidates) {
@@ -2707,8 +3435,8 @@ Prompt: ${prompt}`
         return MODULE_STEPS.slice(1).map(step => {
             const selection = getModuleSelection(step.key);
             if (!selection) return null;
-            const label = selection.label || selection.value || selection.desc || '';
-            const desc = selection.desc || selection.value || '';
+            const label = getLocalizedOptionLabel(selection, step) || selection.label || selection.value || selection.desc || '';
+            const desc = getLocalizedOptionDesc(selection, step) || getLocalizedOptionValueForDisplay(selection, step) || '';
             return {
                 title: getLocalizedStepTitle(step.key),
                 label,
@@ -2919,6 +3647,7 @@ Prompt: ${prompt}`
     }
 
     function finalizeAnalysis() {
+        clearInspirePromptTimer();
         MODULE_STEPS.slice(1).forEach(step => {
             chatSelections[step.key] = getModuleSelection(step.key);
         });
@@ -3076,6 +3805,96 @@ Prompt: ${prompt}`
         if (!attachments.length) return '';
         const names = attachments.map(item => `${item.file.name} (${getFileTypeLabel(item.file)}, ${formatFileSize(item.file.size)})`);
         return `Attached files: ${names.join(', ')}`;
+    }
+
+    function summarizeAttachmentsForAI(attachments = []) {
+        return attachments.map(item => ({
+            name: item.file.name,
+            type: item.file.type || getFileTypeLabel(item.file),
+            size: item.file.size,
+            sizeLabel: formatFileSize(item.file.size),
+            previewAvailable: Boolean(item.previewUrl)
+        }));
+    }
+
+    function recordChatTurn(role, content, meta = {}) {
+        const text = compactPlainText(content, 1800);
+        if (!text && !(meta.attachments && meta.attachments.length)) return;
+        chatTranscript.push({
+            role,
+            content: text,
+            attachments: meta.attachments || [],
+            at: new Date().toISOString()
+        });
+        chatTranscript = chatTranscript.slice(-24);
+    }
+
+    function buildAIRequestContext(userPrompt = '') {
+        const activeModel = getActiveModelMeta();
+        return {
+            currentModel: {
+                providerId: activeModel.providerId,
+                providerLabel: activeModel.providerLabel,
+                modelId: activeModel.modelId,
+                modelLabel: activeModel.modelLabel || activeModel.label
+            },
+            userPrompt,
+            chatContext: chatTranscript.slice(-12),
+            collectedGameSpec: getCurrentGameSpec(),
+            attachmentSummary: chatTranscript
+                .flatMap(turn => turn.attachments || [])
+                .slice(-8),
+            selectedProfile: inspireProfileState.selectedRecommendation || null,
+            aiStages: {
+                analysisModel: analysisState.analysisModelMeta || null,
+                gamePlanModel: analysisState.finalModelMeta || null
+            }
+        };
+    }
+
+    function buildManualQueueContext() {
+        const activeModel = getActiveModelMeta();
+        const plan = latestGenerationPlan || null;
+        const project = plan && plan.generatedProject ? plan.generatedProject : null;
+        return {
+            submittedAt: new Date().toISOString(),
+            prompt: savedPrompt || analysisState.background || '',
+            currentModel: {
+                providerId: activeModel.providerId,
+                providerLabel: activeModel.providerLabel,
+                modelId: activeModel.modelId,
+                modelLabel: activeModel.modelLabel || activeModel.label
+            },
+            gameSpec: getCurrentGameSpec(),
+            templateDecision: analysisState.templateDecision || (plan && plan.decision) || null,
+            capability: analysisState.capability || null,
+            aiStages: {
+                analysisModel: analysisState.analysisModelMeta || null,
+                gamePlanModel: analysisState.finalModelMeta || null,
+                templatePatchModel: plan && plan.templatePatchPlan ? plan.templatePatchPlan.modelMeta || null : null
+            },
+            selectedProfile: inspireProfileState.selectedRecommendation || null,
+            bulletHellProductPlan: bulletHellPlanState.plan || null,
+            gamePlan: latestGamePlan || (plan && plan.productionPlan) || null,
+            templatePatchPlan: plan && plan.templatePatchPlan ? plan.templatePatchPlan : null,
+            validationReport: project && project.validationReport ? project.validationReport : null,
+            generatedFiles: project && Array.isArray(project.files)
+                ? project.files.map(file => ({ path: file.path, kind: file.kind, patched: file.patched, size: file.size }))
+                : [],
+            lastError: latestAIFlowError,
+            chatContext: chatTranscript.slice(-16),
+            attachmentSummary: chatTranscript.flatMap(turn => turn.attachments || []).slice(-8)
+        };
+    }
+
+    function buildManualQueuePrompt() {
+        const context = buildManualQueueContext();
+        return [
+            savedPrompt || analysisState.background || 'Manual game generation request',
+            '',
+            '--- Droi AI generation context ---',
+            JSON.stringify(context, null, 2)
+        ].join('\n').slice(0, 12000);
     }
 
     function handleChatFiles(files) {
@@ -3301,6 +4120,7 @@ Prompt: ${prompt}`
         chatOptionsList.innerHTML = '';
         const optContainer = document.getElementById('chatOptionsContainer');
         if (optContainer) optContainer.style.display = 'none';
+        clearInspirePromptTimer();
 
         if (analysisState.revisionMode) {
             if (analysisState.processing) return;
@@ -3396,11 +4216,7 @@ Prompt: ${prompt}`
 
             if (chatInputField.value.trim() !== '') {
                 clearTimeout(typingTimeout);
-                // Remove prompt container if user starts typing
-                const promptContainer = document.getElementById('inspirePromptContainer');
-                if (promptContainer) {
-                    promptContainer.remove();
-                }
+                clearInspirePromptTimer();
             }
         });
         chatInputField.addEventListener('keydown', (e) => {
@@ -3553,6 +4369,7 @@ Prompt: ${prompt}`
                 bubble.style.display = '';
                 bubble.className = 'chat-bubble';
                 bubble.innerHTML = finalText;
+                recordChatTurn('assistant', finalText, { pending: isPending });
                 clearInterval(workInterval);
                 botWorkIntervals = botWorkIntervals.filter(interval => interval !== workInterval);
                 updateWorkedTime();
@@ -3589,6 +4406,71 @@ Prompt: ${prompt}`
         };
     }
 
+    function openManualQueueModal() {
+        if (!emailModal) return;
+        emailModal.style.display = 'flex';
+        emailModal.offsetWidth;
+        emailModal.classList.add('active');
+        if (modalEmailInput) modalEmailInput.focus();
+    }
+
+    function showAIFlowError(error, options = {}) {
+        const classified = classifyAIFlowError(error, options.phase || 'AI generation');
+        latestAIFlowError = {
+            phase: options.phase || 'AI generation',
+            code: classified.code,
+            category: classified.category,
+            title: classified.title,
+            message: classified.message,
+            technicalMessage: classified.technicalMessage,
+            actions: classified.actions || [],
+            model: getActiveModelMeta(),
+            at: new Date().toISOString()
+        };
+        const active = getActiveModelMeta();
+        const actionSet = new Set(classified.actions || []);
+        const buttons = [
+            actionSet.has('retry') ? '<button type="button" class="chat-action-btn chat-action-primary" data-ai-error-action="retry">Retry current model</button>' : '',
+            actionSet.has('switch_model') ? '<button type="button" class="chat-action-btn" data-ai-error-action="switch_model">Switch model</button>' : '',
+            actionSet.has('check_config') ? '<button type="button" class="chat-action-btn" data-ai-error-action="check_config">Check config</button>' : '',
+            actionSet.has('edit_request') ? '<button type="button" class="chat-action-btn chat-action-primary" data-ai-error-action="edit_request">Modify to P0</button>' : '',
+            actionSet.has('manual_queue') ? '<button type="button" class="chat-action-btn chat-action-edit" data-ai-error-action="manual_queue">Submit email</button>' : ''
+        ].filter(Boolean).join('');
+        showSettingsStatus(`${classified.title}: ${classified.message}`, classified.retryable ? 'warning' : 'error');
+        addBotMessage([
+            '<div class="selection-summary ai-error-card">',
+            `<div class="summary-title">${escapeHtml(classified.title)}</div>`,
+            `<div class="summary-item"><strong>Current model:</strong> ${escapeHtml(active.label || 'Not configured')}</div>`,
+            `<div class="summary-item">${escapeHtml(classified.message)}</div>`,
+            classified.technicalMessage ? `<div class="summary-item"><strong>Technical:</strong> ${escapeHtml(classified.technicalMessage)}</div>` : '',
+            buttons ? `<div class="summary-actions">${buttons}</div>` : '',
+            '</div>'
+        ].join(''), (msgDiv) => {
+            msgDiv.querySelectorAll('[data-ai-error-action]').forEach(button => {
+                button.addEventListener('click', () => {
+                    const action = button.getAttribute('data-ai-error-action');
+                    if (action === 'retry' && typeof options.onRetry === 'function') {
+                        options.onRetry();
+                    } else if (action === 'switch_model') {
+                        if (modelSelector) modelSelector.click();
+                        if (chatInputField) chatInputField.focus();
+                    } else if (action === 'check_config') {
+                        if (adminSession && adminSession.isAdmin) {
+                            openSettingsModal(classified.message);
+                        } else if (modelSelector) {
+                            modelSelector.click();
+                        }
+                    } else if (action === 'edit_request' && typeof options.onEditRequest === 'function') {
+                        options.onEditRequest();
+                    } else if (action === 'manual_queue') {
+                        openManualQueueModal();
+                    }
+                });
+            });
+        });
+        return classified;
+    }
+
     function formatWorkDuration(milliseconds) {
         const totalSeconds = Math.max(1, Math.round(milliseconds / 1000));
         const minutes = Math.floor(totalSeconds / 60);
@@ -3615,6 +4497,8 @@ Prompt: ${prompt}`
         const timeStr = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toLowerCase();
         const content = options.html ? text : escapeHtml(text);
         const attachments = Array.isArray(options.attachments) ? options.attachments : [];
+        const attachmentSummary = summarizeAttachmentsForAI(attachments);
+        recordChatTurn('user', text, { attachments: attachmentSummary });
         if (attachments.length) msgDiv.classList.add('has-attachments');
         const attachmentsHtml = attachments.length ? `
             <div class="message-attachments">
@@ -3793,7 +4677,7 @@ Prompt: ${prompt}`
         if (activeModelName) activeModelName.textContent = active.label;
         if (modelSelector) {
             modelSelector.style.setProperty('--model-color', active.color);
-            modelSelector.title = hasLiveAIProvider() ? `Current model: ${active.label}` : 'Platform AI is not configured. Local fallback is active.';
+            modelSelector.title = hasLiveAIProvider() ? `Current model: ${active.label}` : 'Platform AI is not configured. Configure a model before generating.';
         }
         if (settingsBtn) {
             settingsBtn.classList.toggle('is-configured', hasLiveAIProvider());
@@ -4062,11 +4946,12 @@ Prompt: ${prompt}`
         chatOptionsList.innerHTML = '';
         const items = getNextBatch(step);
         items.forEach(item => {
+            const label = getLocalizedOptionLabel(item, step);
             const btn = document.createElement('button');
             btn.className = 'chat-option-btn';
-            btn.innerHTML = `<span class="quick-tag-icon">${escapeHtml(getOptionIcon(item, step))}</span><span>${escapeHtml(item.label)}</span>`;
+            btn.innerHTML = `<span class="quick-tag-icon">${escapeHtml(getOptionIcon(item, step))}</span><span>${escapeHtml(label)}</span>`;
             btn.addEventListener('click', () => {
-                addUserMessage(item.label);
+                addUserMessage(label);
                 chatOptionsList.innerHTML = '';
 
                 if (analysisState.active) {
@@ -4106,22 +4991,24 @@ Prompt: ${prompt}`
         container.style.animation = null;
 
         chatOptionsList.innerHTML = '';
-        const isDescriptiveStep = items.some(item => item.desc);
+        const isDescriptiveStep = items.some(item => getLocalizedOptionDesc(item, step));
 
         items.forEach((item, idx) => {
             const btn = document.createElement('button');
             btn.type = 'button';
             const icon = getOptionIcon(item, step);
+            const label = getLocalizedOptionLabel(item, step);
+            const desc = getLocalizedOptionDesc(item, step);
 
             if (isDescriptiveStep) {
                 btn.className = 'quick-tag setting-card';
                 btn.innerHTML = `
-                    <div class="card-title"><span class="quick-tag-icon">${escapeHtml(icon)}</span><span>${escapeHtml(item.label)}</span></div>
-                    <div class="card-desc">${escapeHtml(item.desc || item.value || '')}</div>
+                    <div class="card-title"><span class="quick-tag-icon">${escapeHtml(icon)}</span><span>${escapeHtml(label)}</span></div>
+                    <div class="card-desc">${escapeHtml(desc || getLocalizedOptionValueForDisplay(item, step) || '')}</div>
                 `;
             } else {
                 btn.className = 'quick-tag';
-                btn.innerHTML = `<span class="quick-tag-icon">${escapeHtml(icon)}</span><span>${escapeHtml(item.label)}</span>`;
+                btn.innerHTML = `<span class="quick-tag-icon">${escapeHtml(icon)}</span><span>${escapeHtml(label)}</span>`;
             }
 
             btn.style.animationDelay = `${idx * 0.07}s`;
@@ -4139,6 +5026,7 @@ Prompt: ${prompt}`
     }
 
     function onChatOptionClick(step, item, btn) {
+        clearInspirePromptTimer();
         // Disable all options
         const allBtns = document.querySelectorAll('#chatOptionsList .quick-tag');
         allBtns.forEach(b => b.style.pointerEvents = 'none');
@@ -4159,10 +5047,12 @@ Prompt: ${prompt}`
             container.style.display = 'none';
             chatOptionsList.innerHTML = '';
 
-            if (item.desc) {
-                addUserMessage(`<strong>${escapeHtml(item.label)}</strong><br><span style="font-size: 0.9em; opacity: 0.7; display: block; margin-top: 4px; line-height: 1.4;">${escapeHtml(item.desc)}</span>`, { html: true });
+            const label = getLocalizedOptionLabel(item, step);
+            const desc = getLocalizedOptionDesc(item, step);
+            if (desc) {
+                addUserMessage(`<strong>${escapeHtml(label)}</strong><br><span style="font-size: 0.9em; opacity: 0.7; display: block; margin-top: 4px; line-height: 1.4;">${escapeHtml(desc)}</span>`, { html: true });
             } else {
-                addUserMessage(item.label);
+                addUserMessage(label);
             }
 
             regTimeout(() => {
@@ -4274,22 +5164,16 @@ Prompt: ${prompt}`
             enemyTypes,
             progression: firstText(rawPlan.progression, baseSpec.progressionSystem || 'Weapon upgrades, power drops, bomb energy, shield, and life rewards.'),
             difficultyTuning: tuning,
-            readmeSummary: firstText(rawPlan.readmeSummary, 'Playable bullet-hell P0: vertical movement, enemy waves, power growth, bomb clear, final Boss, and win/fail states.')
+            prototypeSummary: firstText(rawPlan.prototypeSummary, 'Playable bullet-hell P0: vertical movement, enemy waves, power growth, bomb clear, final Boss, and win/fail states.')
         };
     }
 
-    function getBulletHellPlanProvider() {
-        return ['gemini', 'qwen'].find(providerId => hasLiveAIProvider(providerId)) || '';
-    }
-
     async function generateBulletHellProductPlan(profile) {
-        const planProviderId = getBulletHellPlanProvider();
-        if (!planProviderId) {
-            throw new Error('No configured Gemini or Qwen model is available for the product-plan step.');
-        }
-        const planModelId = getPublicModelIdForProvider(planProviderId) || getProviderModelId(planProviderId);
+        const activeModel = requireActiveAIModel('Bullet Hell product plan');
+        const planProviderId = activeModel.providerId;
+        const planModelId = activeModel.modelId;
         const planProviderMeta = PROVIDER_META[planProviderId] || PROVIDER_META.custom;
-        const response = await aiService.chat([
+        const response = await withTimeout(aiService.stageChat('/api/ai/generate-game-plan', [
             {
                 role: 'system',
                 content: `You are a senior game product designer for HTML5 bullet-hell prototypes. Return strict JSON only. ${getLanguageInstruction()}
@@ -4308,17 +5192,19 @@ Required keys:
   "bossPhases": string[],
   "progression": string,
   "difficultyTuning": {"level": string, "enemyHpMultiplier": number, "bulletSpeedMultiplier": number, "waveInterval": number, "bossHp": number, "lives": number, "shield": number},
-  "readmeSummary": string
+  "prototypeSummary": string
 }
 Lock Game Type to "Bullet Hell / Flying Shooter" and genre to "bullet-hell".`
             },
             {
                 role: 'user',
-                content: JSON.stringify(profile)
+                content: JSON.stringify({
+                    ...profile,
+                    requestContext: buildAIRequestContext(profile.prompt || profile.spec?.background || '')
+                })
             }
-        ], { provider: planProviderId, model: planModelId });
-        const jsonMatch = response.content.match(/\{[\s\S]*\}/);
-        const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(response.content);
+        ], { provider: planProviderId, model: planModelId }), AI_BULLET_PLAN_TIMEOUT_MS, 'Bullet Hell product plan');
+        const parsed = validateBulletHellProductPlanResponse(extractModelJsonObject(response.content, 'Bullet Hell product plan'));
         const responseModel = response.model || planModelId || getProviderModelId(planProviderId);
         analysisState.finalModelMeta = {
             providerId: planProviderId,
@@ -4371,7 +5257,7 @@ Lock Game Type to "Bullet Hell / Flying Shooter" and genre to "bullet-hell".`
             `<div class="summary-item"><strong>${escapeHtml(bhText('waves'))}:</strong> ${escapeHtml(normalized.waves.map(wave => firstText(wave.name || wave.id)).join(' / '))}</div>`,
             `<div class="summary-item"><strong>${escapeHtml(bhText('progression'))}:</strong> ${escapeHtml(normalized.progression)}</div>`,
             `<div class="summary-item"><strong>${escapeHtml(bhText('difficulty'))}:</strong> ${escapeHtml(firstText(normalized.difficultyTuning.level, 'Normal'))}</div>`,
-            `<div class="summary-item"><strong>README:</strong> ${escapeHtml(normalized.readmeSummary)}</div>`,
+            `<div class="summary-item"><strong>Prototype Summary:</strong> ${escapeHtml(normalized.prototypeSummary)}</div>`,
             '</div>'
         ].join('');
     }
@@ -4411,7 +5297,7 @@ Lock Game Type to "Bullet Hell / Flying Shooter" and genre to "bullet-hell".`
                 enemyDesign: `${bulletHellPlanState.plan.enemyTypes.join(', ')}; Boss: ${bulletHellPlanState.plan.bossConfig.name}`,
                 progressionPlan: bulletHellPlanState.plan.progression,
                 playerFantasy: bulletHellPlanState.plan.winCondition,
-                prototypeScope: bulletHellPlanState.plan.readmeSummary
+                prototypeScope: bulletHellPlanState.plan.prototypeSummary
             }, applyBulletHellPlanToGeneratedSpec(bulletHellPlanState.plan, bulletHellPlanState.baseSpec));
             latestGamePlanDraft = buildGamePlanDraftText(latestGamePlan, applyBulletHellPlanToGeneratedSpec(bulletHellPlanState.plan, bulletHellPlanState.baseSpec));
             if (chatInputField) {
@@ -4447,6 +5333,7 @@ Lock Game Type to "Bullet Hell / Flying Shooter" and genre to "bullet-hell".`
     }
 
     async function startBulletHellPlanFlow(prompt, spec) {
+        clearInspirePromptTimer();
         bulletHellPlanState.active = true;
         bulletHellPlanState.confirmed = false;
         bulletHellPlanState.originalPrompt = prompt || spec.background || '';
@@ -4462,11 +5349,13 @@ Lock Game Type to "Bullet Hell / Flying Shooter" and genre to "bullet-hell".`
             const plan = await generateBulletHellProductPlan({
                 prompt: bulletHellPlanState.originalPrompt,
                 spec: bulletHellPlanState.baseSpec,
+                templateId: 'bullet_hell',
+                templateCapabilitySummary: 'HTML5 Canvas flying shooter template with movement, auto/manual shooting, focus movement, bomb clear, enemy waves, boss phases, bullets, pickups, HUD, win/fail, pause, and restart states.',
                 mappingTargets: {
                     gameType: 'Bullet Hell / Flying Shooter, genre bullet-hell',
                     artStyle: 'bullet colors, enemy palette, background visuals, UI token, asset prompts',
                     gameSetting: 'game name, enemy names, Boss names, background description',
-                    backgroundStory: 'meta.description, README, generated summary',
+                    backgroundStory: 'meta.description and generated summary',
                     coreGameplay: 'autoAttack, defaultShootMode, movement, dodge, shooting, bomb screen-clear',
                     playerGoal: 'win condition and final Boss config',
                     mainChallenge: 'waves, enemyTypes, boss phases',
@@ -4484,7 +5373,7 @@ Lock Game Type to "Bullet Hell / Flying Shooter" and genre to "bullet-hell".`
                 enemyDesign: `${plan.enemyTypes.join(', ')}; Boss: ${plan.bossConfig.name}`,
                 progressionPlan: plan.progression,
                 playerFantasy: plan.winCondition,
-                prototypeScope: plan.readmeSummary
+                prototypeScope: plan.prototypeSummary
             }, applyBulletHellPlanToGeneratedSpec(plan, bulletHellPlanState.baseSpec));
             latestGamePlanDraft = buildGamePlanDraftText(latestGamePlan, applyBulletHellPlanToGeneratedSpec(plan, bulletHellPlanState.baseSpec));
             if (pendingMessage) pendingMessage.finish(buildBulletHellProductPlanHtml(plan));
@@ -4492,20 +5381,41 @@ Lock Game Type to "Bullet Hell / Flying Shooter" and genre to "bullet-hell".`
         } catch (error) {
             bulletHellPlanState.error = error;
             if (pendingMessage) pendingMessage.remove();
-            openEmailQueueAfterBulletHellFailure(error);
+            showAIFlowError(error, {
+                phase: 'Bullet Hell product plan',
+                onRetry: () => startBulletHellPlanFlow(prompt, spec)
+            });
         }
     }
 
     async function askFinalConfirmation() {
+        clearInspirePromptTimer();
         const spec = getCurrentGameSpec();
-        if (isBulletHellLocked(spec.background, spec) && !bulletHellPlanState.confirmed) {
+        const decision = matchTemplate(spec);
+        if (decision.canAutoGenerate && decision.templateId === 'bullet_hell' && !bulletHellPlanState.confirmed) {
             startBulletHellPlanFlow(spec.background, spec);
             return;
         }
+        if (!decision.canAutoGenerate) {
+            showAIFlowError(buildUnsupportedTemplateError(decision), {
+                phase: 'Template capability',
+                onEditRequest: () => prepareP0RewriteRequest(decision)
+            });
+            return;
+        }
         const shapingStartedAt = Date.now();
-        const summaryPromise = buildGamePlanSummaryHtml();
         const pendingMessage = addBotMessage('', null, { pending: true, workType: 'shaping' });
-        const summaryHtml = await summaryPromise;
+        let summaryHtml = '';
+        try {
+            summaryHtml = await buildGamePlanSummaryHtml();
+        } catch (error) {
+            if (pendingMessage) pendingMessage.remove();
+            showAIFlowError(error, {
+                phase: 'Game plan summary',
+                onRetry: () => askFinalConfirmation()
+            });
+            return;
+        }
         const remainingWorkTime = Math.max(0, 1200 - (Date.now() - shapingStartedAt));
         if (remainingWorkTime) {
             await new Promise(resolve => setTimeout(resolve, remainingWorkTime));
@@ -4519,34 +5429,83 @@ Lock Game Type to "Bullet Hell / Flying Shooter" and genre to "bullet-hell".`
     }
 
     async function buildGamePlanSummaryHtml() {
-        if (!hasLiveAIProvider()) {
-            analysisState.finalModelMeta = getLocalFallbackMeta();
-            return buildFallbackGamePlanHtml();
-        }
-
         try {
-            const responseModelMeta = getActiveModelMeta();
+            const responseModelMeta = requireActiveAIModel('Game plan summary');
             const spec = getCurrentGameSpec();
-            const response = await aiService.chat([
+            const templateDecision = matchTemplate(spec);
+            const response = await withTimeout(aiService.stageChat('/api/ai/generate-game-plan', [
                 {
                     role: 'system',
-                    content: `You are a concise game production designer. Return only valid JSON with keys title, hook, storyPremise, coreLoop, momentToMoment, visualDirection, enemyDesign, progressionPlan, playerFantasy, prototypeScope, risk. Keep every value under 26 words. Make the plan specific enough to drive template configuration, asset prompts, enemies, progression, and win/fail goals. ${getLanguageInstruction()}`
+                    content: `You are a senior game product designer generating a complete P0 GamePlan for an HTML5 Canvas game template. Return only valid JSON with keys title, hook, storyPremise, coreLoop, momentToMoment, visualDirection, enemyDesign, progressionPlan, playerFantasy, prototypeScope, risk. Keep every value under 48 words, but make each value specific enough to drive template configuration, asset prompts, enemies, progression, and win/fail goals. If the template is roguelike_survival, include survival timeline, auto-weapons, XP pickups, three-choice upgrades, enemy escalation, boss pressure, and victory/fail conditions. If the template is bullet_hell, include waves, bullet patterns, boss phases, dodge/shoot/bomb loop, pickups, and victory/fail conditions. ${getLanguageInstruction()}`
                 },
                 {
                     role: 'user',
-                    content: JSON.stringify(spec)
+                    content: JSON.stringify({
+                        userSpec: spec,
+                        templateDecision,
+                        requestContext: buildAIRequestContext(spec.background || savedPrompt || ''),
+                        templateCapabilitySummary: templateDecision.templateId === 'roguelike_survival'
+                            ? 'Groglike-SOP supports HTML5 Canvas arena survival, auto weapons, XP pickups, level-up choices, waves, enemies, weapons, balance, effects, boss pressure, pause/restart/result states.'
+                            : (templateDecision.templateId === 'bullet_hell'
+                                ? 'bullet_hell supports HTML5 Canvas flying shooter, movement, auto/manual shooting, focus movement, bomb clear, enemy waves, boss phases, bullets, pickups, HUD, win/fail states.'
+                                : 'No automatic template is confirmed.')
+                    })
                 }
-            ]);
-            const jsonMatch = response.content.match(/\{[\s\S]*\}/);
-            const plan = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(response.content);
-            analysisState.finalModelMeta = responseModelMeta;
+            ], { provider: responseModelMeta.providerId, model: responseModelMeta.modelId }), AI_GAME_PLAN_TIMEOUT_MS, 'Game plan summary');
+            const plan = validateGamePlanResponse(extractModelJsonObject(response.content, 'Game plan summary'));
+            analysisState.finalModelMeta = {
+                ...responseModelMeta,
+                responseModel: response.model || responseModelMeta.modelId
+            };
             return buildAISummaryHtml(plan);
         } catch (error) {
-            console.warn('AI game plan failed, using fallback summary:', error);
-            showSettingsStatus(`AI game plan failed: ${error.message}. Local fallback is active.`, 'warning');
-            analysisState.finalModelMeta = getLocalFallbackMeta();
-            return buildFallbackGamePlanHtml();
+            throw classifyAIFlowError(error, 'Game plan summary');
         }
+    }
+
+    function buildUnsupportedTemplateError(decision = {}) {
+        const blockedReasons = analysisState.capability && Array.isArray(analysisState.capability.blockedReasons)
+            ? analysisState.capability.blockedReasons.filter(Boolean)
+            : [];
+        const reason = blockedReasons.length
+            ? blockedReasons.join(', ')
+            : (decision.reason || decision.fallbackMessage || 'The selected model did not confirm a supported P0 template.');
+        const message = [
+            'This request is outside the current automatic generation templates.',
+            'Current P0 supports HTML5 Canvas Bullet Hell / Flying Shooter and Roguelike Survival.',
+            'Modify the request into one of those P0 formats, or submit email for manual production.'
+        ].join(' ');
+        return createAIFlowError(
+            'CAPABILITY_UNSUPPORTED',
+            'capability_unsupported',
+            'Automatic template is not supported',
+            message,
+            reason,
+            ['edit_request', 'manual_queue']
+        );
+    }
+
+    function prepareP0RewriteRequest(decision = {}) {
+        analysisState.revisionMode = true;
+        const current = latestGamePlanDraft || buildGameSpecPlainText(getCurrentGameSpec());
+        const rewritePrompt = [
+            current,
+            '',
+            'Please revise this into a P0-supported HTML5 Canvas game.',
+            'Choose one:',
+            '- Bullet Hell / Flying Shooter: movement, shooting, dodge bullets, bombs, enemy waves, boss phases.',
+            '- Roguelike Survival: auto-attack, XP pickups, level-up choices, enemy waves, boss pressure.',
+            '',
+            `Unsupported reason: ${decision.reason || decision.fallbackMessage || 'No supported template confirmed.'}`
+        ].join('\n');
+        if (chatInputField) {
+            chatInputField.value = rewritePrompt.slice(0, getChatInputMaxLength());
+            chatInputField.dispatchEvent(new Event('input'));
+            chatInputField.focus();
+            const len = chatInputField.value.length;
+            chatInputField.setSelectionRange(len, len);
+        }
+        addBotMessage('Edit the request in the input box, then send it to re-run analysis with the current model.');
     }
 
     function getCurrentGameSpec() {
@@ -4650,7 +5609,7 @@ Lock Game Type to "Bullet Hell / Flying Shooter" and genre to "bullet-hell".`
             'vertical shooter', 'horizontal shooter', 'bullet curtain', 'air shooter',
             '飞行射击', '飞机大战', '纵版射击', '横版射击', '弹幕', '弹幕射击', '移动射击'
         ];
-        const hit = bulletTerms.find(term => {
+        const hit = [...bulletTerms, ...TEMPLATE_KEYWORD_PATCHES.bullet_hell].find(term => {
             const normalizedTerm = normalizeAnswerText(term);
             return normalizedTerm && text.includes(normalizedTerm);
         });
@@ -4677,7 +5636,8 @@ Lock Game Type to "Bullet Hell / Flying Shooter" and genre to "bullet-hell".`
             'virtual reality', 'augmented reality', 'blockchain', 'nft', 'voice chat', 'networked', 'server authoritative',
             '多人', '联机', '联网', '大型开放世界', '开放世界大地图', '虚拟现实', '增强现实', '区块链', '链游'
         ];
-        const hit = blockers.find(term => intent.includes(term));
+        const extraBlockers = ['多人', '联机', '联网', '多人联网', '开放世界', '大型开放世界', '虚拟现实', '增强现实', '区块链', '链游'];
+        const hit = [...blockers, ...extraBlockers].find(term => intent.includes(term));
         return hit ? {
             blocked: true,
             reason: `Capability exceeded: ${hit}`
@@ -4690,19 +5650,61 @@ Lock Game Type to "Bullet Hell / Flying Shooter" and genre to "bullet-hell".`
     function matchTemplate(spec = getCurrentGameSpec()) {
         const intent = getSpecIntentText(spec);
         const capability = detectCapabilityExceeded(intent);
-        const normalizedIntent = normalizeGameTypeForTemplate(intent, spec);
-        if (normalizedIntent.locked && !capability.blocked) {
-            const template = TEMPLATE_CATALOG.find(item => item.id === 'bullet_hell');
+        const aiCapability = analysisState.capability && analysisState.capability.supported === false
+            ? {
+                blocked: true,
+                reason: `Capability exceeded: ${(analysisState.capability.blockedReasons || []).join(', ') || 'unsupported request'}`
+            }
+            : null;
+        const effectiveCapability = aiCapability || capability;
+        const aiDecision = analysisState.templateDecision || null;
+        const hasAITemplateDecision = Boolean(aiDecision && Object.prototype.hasOwnProperty.call(aiDecision, 'templateId'));
+        if (aiDecision && aiDecision.templateId === 'unsupported') {
+            return {
+                canAutoGenerate: false,
+                templateId: null,
+                templateLabel: 'Unsupported request',
+                confidence: Number(aiDecision.confidence || 0),
+                reason: aiDecision.reason || 'AI marked this request outside current template coverage.',
+                fallbackMessage: 'This idea is outside the current automatic template coverage. Please leave an email and we will route it to the manual queue.',
+                candidates: []
+            };
+        }
+        const aiTemplateId = aiDecision && AUTO_GENERATION_TEMPLATE_IDS.has(aiDecision.templateId) ? aiDecision.templateId : '';
+        const aiConfidence = Number(aiDecision && aiDecision.confidence || 0);
+        if (aiTemplateId && aiConfidence >= 0.6 && !effectiveCapability.blocked) {
+            const template = TEMPLATE_CATALOG.find(item => item.id === aiTemplateId);
+            const isBullet = aiTemplateId === 'bullet_hell';
             return {
                 canAutoGenerate: true,
+                templateId: aiTemplateId,
+                templateLabel: isBullet ? 'Bullet Hell / Flying Shooter' : (template ? template.label : aiTemplateId),
+                templateGenre: isBullet ? 'bullet-hell' : 'roguelike-survival',
+                normalizedGameType: isBullet ? 'Bullet Hell / Flying Shooter' : 'Roguelike Survival',
+                locked: true,
+                confidence: Math.min(0.98, Math.max(0.6, aiConfidence)),
+                reason: aiDecision.reason || `AI selected ${template ? template.label : aiTemplateId}.`,
+                fallbackMessage: '',
+                candidates: template ? [{ ...template, confidence: Math.min(0.98, Math.max(0.6, aiConfidence)), hits: ['ai-template-decision'], directHit: true }] : []
+            };
+        }
+        const normalizedIntent = normalizeGameTypeForTemplate(intent, spec);
+        if (normalizedIntent.locked && !effectiveCapability.blocked) {
+            const template = TEMPLATE_CATALOG.find(item => item.id === 'bullet_hell');
+            return {
+                canAutoGenerate: false,
                 templateId: 'bullet_hell',
                 templateLabel: 'Bullet Hell / Flying Shooter',
                 templateGenre: 'bullet-hell',
                 normalizedGameType: normalizedIntent.normalizedGameType,
-                locked: true,
+                locked: false,
                 confidence: 0.98,
-                reason: `${normalizedIntent.reason}. Template genre locked to bullet-hell.`,
-                fallbackMessage: '',
+                reason: hasAITemplateDecision
+                    ? `${normalizedIntent.reason}, but the current AI templateDecision did not confirm automatic generation.`
+                    : `${normalizedIntent.reason}, but automatic generation requires the selected model to return templateDecision first.`,
+                fallbackMessage: hasAITemplateDecision
+                    ? 'The current AI template decision did not confirm this as an automatic P0 template. Retry or switch model if this looks wrong.'
+                    : 'Automatic generation requires an AI template decision from the selected model. Retry analysis or switch model.',
                 candidates: template ? [{ ...template, confidence: 0.98, hits: [normalizedIntent.reason], directHit: true }] : []
             };
         }
@@ -4727,24 +5729,22 @@ Lock Game Type to "Bullet Hell / Flying Shooter" and genre to "bullet-hell".`
         const best = scored[0];
         const templateMatched = Boolean(best && best.confidence >= 0.7);
         const templateCanAutoGenerate = Boolean(best && AUTO_GENERATION_TEMPLATE_IDS.has(best.id));
-        const canAutoGenerate = Boolean(!capability.blocked && templateMatched && templateCanAutoGenerate);
-        const fallbackMessage = capability.blocked
+        const canAutoGenerate = false;
+        const fallbackMessage = effectiveCapability.blocked
             ? 'This request includes features outside the current P0 HTML5 template whitelist. Please leave an email and we will route it to the manual queue.'
-            : (templateMatched && !templateCanAutoGenerate
-                ? `Matched ${best.label}, but only Roguelike Survival and Bullet Hell / Flying Shooter are enabled for automatic generation. Please leave an email and we will route it to the manual queue.`
-                : 'This idea is outside the current automatic template coverage. Please leave an email and we will route it to the manual queue.');
+            : (hasAITemplateDecision
+                ? 'The current AI template decision did not confirm an automatic P0 template. Retry or switch model if this looks wrong.'
+                : 'Automatic generation requires an AI template decision from the selected model. Retry analysis or switch model.');
         return {
             canAutoGenerate,
             templateId: best ? best.id : null,
             templateLabel: best ? best.label : 'No matching template',
             confidence: best ? best.confidence : 0,
-            reason: capability.blocked
-                ? capability.reason
-                : (canAutoGenerate
-                    ? `Matched ${best.label} from ${best.hits.slice(0, 4).join(', ')}.`
-                    : (templateMatched && !templateCanAutoGenerate
-                        ? `Matched ${best.label}, but it is outside the current automatic generation whitelist.`
-                        : 'No P0 template reached the 70% confidence threshold.')),
+            reason: effectiveCapability.blocked
+                ? effectiveCapability.reason
+                : (templateMatched
+                    ? `Local safety matched ${best.label}, but AI templateDecision is required before automatic generation.`
+                    : 'No AI-confirmed P0 template decision is available.'),
             fallbackMessage: canAutoGenerate ? '' : fallbackMessage,
             candidates: scored.slice(0, 3)
         };
@@ -4911,7 +5911,7 @@ Lock Game Type to "Bullet Hell / Flying Shooter" and genre to "bullet-hell".`
                 description: productPlan ? productPlan.meta.description : (spec.background || 'Generated from one natural-language prompt.'),
                 templateConfidence: Number(decision.confidence.toFixed(2)),
                 sourceArchitectures: [template.sourceArchitecture || 'p0-local-preview'],
-                readmeSummary: productPlan ? productPlan.readmeSummary : '',
+                prototypeSummary: productPlan ? productPlan.prototypeSummary : '',
                 generatedAt: new Date().toISOString()
             },
             template: {
@@ -5107,11 +6107,11 @@ Lock Game Type to "Bullet Hell / Flying Shooter" and genre to "bullet-hell".`
                 fallbackQueueRequired: true,
                 noCrashOnUnmatchedPrompt: true
             },
-            missingRuntimeLogic: [
-                'Persist generated GameSpec and email queue to backend storage.',
-                'Load and validate external manifest assets before replacing canvas fallbacks.',
-                'Compile common GameSpec into full template folders for bullet hell and roguelike runtimes.',
-                'Apply ThemeRegistry CSS variables, audio routing, and art prompts to generated assets.'
+            runtimeOwnership: [
+                'Template runtime owns state machine, input, collision, pause, restart, win, and fail states.',
+                'Compiled project owns patched GameSpec/config/manifest files.',
+                'Generated asset prompts stay routed through assets/manifest.json.',
+                'Validation report must pass before showing playable preview as generated.'
             ]
         };
     }
@@ -5131,7 +6131,7 @@ Lock Game Type to "Bullet Hell / Flying Shooter" and genre to "bullet-hell".`
                 enemyDesign: `${bulletHellPlanState.plan.enemyTypes.join(', ')}; Boss: ${bulletHellPlanState.plan.bossConfig.name}`,
                 progressionPlan: bulletHellPlanState.plan.progression,
                 playerFantasy: bulletHellPlanState.plan.winCondition,
-                prototypeScope: bulletHellPlanState.plan.readmeSummary
+                prototypeScope: bulletHellPlanState.plan.prototypeSummary
             }, sourceSpec)
             : (productionPlan ? normalizeGamePlanForGeneration(productionPlan, sourceSpec) : null);
         if (bulletHellPlanState.confirmed && bulletHellPlanState.plan && decision.templateId === 'bullet_hell') {
@@ -5148,11 +6148,7 @@ Lock Game Type to "Bullet Hell / Flying Shooter" and genre to "bullet-hell".`
         };
     }
 
-    function getTemplatePatchProvider() {
-        return ['gemini', 'qwen'].find(providerId => hasLiveAIProvider(providerId)) || '';
-    }
-
-    function buildLocalTemplatePatchPlan(spec, decision, productionPlan = null) {
+    function buildTemplatePatchPromptSeed(spec, decision, productionPlan = null) {
         const isBulletHell = decision.templateId === 'bullet_hell';
         const normalizedPlan = productionPlan ? normalizeGamePlanForGeneration(productionPlan, spec) : null;
         const productionBrief = normalizedPlan ? buildProductionBriefText(normalizedPlan, spec) : '';
@@ -5225,12 +6221,12 @@ Lock Game Type to "Bullet Hell / Flying Shooter" and genre to "bullet-hell".`
     }
 
     async function generateTemplatePatchPlan(spec, decision, productionPlan = null) {
-        const fallbackPlan = buildLocalTemplatePatchPlan(spec, decision, productionPlan);
-        const providerId = getTemplatePatchProvider();
-        if (!providerId) return fallbackPlan;
+        const promptSeed = buildTemplatePatchPromptSeed(spec, decision, productionPlan);
         try {
-            const modelId = getPublicModelIdForProvider(providerId) || getProviderModelId(providerId);
-            const response = await withTimeout(aiService.chat([
+            const activeModel = requireActiveAIModel('Template patch generation');
+            const providerId = activeModel.providerId;
+            const modelId = activeModel.modelId;
+            const response = await withTimeout(aiService.stageChat('/api/ai/generate-template-patch', [
                 {
                     role: 'system',
                     content: `You are generating a TemplatePatchPlan for an HTML5 game template. Return strict JSON only with these keys:
@@ -5238,8 +6234,9 @@ templateId, userIntentSummary, gameName, settingsPatch, specPatches, manifestPat
 Rules:
 - Use runtime inheritance. Do not request runtime code patches unless template configuration/spec/manifest cannot express the user request.
 - Treat productionPlan and productionBrief as the source of truth for this generation. Translate them into config/spec patches, asset prompts, enemies, progression, goals, and visual direction instead of merely naming the matched template.
-- For bullet_hell, lock genre to bullet-hell and Game Type to Bullet Hell / Flying Shooter.
-- For roguelike_survival, keep wave, XP, upgrades, boss pressure, pause/restart/result runtime inherited.
+- For bullet_hell, lock genre to bullet-hell and Game Type to Bullet Hell / Flying Shooter. specPatches must include coreRules, enemyTypes, enemyBulletTypes, bosses, waves, and difficultyTuning.
+- For roguelike_survival, specPatches must include waves, enemies, weapons, balance, and effects. Keep wave, XP, upgrades, boss pressure, pause/restart/result runtime inherited.
+- Do not output direct file patches, runtime patches, code patches, diffs, or source edits. Only use settingsPatch, specPatches, manifestPatch, stylePatch, assetPrompts.
 - assets must be described through manifestPatch or assetPrompts, never direct paths in game.js.
 - playabilityChecklist must include waves/progression, enemies/bosses, win/fail/restart, input actions, collision/object limits. ${getLanguageInstruction()}`
                 },
@@ -5249,8 +6246,16 @@ Rules:
                         templateId: decision.templateId,
                         templateLabel: decision.templateLabel,
                         userSpec: spec,
-                        productionPlan: fallbackPlan.productionPlan,
-                        productionBrief: fallbackPlan.productionBrief || latestGamePlanDraft,
+                        requestContext: buildAIRequestContext(spec.background || savedPrompt || ''),
+                        productionPlan: promptSeed.productionPlan,
+                        productionBrief: promptSeed.productionBrief || latestGamePlanDraft,
+                        suggestedStructure: {
+                            settingsPatch: promptSeed.settingsPatch,
+                            specPatches: promptSeed.specPatches,
+                            stylePatch: promptSeed.stylePatch,
+                            assetPromptRoles: Object.keys(promptSeed.assetPrompts || {}),
+                            playabilityChecklistTopics: promptSeed.playabilityChecklist
+                        },
                         templateDefaults: {
                             entry: decision.templateId === 'bullet_hell' ? 'bullet_hell/spec/game.json' : 'Groglike-SOP/template-config.js + spec/*.json',
                             manifest: 'assets/manifest.json',
@@ -5258,28 +6263,37 @@ Rules:
                         }
                     })
                 }
-            ], { provider: providerId, model: modelId }), AI_ANALYSIS_TIMEOUT_MS);
-            const jsonMatch = response.content.match(/\{[\s\S]*\}/);
-            const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(response.content);
+            ], { provider: providerId, model: modelId }), AI_TEMPLATE_PATCH_TIMEOUT_MS, 'Template patch generation');
+            const parsed = validateTemplatePatchPlan(extractModelJsonObject(response.content, 'Template patch generation'), decision);
             return {
-                ...fallbackPlan,
                 ...parsed,
                 templateId: decision.templateId,
-                productionPlan: fallbackPlan.productionPlan,
-                productionBrief: fallbackPlan.productionBrief,
-                assetPrompts: { ...fallbackPlan.assetPrompts, ...(parsed.assetPrompts || {}) },
-                playabilityChecklist: Array.isArray(parsed.playabilityChecklist) && parsed.playabilityChecklist.length
-                    ? parsed.playabilityChecklist
-                    : fallbackPlan.playabilityChecklist,
-                aiGenerated: true
+                productionPlan: promptSeed.productionPlan,
+                productionBrief: promptSeed.productionBrief,
+                aiGenerated: true,
+                modelMeta: {
+                    providerId,
+                    modelId,
+                    label: getModelLabel(providerId, response.model || modelId)
+                }
             };
         } catch (error) {
-            console.warn('TemplatePatchPlan AI step failed, using deterministic template patch plan:', error);
-            return fallbackPlan;
+            throw classifyAIFlowError(error, 'Template patch generation');
         }
     }
 
     async function compileTemplateProject(spec, decision, patchPlan) {
+        const availabilityError = getTemplateAvailabilityError(decision);
+        if (availabilityError) {
+            throw createAIFlowError(
+                'TEMPLATE_NOT_PUBLISHED',
+                'template_compile_failure',
+                'Backend template is not published',
+                availabilityError,
+                decision.templateId || '',
+                ['manual_queue']
+            );
+        }
         const response = await fetch(apiUrl('/api/template-project/compile'), {
             method: 'POST',
             credentials: 'include',
@@ -5291,9 +6305,30 @@ Rules:
             })
         });
         if (response.status === 404) {
-            throw new Error('Template compile API returned 404. Restart the local backend so /api/template-project/compile is available, then retry generation.');
+            throw createAIFlowError(
+                'TEMPLATE_COMPILE_FAILED',
+                'template_compile_failure',
+                'Template compile API is unavailable',
+                'Template compile API returned 404. Restart the local backend so /api/template-project/compile is available, then retry generation.',
+                'HTTP 404',
+                ['retry', 'manual_queue']
+            );
         }
-        const data = await parseJsonResponse(response);
+        let data;
+        try {
+            data = await parseJsonResponse(response);
+        } catch (error) {
+            const backendCode = error.data && error.data.code;
+            if (backendCode === 'PATCH_FILE_NOT_ALLOWED' || backendCode === 'PATCH_REQUIRES_RUNTIME_CODE') throw classifyAIFlowError(error, 'Template compile');
+            throw createAIFlowError(
+                'TEMPLATE_COMPILE_FAILED',
+                'template_compile_failure',
+                'Template compile failed',
+                error.message || 'Template compile failed.',
+                error.status ? `HTTP ${error.status}` : '',
+                ['retry', 'manual_queue']
+            );
+        }
         return data.project || null;
     }
 
@@ -5306,93 +6341,19 @@ Rules:
             : applyProductionPlanToSpec(spec, plan.productionPlan || latestGamePlan);
         const patchPlan = await generateTemplatePatchPlan(sourceSpec, plan.decision, plan.productionPlan || latestGamePlan);
         if (patchPlan.requiresRuntimeCodePatch) {
-            throw new Error(patchPlan.runtimePatchReason || 'The selected template needs runtime code changes, so this request must enter the manual production flow.');
+            throw createAIFlowError(
+                'PATCH_REQUIRES_RUNTIME_CODE',
+                'template_compile_failure',
+                'Template patch needs runtime code',
+                patchPlan.runtimePatchReason || 'The selected template needs runtime code changes, so this request must enter the manual production flow.',
+                '',
+                ['retry', 'manual_queue']
+            );
         }
         const project = await compileTemplateProject(sourceSpec, plan.decision, patchPlan);
         plan.templatePatchPlan = patchPlan;
         plan.generatedProject = project;
         return plan;
-    }
-
-    function buildLocalEnhancedPlan(spec = getCurrentGameSpec(), decision = matchTemplate(spec)) {
-        const templateId = decision.templateId || '';
-        const isBulletHell = templateId === 'bullet_hell';
-        const isRoguelike = templateId === 'roguelike_survival';
-        const isTowerDefense = templateId === 'tower_defense';
-        const settingName = spec.gameSetting || 'Custom World';
-        const artStyle = spec.artStyle || 'Readable arcade';
-        const difficulty = spec.difficultyLevel || 'Normal';
-
-        if (isBulletHell) {
-            return {
-                title: 'Neon Prism Storm',
-                hook: 'A precision dodging shooter where the player cuts through corporate signal swarms and dismantles a boss core phase by phase.',
-                storyPremise: 'The city is controlled by hostile broadcast towers. The pilot enters the aerial grid to break the transmission chain before it locks the district down.',
-                coreLoop: 'Read bullet patterns, slip through narrow lanes, fire focused shots, collect power drops, and spend bomb energy when the screen becomes unsafe.',
-                momentToMoment: 'The player alternates between fast movement for repositioning and focus movement for micro-dodging. Each wave teaches a pattern that returns harder in the boss fight.',
-                visualDirection: `Use ${artStyle} as the rendering style, with dark streets, high-contrast projectile colors, clean silhouettes, and readable warning effects instead of repeated neon decoration.`,
-                enemyDesign: 'Drones use aimed shots, weavers create fan lanes, lotus enemies build ring pressure, and the boss rotates through spiral, flower, and burst phases.',
-                progressionPlan: 'Level-up choices increase shot count, spread control, bomb recharge, graze score, or shield capacity without hiding the player hitbox.',
-                playerFantasy: 'The player should feel like a calm ace pilot surviving impossible traffic through skill, timing, and disciplined resource use.',
-                prototypeScope: `P0 scope: one playable stage in ${settingName}, one enemy wave table, one multi-phase boss, keyboard movement, shooting, pause, win and fail states tuned for ${difficulty}.`
-            };
-        }
-
-        if (isRoguelike) {
-            return {
-                title: 'Signal Run Survivors',
-                hook: 'A compact survival run where automatic weapons evolve while enemies close in from every direction.',
-                storyPremise: `The player is trapped in ${settingName}. Every minute raises pressure, forcing quick upgrade decisions and movement routes through enemy density.`,
-                coreLoop: 'Move to survive, let weapons trigger automatically, collect XP, choose upgrades, recover health when possible, and prepare for elite spikes.',
-                momentToMoment: 'The player kites swarms, cuts through weak edges, risks dives for XP, and repositions before elites or boss pressure collapses the safe area.',
-                visualDirection: `Use ${artStyle} with clear attack telegraphs, bright pickup readability, strong enemy silhouettes, and UI that keeps cooldowns and level progress visible.`,
-                enemyDesign: 'Basic enemies create density, elites force directional movement, and the boss tests the current build with higher health and stronger contact pressure.',
-                progressionPlan: `${spec.progressionSystem || 'Level-up choices'} should offer weapon growth, passive stat boosts, area control, cooldown reduction, and survivability tradeoffs.`,
-                playerFantasy: 'The player should feel like they are building a broken run from small upgrades while barely staying ahead of the swarm.',
-                prototypeScope: `P0 scope: one survival arena, escalating spawn rate, XP pickups, three upgrade choices per level, one elite class, one boss objective, and ${difficulty} tuning.`
-            };
-        }
-
-        if (isTowerDefense) {
-            return {
-                title: 'Last Line Protocol',
-                hook: 'A short defense prototype where the player places towers, reads enemy lanes, and protects a fragile base.',
-                storyPremise: `Enemy waves are pushing through ${settingName}. The player has limited build windows to stabilize lanes before pressure compounds.`,
-                coreLoop: 'Place towers, watch lanes, upgrade weak points, survive wave spikes, and keep the base alive until the final wave ends.',
-                momentToMoment: 'The player reacts to leaks, spends resources on range or damage, and adjusts placement to cover bends and enemy clusters.',
-                visualDirection: `Use ${artStyle} with clear lane contrast, readable tower ranges, distinct projectile colors, and compact HUD feedback.`,
-                enemyDesign: 'Runners test early coverage, armored units punish low damage, and fast units expose path gaps.',
-                progressionPlan: `${spec.progressionSystem || 'Upgrade choices'} should unlock stronger towers, temporary buffs, and repair decisions between waves.`,
-                playerFantasy: 'The player should feel like a tactical operator turning a weak defense into a controlled kill zone.',
-                prototypeScope: `P0 scope: one path, two tower types, several enemy waves, base health, basic upgrades, and ${difficulty} tuning.`
-            };
-        }
-
-        return {
-            title: `${settingName} Prototype`,
-            hook: 'A custom game idea that needs manual production because it falls outside the current automatic template set.',
-            storyPremise: spec.background || `A custom concept set in ${settingName}.`,
-            coreLoop: spec.coreGameplay || 'The core loop still needs manual design clarification.',
-            momentToMoment: 'The team should clarify player verbs, failure pressure, session length, and what makes each decision interesting.',
-            visualDirection: `Use ${artStyle}, but lock the exact asset style before production so characters, UI, effects, and environments stay consistent.`,
-            enemyDesign: spec.mainChallenge || 'Challenge design needs manual breakdown.',
-            progressionPlan: spec.progressionSystem || 'Progression needs manual breakdown.',
-            playerFantasy: 'The desired player fantasy needs a more specific design pass before automatic generation.',
-            prototypeScope: 'Manual queue scope: clarify mechanics, pick a supported runtime or create a new template, then generate a testable prototype.'
-        };
-    }
-
-    function buildFallbackGamePlanHtml() {
-        const spec = getCurrentGameSpec();
-        const decision = matchTemplate(spec);
-        const plan = buildLocalEnhancedPlan(spec, decision);
-        latestGamePlan = normalizeGamePlanForGeneration(plan, spec);
-        latestGamePlanDraft = buildGamePlanDraftText(latestGamePlan, spec);
-        return [
-            '<div class="selection-summary">',
-            buildEnhancedPlanHtml(latestGamePlan),
-            '</div>'
-        ].join('');
     }
 
     function buildEnhancedPlanHtml(plan) {
@@ -5857,26 +6818,58 @@ Rules:
         ].join('');
     }
 
+    function modelMetaDisplay(meta) {
+        if (!meta) return '';
+        return meta.label || meta.modelLabel || meta.modelId || meta.responseModel || meta.providerId || '';
+    }
+
+    function buildAiPipelineSummaryHtml(plan, project) {
+        const stages = [
+            { label: 'Analysis', meta: analysisState.analysisModelMeta },
+            { label: 'GamePlan', meta: analysisState.finalModelMeta },
+            { label: 'TemplatePatch', meta: plan.templatePatchPlan && plan.templatePatchPlan.modelMeta }
+        ].filter(stage => modelMetaDisplay(stage.meta));
+        const checks = project && project.validationReport && Array.isArray(project.validationReport.checks)
+            ? project.validationReport.checks
+            : [];
+        return [
+            '<div class="selection-summary ai-pipeline-summary">',
+            '<div class="summary-title">AI pipeline</div>',
+            stages.length
+                ? `<div class="summary-item"><strong>Models:</strong> ${stages.map(stage => `${escapeHtml(stage.label)} ${escapeHtml(modelMetaDisplay(stage.meta))}`).join(' / ')}</div>`
+                : '',
+            project && project.validationReport
+                ? `<div class="summary-item"><strong>Validation report:</strong> ${escapeHtml(project.validationReport.ok ? 'Passed' : 'Needs review')}</div>`
+                : '',
+            checks.length
+                ? `<div class="summary-item validation-inline">${checks.map(check => `<span class="${check.ok ? 'ok' : 'warn'}">${check.ok ? 'OK' : 'Review'} · ${escapeHtml(check.label)}</span>`).join('')}</div>`
+                : '',
+            '</div>'
+        ].join('');
+    }
+
     function buildGeneratedSpecHtml(plan) {
         const decision = plan.decision || matchTemplate(getCurrentGameSpec());
         const project = plan.generatedProject || null;
-        const generated = plan.generatedSpec || buildGeneratedGameSpec({
-            gameType: 'Roguelike Survival',
-            artStyle: 'Cyberpunk',
-            gameSetting: 'Neon Dungeon',
-            background: 'Generated local preview for the AI game editing workspace.',
-            coreGameplay: 'Move, attack, dodge, and survive waves.',
-            playerGoal: 'Clear the prototype run.',
-            mainChallenge: 'Escalating enemy pressure.',
-            progressionSystem: 'Level-up choices.',
-            difficultyLevel: 'Normal',
-            outputPackage: { mode: 'fixed', preview: true, exportProjectFolder: true }
-        }, decision);
+        const generationModel = plan.templatePatchPlan && plan.templatePatchPlan.modelMeta
+            ? plan.templatePatchPlan.modelMeta
+            : (analysisState.finalModelMeta || analysisState.analysisModelMeta || null);
+        const modelLabel = modelMetaDisplay(generationModel);
+        const generated = plan.generatedSpec;
+        if (!generated) {
+            return [
+                '<div class="selection-summary ai-error-card">',
+                '<div class="summary-title">Generated GameSpec is missing</div>',
+                '<div class="summary-item">The generation flow did not produce a validated GameSpec. Retry the current model or submit this request to the manual queue.</div>',
+                '</div>'
+            ].join('');
+        }
         return [
             '<div class="generation-result">',
             `<div class="generation-status">${escapeHtml(t('autoPath'))}</div>`,
             `<div class="generation-title">${escapeHtml(t('gameSpecReady'))}</div>`,
-            `<div class="generation-meta"><span>${escapeHtml(decision.templateLabel)}</span><span>${Math.round(decision.confidence * 100)}% match</span></div>`,
+            `<div class="generation-meta"><span>${escapeHtml(decision.templateLabel)}</span><span>${Math.round(decision.confidence * 100)}% match</span>${modelLabel ? `<span>AI: ${escapeHtml(modelLabel)}</span>` : ''}</div>`,
+            buildAiPipelineSummaryHtml(plan, project),
             buildProductionPlanAppliedHtml(plan),
             '<div class="generated-workspace-topbar">',
             '<div class="generated-web-card">',
@@ -6759,10 +7752,12 @@ Rules:
     }
 
     function composeAndReturn() {
+        clearInspirePromptTimer();
         const spec = bulletHellPlanState.confirmed && bulletHellPlanState.plan
             ? applyBulletHellPlanToGeneratedSpec(bulletHellPlanState.plan, getCurrentGameSpec())
             : getCurrentGameSpec();
         const generationPlan = buildGenerationPlan(spec);
+        latestGenerationPlan = generationPlan;
         savedPrompt = `Your Concept: ${spec.background}
 Game Type: ${spec.gameType}
 Art Style: ${spec.artStyle}
@@ -6816,10 +7811,7 @@ Confidence: ${Math.round(generationPlan.decision.confidence * 100)}%`;
         activeGameCleanups.forEach(cleanup => cleanup());
         activeGameCleanups = [];
 
-        if (analysisTimeout) {
-            clearTimeout(analysisTimeout);
-            analysisTimeout = null;
-        }
+        clearInspirePromptTimer();
 
         if (typingTimeout) {
             clearTimeout(typingTimeout);
@@ -6857,6 +7849,8 @@ Confidence: ${Math.round(generationPlan.decision.confidence * 100)}%`;
         chatCurrent = createChatTracking(() => []);
         latestGamePlanDraft = '';
         latestGamePlan = null;
+        latestGenerationPlan = null;
+        latestAIFlowError = null;
         resetBulletHellPlanState();
         analysisState = {
             active: false,
@@ -6864,10 +7858,14 @@ Confidence: ${Math.round(generationPlan.decision.confidence * 100)}%`;
             background: null,
             processing: false,
             revisionMode: false,
+            templateDecision: null,
+            capability: null,
+            analysisModelMeta: null,
             finalModelMeta: null,
             workStartedAt: 0,
             modules: createModuleStates()
         };
+        chatTranscript = [];
 
         chatHistory.innerHTML = '';
         chatHistory.classList.remove('is-generating');
@@ -6952,6 +7950,12 @@ Confidence: ${Math.round(generationPlan.decision.confidence * 100)}%`;
                 exportProjectFolder: true
             }
         };
+        analysisState.templateDecision = {
+            templateId: 'roguelike_survival',
+            confidence: 0.95,
+            reason: 'Local edit workspace demo seed.'
+        };
+        analysisState.capability = { supported: true, blockedReasons: [] };
         const plan = buildGenerationPlan(spec);
         addUserMessage('Create a playable mini-game and open the post-generation editing workspace.');
         regTimeout(() => {
@@ -7219,6 +8223,7 @@ Confidence: ${Math.round(generationPlan.decision.confidence * 100)}%`;
     updateModelUI();
     updateLocalizedUI();
     loadPlatformModels();
+    loadPlatformTemplates();
 
     refreshAdminSession();
 
@@ -7259,8 +8264,9 @@ Confidence: ${Math.round(generationPlan.decision.confidence * 100)}%`;
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     email,
-                    prompt: savedPrompt,
-                    subject: 'New Droi AI Waitlist Submission (Inspire Me)'
+                    prompt: buildManualQueuePrompt(),
+                    context: buildManualQueueContext(),
+                    subject: 'New Droi AI Manual Game Generation Request'
                 })
             })
                 .then(async response => {
@@ -7586,6 +8592,7 @@ Confidence: ${Math.round(generationPlan.decision.confidence * 100)}%`;
                                 progressMessage.style.display = 'block';
                                 progressMessage.textContent = 'Sending the production brief to the template planner and compiling the playable project...';
                             }
+                            latestGenerationPlan = plan;
                             await ensureTemplateProject(plan);
                             completeStep(step3);
                             if (progressBarFill) progressBarFill.style.width = '100%';
@@ -7597,7 +8604,10 @@ Confidence: ${Math.round(generationPlan.decision.confidence * 100)}%`;
                             chatHistory.classList.remove('is-generating');
                             const inputArea = document.querySelector('.chat-input-wrapper');
                             if (inputArea) inputArea.style.display = '';
-                            addBotMessage(`<div class="selection-summary"><div class="summary-title">Template generation needs review</div><div class="summary-item">${escapeHtml(error.message || 'Template compile failed. Please route this request to the manual production flow.')}</div></div>`);
+                            showAIFlowError(classifyAIFlowError(error, 'Template generation'), {
+                                phase: 'Template generation',
+                                onRetry: () => runGenerationAnimation(plan)
+                            });
                         }
                     } else {
                         if (emailModal) {

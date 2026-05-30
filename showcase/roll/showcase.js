@@ -1,6 +1,6 @@
 const imageModelName = document.body.dataset.assetModel || window.DROI_IMAGE_MODEL || 'gpt-image-2';
 
-const games = [
+const DEFAULT_GAMES = [
     {
         title: 'Neon Dungeon Survivor',
         slug: 'neon-dungeon-survivor',
@@ -73,8 +73,24 @@ const games = [
     }
 ];
 
-const catalogGames = [
-    ...games,
+let games = [...DEFAULT_GAMES];
+let catalogGames = [...games];
+
+const elements = {
+    rollView: document.getElementById('rollView'),
+    detailView: document.getElementById('detailView'),
+    activeIndexLabel: document.getElementById('activeIndexLabel'),
+    selectedLabel: document.getElementById('selectedLabel'),
+    hoverStatus: document.getElementById('hoverStatus'),
+    gameDirectory: document.getElementById('gameDirectory'),
+    filmRail: document.getElementById('filmRail'),
+    rollDots: document.getElementById('rollDots'),
+    rollFilmPanel: document.querySelector('.roll-film-panel'),
+    detailSections: document.getElementById('detailSections'),
+    backToRollBtn: document.getElementById('backToRollBtn')
+};
+
+const queuedCatalogGames = [
     {
         title: 'Crystal Core Defense',
         typeShort: 'TOWER',
@@ -91,20 +107,6 @@ const catalogGames = [
         buildTime: '21 MIN'
     }
 ];
-
-const elements = {
-    rollView: document.getElementById('rollView'),
-    detailView: document.getElementById('detailView'),
-    activeIndexLabel: document.getElementById('activeIndexLabel'),
-    selectedLabel: document.getElementById('selectedLabel'),
-    hoverStatus: document.getElementById('hoverStatus'),
-    gameDirectory: document.getElementById('gameDirectory'),
-    filmRail: document.getElementById('filmRail'),
-    rollDots: document.getElementById('rollDots'),
-    rollFilmPanel: document.querySelector('.roll-film-panel'),
-    detailSections: document.getElementById('detailSections'),
-    backToRollBtn: document.getElementById('backToRollBtn')
-};
 
 let previewIndex = 0;
 let selectedIndex = 0;
@@ -125,6 +127,77 @@ const carouselDelay = 3500;
 const wheelSwitchUnlockMs = 180;
 let wheelSwitchLocked = false;
 let wheelSwitchUnlockTimer = null;
+
+function resolveApiBase() {
+    const params = new URLSearchParams(window.location.search);
+    const queryBase = params.get('apiBase') || '';
+    if (queryBase) return queryBase.replace(/\/$/, '');
+    if (window.DROI_API_BASE) return String(window.DROI_API_BASE).replace(/\/$/, '');
+    if (['127.0.0.1', 'localhost'].includes(window.location.hostname)) return 'http://127.0.0.1:3000';
+    return '';
+}
+
+const apiBase = resolveApiBase();
+
+function apiUrl(path) {
+    return `${apiBase}${path}`;
+}
+
+function sanitizeGame(game, index) {
+    const title = String(game.title || `Generated Game ${index + 1}`).trim();
+    return {
+        title,
+        slug: String(game.slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || `game-${index + 1}`),
+        genre: String(game.genre || 'ARCADE GAME'),
+        typeShort: String(game.typeShort || game.genre || 'GAME').slice(0, 16),
+        buildTime: String(game.buildTime || ''),
+        image: String(game.image || ''),
+        playUrl: String(game.playUrl || ''),
+        embedMode: game.embedMode === 'new_tab' ? 'new_tab' : 'iframe',
+        prompt: String(game.prompt || ''),
+        caption: String(game.caption || ''),
+        tags: Array.isArray(game.tags) ? game.tags.map(tag => String(tag || '').trim()).filter(Boolean) : [],
+        breakdown: String(game.breakdown || ''),
+        output: String(game.output || ''),
+        hook: String(game.hook || game.caption || ''),
+        gameId: String(game.gameId || ''),
+        source: String(game.source || 'minigame'),
+        orientation: String(game.orientation || 'vertical'),
+        status: String(game.status || 'online'),
+        category: String(game.category || ''),
+        gameType: String(game.gameType || 'H5'),
+        enabled: game.enabled !== false,
+        order: Number(game.order) || index + 1
+    };
+}
+
+function syncCatalogGames() {
+    catalogGames = [...games, ...queuedCatalogGames];
+}
+
+async function loadBackendGames() {
+    if (!apiBase) return;
+    try {
+        const response = await fetch(apiUrl('/api/showcase/games'), {
+            credentials: 'include',
+            cache: 'no-store'
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        const nextGames = Array.isArray(data.games)
+            ? data.games.map(sanitizeGame).filter(game => game.enabled && game.status === 'online' && game.image)
+            : [];
+        if (nextGames.length) {
+            games = nextGames.sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
+            selectedIndex = 0;
+            previewIndex = 0;
+            detailIndex = 0;
+            syncCatalogGames();
+        }
+    } catch (error) {
+        // Static fallback keeps the bundled showcase list available.
+    }
+}
 
 function numberLabel(index) {
     return String(index + 1).padStart(2, '0');
@@ -412,6 +485,14 @@ function renderDetailSections() {
                     ${dotMarkup}
                 </div>
             </section>
+
+            <section class="detail-play-panel" data-detail-field="playPanel" hidden>
+                <div class="detail-play-heading">
+                    <span>Embedded game</span>
+                    <a data-detail-field="playLink" href="#" target="_blank" rel="noopener noreferrer">Open game</a>
+                </div>
+                <iframe data-detail-field="playFrame" src="about:blank" title="Embedded game preview" loading="lazy" allowfullscreen></iframe>
+            </section>
         </section>
     `;
 
@@ -469,6 +550,23 @@ function updateFocusedDetail(index) {
         image.alt = `${game.title} generated game focus`;
     }
 
+    const playPanel = elements.detailSections.querySelector('[data-detail-field="playPanel"]');
+    const playFrame = elements.detailSections.querySelector('[data-detail-field="playFrame"]');
+    const playLink = elements.detailSections.querySelector('[data-detail-field="playLink"]');
+    if (playPanel && playFrame && playLink) {
+        const hasPlayableUrl = Boolean(game.playUrl);
+        playPanel.hidden = !hasPlayableUrl;
+        playLink.href = game.playUrl || '#';
+        playLink.textContent = game.embedMode === 'new_tab' ? 'Open game in new tab' : 'Open game';
+        if (hasPlayableUrl && game.embedMode !== 'new_tab') {
+            playFrame.src = game.playUrl;
+            playFrame.hidden = false;
+        } else {
+            playFrame.src = 'about:blank';
+            playFrame.hidden = true;
+        }
+    }
+
     document.querySelectorAll('.focus-dot').forEach((dot, dotIndex) => {
         const isActive = dotIndex === index;
         dot.classList.toggle('is-active', isActive);
@@ -495,7 +593,8 @@ function navigateToGame(index, pushHash = true) {
     if (embeddedPageFlow) {
         window.parent?.postMessage({
             type: 'droi-roll-scroll-to',
-            pageIndex: 1
+            pageIndex: getEmbeddedDetailPageIndex(),
+            offset: getEmbeddedDetailOffset()
         }, parentOrigin);
         return;
     }
@@ -514,7 +613,8 @@ function closeDetail(updateHistory = true) {
     if (embeddedPageFlow) {
         window.parent?.postMessage({
             type: 'droi-roll-scroll-to',
-            pageIndex: 0
+            pageIndex: 0,
+            offset: 0
         }, parentOrigin);
     } else {
         elements.rollView.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -589,6 +689,43 @@ function applyEmbeddedViewport(height) {
     embeddedPageFlow = true;
     document.documentElement.classList.add('is-embedded-page-flow');
     document.documentElement.style.setProperty('--roll-page-height', `${nextHeight}px`);
+    window.requestAnimationFrame(notifyEmbeddedReady);
+}
+
+function getEmbeddedPageHeight() {
+    const rawHeight = getComputedStyle(document.documentElement).getPropertyValue('--roll-page-height');
+    return Math.max(480, parseFloat(rawHeight) || window.innerHeight || 480);
+}
+
+function getEmbeddedDetailOffset() {
+    const shellBottom = elements.rollView
+        ? (elements.rollView.offsetTop || 0) + Math.max(elements.rollView.offsetHeight || 0, elements.rollView.scrollHeight || 0)
+        : 0;
+    const detailTop = elements.detailView?.offsetTop || getEmbeddedPageHeight();
+    return Math.max(0, Math.round(Math.max(detailTop, shellBottom)));
+}
+
+function getEmbeddedDetailPageIndex() {
+    return Math.max(1, Math.round(getEmbeddedDetailOffset() / getEmbeddedPageHeight()));
+}
+
+function getEmbeddedPageCount() {
+    const pageHeight = getEmbeddedPageHeight();
+    const contentHeight = Math.max(
+        document.documentElement.scrollHeight,
+        document.body.scrollHeight,
+        getEmbeddedDetailOffset() + (elements.detailView?.scrollHeight || 0),
+        pageHeight * 2
+    );
+    return Math.max(2, Math.ceil(contentHeight / pageHeight));
+}
+
+function notifyEmbeddedReady() {
+    if (!window.parent || window.parent === window) return;
+    window.parent.postMessage({
+        type: 'droi-roll-ready',
+        pageCount: getEmbeddedPageCount()
+    }, parentOrigin);
 }
 
 function initEmbeddedPageFlow() {
@@ -602,10 +739,7 @@ function initEmbeddedPageFlow() {
 
     if (window.parent && window.parent !== window) {
         applyEmbeddedViewport(window.innerHeight);
-        window.parent.postMessage({
-            type: 'droi-roll-ready',
-            pageCount: 2
-        }, parentOrigin);
+        notifyEmbeddedReady();
     }
 }
 
@@ -732,17 +866,23 @@ function bindEvents() {
     });
 }
 
-createStarlights();
-initSpotlight();
-initRipples();
-renderDirectory();
-renderFilmRail();
-renderDots();
-renderDetailSections();
-previewGame(0);
-elements.selectedLabel.textContent = totalLabel(0);
-initEmbeddedPageFlow();
-bindEvents();
-initSectionObservers();
-openFromHash(false);
-startCarousel();
+async function initShowcase() {
+    createStarlights();
+    initSpotlight();
+    initRipples();
+    syncCatalogGames();
+    await loadBackendGames();
+    renderDirectory();
+    renderFilmRail();
+    renderDots();
+    renderDetailSections();
+    previewGame(0);
+    elements.selectedLabel.textContent = totalLabel(0);
+    initEmbeddedPageFlow();
+    bindEvents();
+    initSectionObservers();
+    openFromHash(false);
+    startCarousel();
+}
+
+initShowcase();
