@@ -1187,6 +1187,41 @@ body.is-in-detail .floating-roll-btn {
     gap: 0.7rem;
 }
 
+.detail-play-panel {
+    margin-top: 1rem;
+    display: grid;
+    gap: 0.7rem;
+}
+
+.detail-play-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    color: rgba(245, 247, 255, 0.72);
+    font-size: 0.7rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.detail-play-heading a {
+    color: #fff;
+    text-decoration: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 999px;
+    padding: 0.55rem 0.75rem;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.detail-play-panel iframe {
+    width: 100%;
+    min-height: 360px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 10px;
+    background: #050812;
+}
+
 .prompt-stage {
     border-left: 2px solid rgba(94, 231, 255, 0.54);
     background:

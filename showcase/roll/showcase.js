@@ -1,6 +1,9 @@
 const imageModelName = document.body.dataset.assetModel || window.DROI_IMAGE_MODEL || 'gpt-image-2';
 
-const games = [
+const SHOWCASE_CACHE_KEY = 'droi_showcase_cache_v1';
+const SHOWCASE_POLL_MS = 5 * 60 * 1000;
+
+const DEFAULT_GAMES = [
     {
         title: 'Neon Dungeon Survivor',
         slug: 'neon-dungeon-survivor',
@@ -73,7 +76,8 @@ const games = [
     }
 ];
 
-const catalogGames = [
+let games = [...DEFAULT_GAMES];
+let catalogGames = [
     ...games,
     {
         title: 'Crystal Core Defense',
@@ -91,6 +95,8 @@ const catalogGames = [
         buildTime: '21 MIN'
     }
 ];
+let showcaseBusy = false;
+let pendingGames = null;
 
 const elements = {
     rollView: document.getElementById('rollView'),
@@ -122,6 +128,137 @@ const parentOrigin = (() => {
 })();
 
 const carouselDelay = 3500;
+
+function resolveApiBase() {
+    const params = new URLSearchParams(window.location.search);
+    const queryBase = params.get('apiBase') || '';
+    if (queryBase) return queryBase.replace(/\/+$/, '');
+    if (window.DROI_API_BASE) return String(window.DROI_API_BASE).replace(/\/+$/, '');
+    if (['127.0.0.1', 'localhost'].includes(window.location.hostname)) return 'http://127.0.0.1:3000';
+    return '';
+}
+
+const apiBase = resolveApiBase();
+
+function apiUrl(path) {
+    return `${apiBase}${path}`;
+}
+
+function resolveAssetUrl(value) {
+    const url = String(value || '');
+    if (!url) return '';
+    if (/^https?:\/\//i.test(url)) return url;
+    if (url.startsWith('/api/') && apiBase) return apiUrl(url);
+    return url;
+}
+
+function sanitizeGame(game, index) {
+    const title = String(game.title || `Generated Game ${index + 1}`).trim();
+    return {
+        title,
+        slug: String(game.slug || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || `game-${index + 1}`),
+        genre: String(game.genre || 'ARCADE GAME'),
+        typeShort: String(game.typeShort || game.genre || 'GAME').slice(0, 16),
+        buildTime: String(game.buildTime || ''),
+        image: resolveAssetUrl(game.image),
+        playUrl: String(game.playUrl || ''),
+        embedMode: game.embedMode === 'new_tab' ? 'new_tab' : 'iframe',
+        prompt: String(game.prompt || ''),
+        caption: String(game.caption || ''),
+        tags: Array.isArray(game.tags) ? game.tags.map(tag => String(tag || '').trim()).filter(Boolean) : [],
+        breakdown: String(game.breakdown || ''),
+        output: String(game.output || ''),
+        hook: String(game.hook || game.caption || ''),
+        gameId: String(game.gameId || ''),
+        source: String(game.source || 'minigame'),
+        orientation: String(game.orientation || 'vertical'),
+        status: String(game.status || 'online'),
+        category: String(game.category || ''),
+        gameType: String(game.gameType || 'H5'),
+        enabled: game.enabled !== false,
+        order: Number(game.order) || index + 1
+    };
+}
+
+function syncCatalogGames() {
+    const queued = [
+        { title: 'Crystal Core Defense', typeShort: 'TOWER', buildTime: '18 MIN' },
+        { title: 'Pixel Storm Racer', typeShort: 'RACING', buildTime: '09 MIN' },
+        { title: 'Void Garden Tactics', typeShort: 'STRATEGY', buildTime: '21 MIN' }
+    ];
+    catalogGames = [...games, ...queued];
+}
+
+function applyShowcaseGames(nextGames) {
+    if (!Array.isArray(nextGames) || !nextGames.length) return;
+    games = nextGames
+        .map(sanitizeGame)
+        .filter(game => game.enabled && game.status === 'online' && game.image)
+        .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
+    if (!games.length) games = [...DEFAULT_GAMES];
+    selectedIndex = Math.min(selectedIndex || 0, games.length - 1);
+    previewIndex = Math.min(previewIndex || 0, games.length - 1);
+    detailIndex = Math.min(detailIndex || 0, games.length - 1);
+    syncCatalogGames();
+    renderDirectory();
+    renderFilmRail();
+    renderDots();
+    renderDetailSections();
+    previewGame(selectedIndex || 0);
+    elements.selectedLabel.textContent = totalLabel(selectedIndex || 0);
+    notifyEmbeddedReady();
+}
+
+function readCachedShowcaseGames() {
+    try {
+        const cached = JSON.parse(localStorage.getItem(SHOWCASE_CACHE_KEY) || 'null');
+        if (cached && Array.isArray(cached.games)) return cached.games;
+    } catch (error) {
+        // Ignore cache parse errors and keep bundled games.
+    }
+    return [];
+}
+
+async function loadBackendGames({ background = false } = {}) {
+    if (!apiBase) return;
+    try {
+        const response = await fetch(apiUrl('/api/showcase/games'), {
+            credentials: 'include',
+            cache: 'no-store'
+        });
+        if (!response.ok) throw new Error(`showcase config ${response.status}`);
+        const data = await response.json();
+        const nextGames = Array.isArray(data.games) ? data.games : [];
+        if (!nextGames.length) return;
+        localStorage.setItem(SHOWCASE_CACHE_KEY, JSON.stringify({
+            updatedAt: data.updatedAt || new Date().toISOString(),
+            games: nextGames
+        }));
+        if (showcaseBusy && background) {
+            pendingGames = nextGames;
+            return;
+        }
+        applyShowcaseGames(nextGames);
+    } catch (error) {
+        const cached = readCachedShowcaseGames();
+        if (cached.length && !background) applyShowcaseGames(cached);
+    }
+}
+
+function startShowcasePolling() {
+    window.setInterval(() => {
+        loadBackendGames({ background: true });
+    }, SHOWCASE_POLL_MS);
+}
+
+function setShowcaseBusy(nextBusy) {
+    showcaseBusy = Boolean(nextBusy);
+    if (!showcaseBusy && pendingGames) {
+        const nextGames = pendingGames;
+        pendingGames = null;
+        applyShowcaseGames(nextGames);
+    }
+}
 
 function numberLabel(index) {
     return String(index + 1).padStart(2, '0');
@@ -362,6 +499,14 @@ function renderDetailSections() {
                             <p>${game.output}</p>
                         </div>
                     </div>
+                    ${game.playUrl ? `
+                    <div class="detail-play-panel">
+                        <div class="detail-play-heading">
+                            <span>Playable game</span>
+                            <a href="${game.playUrl}" target="_blank" rel="noopener noreferrer">${game.embedMode === 'new_tab' ? 'Open game in new tab' : 'Open game'}</a>
+                        </div>
+                        ${game.embedMode === 'new_tab' ? '' : `<iframe src="${game.playUrl}" title="${game.title} playable preview" loading="lazy" allowfullscreen></iframe>`}
+                    </div>` : ''}
                 </section>
 
                 <section class="detail-visual" aria-label="${game.title} generated game detail">
@@ -648,17 +793,36 @@ function bindEvents() {
     });
 }
 
-createStarlights();
-initSpotlight();
-initRipples();
-renderDirectory();
-renderFilmRail();
-renderDots();
-renderDetailSections();
-previewGame(0);
-elements.selectedLabel.textContent = totalLabel(0);
-initEmbeddedPageFlow();
-bindEvents();
-initSectionObservers();
-openFromHash(false);
-startCarousel();
+async function initShowcase() {
+    createStarlights();
+    initSpotlight();
+    initRipples();
+    const cached = readCachedShowcaseGames();
+    if (cached.length) {
+        applyShowcaseGames(cached);
+    } else {
+        syncCatalogGames();
+    }
+    await loadBackendGames();
+    renderDirectory();
+    renderFilmRail();
+    renderDots();
+    renderDetailSections();
+    previewGame(0);
+    elements.selectedLabel.textContent = totalLabel(0);
+    initEmbeddedPageFlow();
+    bindEvents();
+    initSectionObservers();
+    openFromHash(false);
+    startCarousel();
+    startShowcasePolling();
+}
+
+window.addEventListener('message', (event) => {
+    if (window.parent && window.parent !== window && event.source !== window.parent) return;
+    const data = event.data || {};
+    if (!data || typeof data !== 'object' || data.type !== 'droi-chat-busy') return;
+    setShowcaseBusy(data.busy);
+});
+
+initShowcase();

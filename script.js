@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatHistory = document.getElementById('chatHistory');
     const chatOptionsList = document.getElementById('chatOptionsList');
     const chatMoreBtn = document.getElementById('chatMoreBtn');
+    const rollEmbedFrame = document.getElementById('rollEmbedFrame');
     const mainHero = document.querySelector('.hero');
     const inspireSection = document.querySelector('.inspire-section');
     const adminLoginBtn = document.getElementById('adminLoginBtn');
@@ -51,6 +52,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const activeModelIcon = document.getElementById('activeModelIcon');
     const activeModelName = document.getElementById('activeModelName');
     const modelSwitchNotice = document.getElementById('modelSwitchNotice');
+    const defaultGameToolBaseUrl = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+        ? 'http://127.0.0.1:5173'
+        : 'https://frame-ronin.vercel.app';
+    const DROI_GAME_TOOL_BASE_URL = window.DROI_GAME_TOOL_BASE_URL || defaultGameToolBaseUrl;
 
     // === WIZARD DATA ===
     const GAME_TYPES = [
@@ -391,7 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
             : ''
     );
     let API_BASE_URL = normalizeApiBaseUrl(window.DROI_API_BASE || DEFAULT_API_BASE_URL);
-    const PROVIDER_ORDER = ['openai', 'gemini', 'anthropic', 'groq'];
+    const PROVIDER_ORDER = ['openai', 'qwen', 'gemini', 'anthropic', 'groq'];
     const PROVIDER_META = {
         openai: {
             label: 'GPT',
@@ -403,6 +408,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 { id: 'gpt-5.5-high', label: 'GPT 5.5 High', reasoningEffort: 'high' },
                 { id: 'gpt-5.5-low', label: 'GPT 5.5 Low', reasoningEffort: 'low' },
                 { id: 'gpt-5.4-mid', label: 'GPT 5.4 Mid', reasoningEffort: 'medium' }
+            ]
+        },
+        qwen: {
+            label: 'Qwen',
+            icon: 'QW',
+            color: '#7c6cff',
+            defaultBaseUrl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
+            adapter: 'openai-compatible',
+            models: [
+                { id: 'qwen3.7-max', label: 'Qwen3.7 Max', reasoningEffort: 'none' },
+                { id: 'qwen-plus', label: 'Qwen Plus', reasoningEffort: 'none' }
             ]
         },
         anthropic: {
@@ -618,6 +634,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function apiUrl(path) {
         return `${API_BASE_URL}${path}`;
+    }
+
+    function notifyShowcaseBusy(isBusy) {
+        try {
+            if (!rollEmbedFrame || !rollEmbedFrame.contentWindow) return;
+            rollEmbedFrame.contentWindow.postMessage({
+                type: 'droi-chat-busy',
+                busy: Boolean(isBusy)
+            }, '*');
+        } catch (error) {
+            // Showcase sync is best-effort and must not interrupt chat or generation.
+        }
     }
 
     function resolveBackendUrl(pathOrUrl) {
@@ -4040,12 +4068,14 @@ Use templateCapability.outputFiles as the compile target, but do not emit a file
         const traceModel = trace.selectedModel || {};
         const traceStages = trace.stages || {};
         const previewUrl = resolveBackendUrl(project.previewUrl || project.url || '');
+        const projectId = project && (project.id || project.projectId) ? String(project.id || project.projectId) : '';
 
         return [
             '<div class="generation-result compiled-project-result">',
             '<div class="generation-status">AI template compile path</div>',
             `<div class="generation-title">${escapeHtml(project.name || project.gameName || 'Playable project ready')}</div>`,
             `<div class="generation-meta"><span>${escapeHtml(decision.templateLabel || 'Template')}</span><span>${escapeHtml(getActiveModelMeta().label)}</span></div>`,
+            buildGameToolLauncherHtml(projectId),
             trace.aiFirst
                 ? [
                     '<div class="summary-title">Generation trace</div>',
@@ -4075,6 +4105,88 @@ Use templateCapability.outputFiles as the compile target, but do not emit a file
                 : '<div class="summary-item">No preview URL was returned by the compiler.</div>',
             '</div>'
         ].join('');
+    }
+
+    function buildGameToolLauncherHtml(projectId) {
+        const tools = [
+            { id: 'map-studio', mode: 'stitch', label: 'Map Editor', desc: 'Stitch and expand the generated game map.' },
+            { id: 'map-studio', mode: 'obstacles', label: 'Obstacle Painter', desc: 'Place obstacle assets on a large pixel grid.' },
+            { id: 'character-action', mode: '', label: 'Action Pack', desc: 'Create character motion sheets and metadata.' },
+            { id: 'droi-art-matte', mode: '', label: 'AI Matte', desc: 'Remove backgrounds for transparent game assets.' },
+            { id: 'image-process', mode: '', label: 'Asset Processor', desc: 'Resize, crop, outline, and clean image assets.' }
+        ];
+        return `
+            <div class="compiled-tool-launcher" data-game-tool-launcher data-project-id="${escapeHtml(projectId || '')}">
+                <div class="compiled-tool-title">
+                    <strong>Game Production Tools</strong>
+                    <small>Open Droi-game-tool inside this generated project.</small>
+                </div>
+                <div class="compiled-tool-grid">
+                    ${tools.map(tool => `
+                        <button type="button" class="compiled-tool-card" data-game-tool-open data-tool-id="${escapeHtml(tool.id)}" data-tool-mode="${escapeHtml(tool.mode)}">
+                            <span>${escapeHtml(tool.label)}</span>
+                            <small>${escapeHtml(tool.desc)}</small>
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    function buildGameToolUrl(toolId, mode, projectId) {
+        const url = new URL(`/tool/${toolId}`, DROI_GAME_TOOL_BASE_URL);
+        if (mode) url.searchParams.set('mode', mode);
+        if (projectId) url.searchParams.set('projectId', projectId);
+        url.searchParams.set('embed', '1');
+        return url.toString();
+    }
+
+    function openGameToolOverlay(toolId, mode, projectId) {
+        let overlay = document.querySelector('[data-game-tool-overlay]');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.className = 'game-tool-overlay';
+            overlay.setAttribute('data-game-tool-overlay', '');
+            overlay.innerHTML = `
+                <div class="game-tool-overlay-panel">
+                    <div class="game-tool-overlay-head">
+                        <strong data-game-tool-title>Game Production Tool</strong>
+                        <button type="button" class="game-tool-overlay-close" data-game-tool-close aria-label="Close game tool">Close</button>
+                    </div>
+                    <iframe class="game-tool-frame" data-game-tool-frame title="Droi game production tool"></iframe>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            overlay.querySelector('[data-game-tool-close]').addEventListener('click', () => {
+                overlay.classList.remove('open');
+                const frame = overlay.querySelector('[data-game-tool-frame]');
+                if (frame) frame.removeAttribute('src');
+            });
+            overlay.addEventListener('click', event => {
+                if (event.target === overlay) {
+                    overlay.classList.remove('open');
+                    const frame = overlay.querySelector('[data-game-tool-frame]');
+                    if (frame) frame.removeAttribute('src');
+                }
+            });
+        }
+        const frame = overlay.querySelector('[data-game-tool-frame]');
+        const title = overlay.querySelector('[data-game-tool-title]');
+        if (title) title.textContent = `Game Production Tool / ${toolId}`;
+        if (frame) frame.src = buildGameToolUrl(toolId, mode, projectId);
+        overlay.classList.add('open');
+    }
+
+    function isAllowedGameToolOrigin(origin) {
+        if (!origin || origin === 'null') return false;
+        try {
+            const expected = new URL(DROI_GAME_TOOL_BASE_URL).origin;
+            if (origin === expected) return true;
+            const parsed = new URL(origin);
+            return ['localhost', '127.0.0.1'].includes(parsed.hostname) && ['5173', '4173'].includes(parsed.port);
+        } catch (error) {
+            return false;
+        }
     }
 
     async function composeAndReturn() {
@@ -4221,6 +4333,7 @@ Decision Source: ${decision.source || 'unknown'}`;
     }
 
     function openChatView() {
+        notifyShowcaseBusy(true);
         mainHero.style.display = 'none';
         inspireView.style.display = 'flex';
 
@@ -4397,6 +4510,53 @@ Decision Source: ${decision.source || 'unknown'}`;
         if (!modelDropdown || !modelSelector) return;
         if (!modelDropdown.contains(event.target) && !modelSelector.contains(event.target)) {
             closeModelDropdown();
+        }
+    });
+
+    document.addEventListener('click', (event) => {
+        const toolButton = event.target && event.target.closest ? event.target.closest('[data-game-tool-open]') : null;
+        if (!toolButton) return;
+        const launcher = toolButton.closest('[data-game-tool-launcher]');
+        const projectId = launcher ? launcher.dataset.projectId : '';
+        openGameToolOverlay(toolButton.dataset.toolId, toolButton.dataset.toolMode || '', projectId);
+    });
+
+    window.addEventListener('message', async (event) => {
+        const data = event.data || {};
+        if (!data || typeof data.type !== 'string' || !data.type.startsWith('droi.tool.')) return;
+        if (!isAllowedGameToolOrigin(event.origin)) return;
+        if (data.type === 'droi.tool.requestProjectContext' && event.source && latestCompiledProject) {
+            event.source.postMessage({
+                type: 'droi.host.projectContext',
+                project: {
+                    projectId: latestCompiledProject.id,
+                    templateId: latestCompiledProject.templateId,
+                    previewUrl: latestCompiledProject.previewUrl,
+                    assetManifest: latestCompiledProject.assetManifest || latestCompiledProject.assetSidebar || null,
+                    gameSpec: getCurrentGameSpec()
+                }
+            }, event.origin || '*');
+            return;
+        }
+        if (data.type === 'droi.tool.exportArtifact') {
+            const artifact = data.artifact || {};
+            try {
+                if (!latestCompiledProject || !latestCompiledProject.id) throw new Error('No active compiled project.');
+                const response = await fetch(apiUrl(`/api/template-project/${encodeURIComponent(latestCompiledProject.id)}/artifacts`), {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ artifact: { ...artifact, toolId: artifact.toolId || data.toolId } })
+                });
+                if (!response.ok) throw new Error(`Artifact save failed (${response.status}).`);
+                const saved = await response.json();
+                addBotMessage(`Game tool exported ${artifact.artifactType || 'artifact'} from ${data.toolId || 'Droi-game-tool'} and saved it to the generated project artifacts.${saved.artifact && saved.artifact.files && saved.artifact.files.length ? ` Files: ${saved.artifact.files.map(file => file.name).join(', ')}` : ''}`);
+            } catch (error) {
+                addBotMessage(`Game tool exported ${artifact.artifactType || 'artifact'}, but saving it failed: ${error.message || error}`);
+            }
+        }
+        if (data.type === 'droi.tool.error') {
+            addBotMessage(`Game tool error: ${data.message || 'Unknown error'}`);
         }
     });
 
@@ -4698,6 +4858,7 @@ Decision Source: ${decision.source || 'unknown'}`;
 
     function resetChat() {
         resetChatStateOnly();
+        notifyShowcaseBusy(false);
 
         // UI View Transition
         if (inspireView) inspireView.style.display = 'none';
