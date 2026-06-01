@@ -1523,6 +1523,18 @@ body.is-in-detail .floating-roll-btn {
         overflow: visible !important;
     }
 
+    html.is-embedded-page-flow .detail-page {
+        min-height: auto !important;
+        grid-template-columns: 1fr !important;
+        align-items: start !important;
+        align-content: start !important;
+    }
+
+    html.is-embedded-page-flow .detail-copy,
+    html.is-embedded-page-flow .detail-visual {
+        align-self: start;
+    }
+
     html.is-embedded-page-flow .roll-film-panel {
         display: flex !important;
     }
