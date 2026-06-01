@@ -674,6 +674,14 @@ function applyEmbeddedViewport(height) {
     document.documentElement.style.setProperty('--roll-page-height', `${nextHeight}px`);
 }
 
+function notifyEmbeddedReady() {
+    if (!window.parent || window.parent === window) return;
+    window.parent.postMessage({
+        type: 'droi-roll-ready',
+        pageCount: games.length + (window.matchMedia('(max-width: 760px)').matches ? 2 : 1)
+    }, parentOrigin);
+}
+
 function initEmbeddedPageFlow() {
     window.addEventListener('message', (event) => {
         if (window.parent && event.source !== window.parent) return;
@@ -685,10 +693,7 @@ function initEmbeddedPageFlow() {
 
     if (window.parent && window.parent !== window) {
         applyEmbeddedViewport(window.innerHeight);
-        window.parent.postMessage({
-            type: 'droi-roll-ready',
-            pageCount: games.length + (window.matchMedia('(max-width: 760px)').matches ? 2 : 1)
-        }, parentOrigin);
+        notifyEmbeddedReady();
     }
 }
 
