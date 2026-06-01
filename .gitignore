@@ -1,11 +1,5 @@
 .env
 .env.*
-!.env.example
 node_modules/
 tmp/
 .vscode/
-backend/data/*.json
-backend/data/*.log
-backend/data/generated/
-backend/data/manual-queue/
-!backend/data/.gitkeep
