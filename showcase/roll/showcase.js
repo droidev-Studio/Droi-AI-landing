@@ -2,6 +2,7 @@ const imageModelName = document.body.dataset.assetModel || window.DROI_IMAGE_MOD
 
 const SHOWCASE_CACHE_KEY = 'droi_showcase_cache_v1';
 const SHOWCASE_POLL_MS = 5 * 60 * 1000;
+const PUBLIC_API_BASE_URL = 'https://droi-ai-backend-dev-585034669241.asia-east1.run.app';
 
 const DEFAULT_GAMES = [
     {
@@ -138,7 +139,25 @@ function resolveApiBase() {
     return '';
 }
 
-const apiBase = resolveApiBase();
+let apiBase = resolveApiBase();
+
+async function loadShowcaseRuntimeConfig() {
+    if (apiBase) return apiBase;
+    try {
+        const response = await fetch('../../droi-config.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`Config request failed with ${response.status}`);
+        const config = await response.json();
+        const configuredBase = config.apiBaseUrl || config.apiBase || config.backendUrl || '';
+        if (configuredBase) {
+            apiBase = String(configuredBase).replace(/\/+$/, '');
+            return apiBase;
+        }
+    } catch (error) {
+        console.info('Showcase runtime config unavailable; using public backend fallback.', error);
+    }
+    apiBase = PUBLIC_API_BASE_URL;
+    return apiBase;
+}
 
 function apiUrl(path) {
     return `${apiBase}${path}`;
@@ -803,6 +822,7 @@ async function initShowcase() {
     } else {
         syncCatalogGames();
     }
+    await loadShowcaseRuntimeConfig();
     await loadBackendGames();
     renderDirectory();
     renderFilmRail();
