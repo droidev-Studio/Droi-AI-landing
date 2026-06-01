@@ -1,9 +1,5 @@
 const imageModelName = document.body.dataset.assetModel || window.DROI_IMAGE_MODEL || 'gpt-image-2';
 
-const SHOWCASE_CACHE_KEY = 'droi_showcase_cache_v1';
-const SHOWCASE_POLL_MS = 5 * 60 * 1000;
-const PUBLIC_API_BASE_URL = 'https://droi-ai-backend-dev-585034669241.asia-east1.run.app';
-
 const DEFAULT_GAMES = [
     {
         title: 'Neon Dungeon Survivor',
@@ -78,8 +74,23 @@ const DEFAULT_GAMES = [
 ];
 
 let games = [...DEFAULT_GAMES];
-let catalogGames = [
-    ...games,
+let catalogGames = [...games];
+
+const elements = {
+    rollView: document.getElementById('rollView'),
+    detailView: document.getElementById('detailView'),
+    activeIndexLabel: document.getElementById('activeIndexLabel'),
+    selectedLabel: document.getElementById('selectedLabel'),
+    hoverStatus: document.getElementById('hoverStatus'),
+    gameDirectory: document.getElementById('gameDirectory'),
+    filmRail: document.getElementById('filmRail'),
+    rollDots: document.getElementById('rollDots'),
+    rollFilmPanel: document.querySelector('.roll-film-panel'),
+    detailSections: document.getElementById('detailSections'),
+    backToRollBtn: document.getElementById('backToRollBtn')
+};
+
+const queuedCatalogGames = [
     {
         title: 'Crystal Core Defense',
         typeShort: 'TOWER',
@@ -96,22 +107,6 @@ let catalogGames = [
         buildTime: '21 MIN'
     }
 ];
-let showcaseBusy = false;
-let pendingGames = null;
-
-const elements = {
-    rollView: document.getElementById('rollView'),
-    detailView: document.getElementById('detailView'),
-    activeIndexLabel: document.getElementById('activeIndexLabel'),
-    selectedLabel: document.getElementById('selectedLabel'),
-    hoverStatus: document.getElementById('hoverStatus'),
-    gameDirectory: document.getElementById('gameDirectory'),
-    filmRail: document.getElementById('filmRail'),
-    rollDots: document.getElementById('rollDots'),
-    rollFilmPanel: document.querySelector('.roll-film-panel'),
-    detailSections: document.getElementById('detailSections'),
-    backToRollBtn: document.getElementById('backToRollBtn')
-};
 
 let previewIndex = 0;
 let selectedIndex = 0;
@@ -129,12 +124,16 @@ const parentOrigin = (() => {
 })();
 
 const carouselDelay = 3500;
+const wheelSwitchUnlockMs = 180;
+const PUBLIC_API_BASE_URL = 'https://droi-ai-backend-dev-585034669241.asia-east1.run.app';
+let wheelSwitchLocked = false;
+let wheelSwitchUnlockTimer = null;
 
 function resolveApiBase() {
     const params = new URLSearchParams(window.location.search);
     const queryBase = params.get('apiBase') || '';
-    if (queryBase) return queryBase.replace(/\/+$/, '');
-    if (window.DROI_API_BASE) return String(window.DROI_API_BASE).replace(/\/+$/, '');
+    if (queryBase) return queryBase.replace(/\/$/, '');
+    if (window.DROI_API_BASE) return String(window.DROI_API_BASE).replace(/\/$/, '');
     if (['127.0.0.1', 'localhost'].includes(window.location.hostname)) return 'http://127.0.0.1:3000';
     return '';
 }
@@ -200,82 +199,30 @@ function sanitizeGame(game, index) {
 }
 
 function syncCatalogGames() {
-    const queued = [
-        { title: 'Crystal Core Defense', typeShort: 'TOWER', buildTime: '18 MIN' },
-        { title: 'Pixel Storm Racer', typeShort: 'RACING', buildTime: '09 MIN' },
-        { title: 'Void Garden Tactics', typeShort: 'STRATEGY', buildTime: '21 MIN' }
-    ];
-    catalogGames = [...games, ...queued];
+    catalogGames = [...games, ...queuedCatalogGames];
 }
 
-function applyShowcaseGames(nextGames) {
-    if (!Array.isArray(nextGames) || !nextGames.length) return;
-    games = nextGames
-        .map(sanitizeGame)
-        .filter(game => game.enabled && game.status === 'online' && game.image)
-        .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
-    if (!games.length) games = [...DEFAULT_GAMES];
-    selectedIndex = Math.min(selectedIndex || 0, games.length - 1);
-    previewIndex = Math.min(previewIndex || 0, games.length - 1);
-    detailIndex = Math.min(detailIndex || 0, games.length - 1);
-    syncCatalogGames();
-    renderDirectory();
-    renderFilmRail();
-    renderDots();
-    renderDetailSections();
-    previewGame(selectedIndex || 0);
-    elements.selectedLabel.textContent = totalLabel(selectedIndex || 0);
-    notifyEmbeddedReady();
-}
-
-function readCachedShowcaseGames() {
-    try {
-        const cached = JSON.parse(localStorage.getItem(SHOWCASE_CACHE_KEY) || 'null');
-        if (cached && Array.isArray(cached.games)) return cached.games;
-    } catch (error) {
-        // Ignore cache parse errors and keep bundled games.
-    }
-    return [];
-}
-
-async function loadBackendGames({ background = false } = {}) {
+async function loadBackendGames() {
     if (!apiBase) return;
     try {
         const response = await fetch(apiUrl('/api/showcase/games'), {
             credentials: 'include',
             cache: 'no-store'
         });
-        if (!response.ok) throw new Error(`showcase config ${response.status}`);
+        if (!response.ok) return;
         const data = await response.json();
-        const nextGames = Array.isArray(data.games) ? data.games : [];
-        if (!nextGames.length) return;
-        localStorage.setItem(SHOWCASE_CACHE_KEY, JSON.stringify({
-            updatedAt: data.updatedAt || new Date().toISOString(),
-            games: nextGames
-        }));
-        if (showcaseBusy && background) {
-            pendingGames = nextGames;
-            return;
+        const nextGames = Array.isArray(data.games)
+            ? data.games.map(sanitizeGame).filter(game => game.enabled && game.status === 'online' && game.image)
+            : [];
+        if (nextGames.length) {
+            games = nextGames.sort((a, b) => a.order - b.order || a.title.localeCompare(b.title));
+            selectedIndex = 0;
+            previewIndex = 0;
+            detailIndex = 0;
+            syncCatalogGames();
         }
-        applyShowcaseGames(nextGames);
     } catch (error) {
-        const cached = readCachedShowcaseGames();
-        if (cached.length && !background) applyShowcaseGames(cached);
-    }
-}
-
-function startShowcasePolling() {
-    window.setInterval(() => {
-        loadBackendGames({ background: true });
-    }, SHOWCASE_POLL_MS);
-}
-
-function setShowcaseBusy(nextBusy) {
-    showcaseBusy = Boolean(nextBusy);
-    if (!showcaseBusy && pendingGames) {
-        const nextGames = pendingGames;
-        pendingGames = null;
-        applyShowcaseGames(nextGames);
+        // Static fallback keeps the bundled showcase list available.
     }
 }
 
@@ -285,6 +232,15 @@ function numberLabel(index) {
 
 function totalLabel(index) {
     return `${numberLabel(index)} / ${String(games.length).padStart(2, '0')}`;
+}
+
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 function renderDirectory() {
@@ -389,6 +345,12 @@ function updatePreviewClasses() {
         dot.classList.toggle('is-active', index === selectedIndex);
     });
 
+    document.querySelectorAll('.focus-dot').forEach((dot, index) => {
+        const isActive = index === detailIndex;
+        dot.classList.toggle('is-active', isActive);
+        dot.setAttribute('aria-current', isActive ? 'true' : 'false');
+    });
+
     const progressIndex = selectedIndex ?? previewIndex ?? 0;
     const progress = catalogGames.length > 1 ? progressIndex / (catalogGames.length - 1) : 1;
     const windowProgress = catalogGames.length ? games.length / catalogGames.length : 1;
@@ -427,6 +389,33 @@ function selectGame(index) {
     previewGame(index);
     elements.selectedLabel.textContent = totalLabel(index);
     restartCarousel();
+}
+
+function switchGameByWheel(direction) {
+    const currentIndex = selectedIndex ?? previewIndex ?? 0;
+    const nextIndex = (currentIndex + direction + games.length) % games.length;
+    selectGame(nextIndex);
+}
+
+function handleRollWheel(event) {
+    if (document.body.classList.contains('is-in-detail')) return;
+    const wheelDelta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
+    if (!wheelDelta) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (wheelSwitchUnlockTimer) {
+        window.clearTimeout(wheelSwitchUnlockTimer);
+    }
+    wheelSwitchUnlockTimer = window.setTimeout(() => {
+        wheelSwitchLocked = false;
+        wheelSwitchUnlockTimer = null;
+    }, wheelSwitchUnlockMs);
+
+    if (wheelSwitchLocked) return;
+    wheelSwitchLocked = true;
+    switchGameByWheel(wheelDelta > 0 ? 1 : -1);
 }
 
 function handleFilmClick(index) {
@@ -470,92 +459,145 @@ function resumeCarousel() {
 }
 
 function renderDetailSections() {
-    elements.detailSections.innerHTML = games.map((game, index) => {
-        const tagMarkup = game.tags.map((tag) => `<span>${tag}</span>`).join('');
-        const thumbMarkup = games.map((thumbGame, thumbIndex) => `
-            <button class="detail-thumb ${thumbIndex === index ? 'is-active' : ''}" type="button" data-index="${thumbIndex}" aria-label="View ${thumbGame.title}">
-                <img src="${thumbGame.image}" alt="" loading="lazy" decoding="async">
-                <span>${numberLabel(thumbIndex)}</span>
-            </button>
-        `).join('');
+    const dotMarkup = games.map((game, index) => `
+        <button class="focus-dot" type="button" data-index="${index}" aria-label="Show ${escapeHtml(game.title)}"></button>
+    `).join('');
 
-        return `
-            <section class="detail-page" id="game-${game.slug}" data-index="${index}" aria-labelledby="detail-title-${game.slug}">
-                <section class="detail-copy" aria-labelledby="detail-title-${game.slug}">
-                    <div class="roll-meta detail-meta">
-                        <span>${totalLabel(index)}</span>
-                        <span>${game.genre}</span>
-                        <span>GENERATED BY DROI AI</span>
+    elements.detailSections.innerHTML = `
+        <section class="detail-page" id="game-detail-focus" data-index="0" aria-labelledby="detail-title-focus">
+            <section class="detail-copy" aria-labelledby="detail-title-focus">
+                <div class="roll-meta detail-meta">
+                    <span data-detail-field="count"></span>
+                    <span data-detail-field="genre"></span>
+                    <span>GENERATED BY DROI AI</span>
+                </div>
+                <h2 class="detail-title" id="detail-title-focus" data-detail-field="title"></h2>
+                <p class="detail-hook" data-detail-field="hook"></p>
+                <div class="tag-row" data-detail-field="tags"></div>
+                <dl class="build-facts">
+                    <div>
+                        <dt>GAME TYPE</dt>
+                        <dd data-detail-field="type"></dd>
                     </div>
-                    <h2 class="detail-title" id="detail-title-${game.slug}">${game.title}</h2>
-                    <p class="detail-hook">${game.hook}</p>
-                    <div class="tag-row">${tagMarkup}</div>
-                    <dl class="build-facts">
-                        <div>
-                            <dt>BUILD TIME</dt>
-                            <dd>${game.buildTime}</dd>
-                        </div>
-                        <div>
-                            <dt>ASSET SOURCE</dt>
-                            <dd>${imageModelName.toUpperCase()}</dd>
-                        </div>
-                        <div>
-                            <dt>OUTPUT</dt>
-                            <dd>WEB GAME</dd>
-                        </div>
-                    </dl>
-                    <div class="prompt-flow">
-                        <div class="prompt-stage">
-                            <span>01 USER INPUT</span>
-                            <p>${game.prompt}</p>
-                        </div>
-                        <div class="prompt-stage">
-                            <span>02 AI BREAKDOWN</span>
-                            <p>${game.breakdown}</p>
-                        </div>
-                        <div class="prompt-stage">
-                            <span>03 FINISHED GAME</span>
-                            <p>${game.output}</p>
-                        </div>
+                    <div>
+                        <dt>BUILD TIME</dt>
+                        <dd data-detail-field="buildTime"></dd>
                     </div>
-                    ${game.playUrl ? `
-                    <div class="detail-play-panel">
-                        <div class="detail-play-heading">
-                            <span>Playable game</span>
-                            <a href="${game.playUrl}" target="_blank" rel="noopener noreferrer">${game.embedMode === 'new_tab' ? 'Open game in new tab' : 'Open game'}</a>
-                        </div>
-                        ${game.embedMode === 'new_tab' ? '' : `<iframe src="${game.playUrl}" title="${game.title} playable preview" loading="lazy" allowfullscreen></iframe>`}
-                    </div>` : ''}
-                </section>
-
-                <section class="detail-visual" aria-label="${game.title} generated game detail">
-                    <div class="detail-image-frame">
-                        <img src="${game.image}" alt="${game.title} game detail" loading="lazy" decoding="async">
-                        <div class="detail-image-caption">
-                            <span>${numberLabel(index)}</span>
-                            <p>${game.caption}</p>
-                        </div>
+                    <div>
+                        <dt>AI MODEL</dt>
+                        <dd data-detail-field="model"></dd>
                     </div>
-                    <div class="detail-thumbs" aria-label="Other generated games">
-                        ${thumbMarkup}
+                    <div>
+                        <dt>OUTPUT</dt>
+                        <dd>WEB GAME</dd>
                     </div>
-                </section>
+                </dl>
             </section>
-        `;
-    }).join('');
 
-    elements.detailSections.querySelectorAll('.detail-thumb').forEach((thumb) => {
-        thumb.addEventListener('click', () => navigateToGame(Number(thumb.dataset.index)));
+            <section class="detail-visual" aria-label="Focused generated game detail">
+                <article class="focus-card">
+                    <div class="focus-card-topline">
+                        <span>Droi Arcade</span>
+                        <span>Playing in focus</span>
+                    </div>
+                    <img data-detail-field="image" src="" alt="" loading="lazy" decoding="async">
+                    <div class="focus-card-scrim"></div>
+                    <div class="focus-card-copy">
+                        <span class="focus-genre" data-detail-field="focusGenre"></span>
+                        <h3 data-detail-field="focusTitle"></h3>
+                        <p data-detail-field="focusCaption"></p>
+                    </div>
+                </article>
+                <div class="focus-dots" aria-label="Switch focused generated game">
+                    ${dotMarkup}
+                </div>
+            </section>
+
+            <section class="detail-play-panel" data-detail-field="playPanel" hidden>
+                <div class="detail-play-heading">
+                    <span>Embedded game</span>
+                    <a data-detail-field="playLink" href="#" target="_blank" rel="noopener noreferrer">Open game</a>
+                </div>
+                <iframe data-detail-field="playFrame" src="about:blank" title="Embedded game preview" loading="lazy" allowfullscreen></iframe>
+            </section>
+        </section>
+    `;
+
+    elements.detailSections.querySelectorAll('.focus-dot').forEach((dot) => {
+        dot.addEventListener('click', () => syncDetailState(Number(dot.dataset.index)));
     });
+
+    updateFocusedDetail(selectedIndex);
 }
 
 function markCurrentDetail(index) {
+    updateFocusedDetail(index);
+}
+
+function updateFocusedDetail(index) {
+    if (index < 0 || index >= games.length || !elements.detailSections) return;
+    const game = games[index];
     detailIndex = index;
-    document.querySelectorAll('.detail-page').forEach((section, sectionIndex) => {
-        section.classList.toggle('is-current', sectionIndex === index);
-    });
-    document.querySelectorAll('.detail-thumb').forEach((thumb) => {
-        thumb.classList.toggle('is-active', Number(thumb.dataset.index) === index);
+
+    const detailPage = elements.detailSections.querySelector('.detail-page');
+    if (detailPage) {
+        detailPage.id = `game-${game.slug}`;
+        detailPage.dataset.index = String(index);
+        detailPage.setAttribute('aria-labelledby', 'detail-title-focus');
+        detailPage.classList.add('is-current');
+    }
+
+    const setText = (field, value) => {
+        const target = elements.detailSections.querySelector(`[data-detail-field="${field}"]`);
+        if (target) target.textContent = value;
+    };
+
+    setText('count', totalLabel(index));
+    setText('genre', game.genre);
+    setText('title', game.title);
+    setText('hook', game.hook);
+    setText('type', game.genre);
+    setText('buildTime', game.buildTime);
+    setText('model', imageModelName.toUpperCase());
+    setText('prompt', game.prompt);
+    setText('breakdown', game.breakdown);
+    setText('output', game.output);
+    setText('focusGenre', game.genre);
+    setText('focusTitle', game.title);
+    setText('focusCaption', game.caption);
+
+    const tags = elements.detailSections.querySelector('[data-detail-field="tags"]');
+    if (tags) {
+        tags.innerHTML = game.tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join('');
+    }
+
+    const image = elements.detailSections.querySelector('[data-detail-field="image"]');
+    if (image) {
+        image.src = game.image;
+        image.alt = `${game.title} generated game focus`;
+    }
+
+    const playPanel = elements.detailSections.querySelector('[data-detail-field="playPanel"]');
+    const playFrame = elements.detailSections.querySelector('[data-detail-field="playFrame"]');
+    const playLink = elements.detailSections.querySelector('[data-detail-field="playLink"]');
+    if (playPanel && playFrame && playLink) {
+        const hasPlayableUrl = Boolean(game.playUrl);
+        playPanel.hidden = !hasPlayableUrl;
+        playLink.href = game.playUrl || '#';
+        playLink.textContent = game.embedMode === 'new_tab' ? 'Open game in new tab' : 'Open game';
+        if (hasPlayableUrl && game.embedMode !== 'new_tab') {
+            playFrame.src = game.playUrl;
+            playFrame.hidden = false;
+        } else {
+            playFrame.src = 'about:blank';
+            playFrame.hidden = true;
+        }
+    }
+
+    document.querySelectorAll('.focus-dot').forEach((dot, dotIndex) => {
+        const isActive = dotIndex === index;
+        dot.classList.toggle('is-active', isActive);
+        dot.setAttribute('aria-current', isActive ? 'true' : 'false');
     });
 }
 
@@ -578,7 +620,8 @@ function navigateToGame(index, pushHash = true) {
     if (embeddedPageFlow) {
         window.parent?.postMessage({
             type: 'droi-roll-scroll-to',
-            pageIndex: index + 1
+            pageIndex: getEmbeddedDetailPageIndex(),
+            offset: getEmbeddedDetailOffset()
         }, parentOrigin);
         return;
     }
@@ -597,7 +640,8 @@ function closeDetail(updateHistory = true) {
     if (embeddedPageFlow) {
         window.parent?.postMessage({
             type: 'droi-roll-scroll-to',
-            pageIndex: 0
+            pageIndex: 0,
+            offset: 0
         }, parentOrigin);
     } else {
         elements.rollView.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -672,13 +716,42 @@ function applyEmbeddedViewport(height) {
     embeddedPageFlow = true;
     document.documentElement.classList.add('is-embedded-page-flow');
     document.documentElement.style.setProperty('--roll-page-height', `${nextHeight}px`);
+    window.requestAnimationFrame(notifyEmbeddedReady);
+}
+
+function getEmbeddedPageHeight() {
+    const rawHeight = getComputedStyle(document.documentElement).getPropertyValue('--roll-page-height');
+    return Math.max(480, parseFloat(rawHeight) || window.innerHeight || 480);
+}
+
+function getEmbeddedDetailOffset() {
+    const shellBottom = elements.rollView
+        ? (elements.rollView.offsetTop || 0) + Math.max(elements.rollView.offsetHeight || 0, elements.rollView.scrollHeight || 0)
+        : 0;
+    const detailTop = elements.detailView?.offsetTop || getEmbeddedPageHeight();
+    return Math.max(0, Math.round(Math.max(detailTop, shellBottom)));
+}
+
+function getEmbeddedDetailPageIndex() {
+    return Math.max(1, Math.round(getEmbeddedDetailOffset() / getEmbeddedPageHeight()));
+}
+
+function getEmbeddedPageCount() {
+    const pageHeight = getEmbeddedPageHeight();
+    const contentHeight = Math.max(
+        document.documentElement.scrollHeight,
+        document.body.scrollHeight,
+        getEmbeddedDetailOffset() + (elements.detailView?.scrollHeight || 0),
+        pageHeight * 2
+    );
+    return Math.max(2, Math.ceil(contentHeight / pageHeight));
 }
 
 function notifyEmbeddedReady() {
     if (!window.parent || window.parent === window) return;
     window.parent.postMessage({
         type: 'droi-roll-ready',
-        pageCount: games.length + (window.matchMedia('(max-width: 760px)').matches ? 2 : 1)
+        pageCount: getEmbeddedPageCount()
     }, parentOrigin);
 }
 
@@ -792,6 +865,9 @@ function initRipples() {
 
 function bindEvents() {
     elements.backToRollBtn.addEventListener('click', closeDetail);
+    [elements.gameDirectory, elements.filmRail, elements.rollFilmPanel].forEach((target) => {
+        target?.addEventListener('wheel', handleRollWheel, { passive: false });
+    });
     elements.rollFilmPanel.addEventListener('mouseenter', pauseCarousel);
     elements.rollFilmPanel.addEventListener('mouseleave', resumeCarousel);
     elements.rollFilmPanel.addEventListener('focusin', pauseCarousel);
@@ -821,12 +897,7 @@ async function initShowcase() {
     createStarlights();
     initSpotlight();
     initRipples();
-    const cached = readCachedShowcaseGames();
-    if (cached.length) {
-        applyShowcaseGames(cached);
-    } else {
-        syncCatalogGames();
-    }
+    syncCatalogGames();
     await loadShowcaseRuntimeConfig();
     await loadBackendGames();
     renderDirectory();
@@ -840,14 +911,6 @@ async function initShowcase() {
     initSectionObservers();
     openFromHash(false);
     startCarousel();
-    startShowcasePolling();
 }
-
-window.addEventListener('message', (event) => {
-    if (window.parent && window.parent !== window && event.source !== window.parent) return;
-    const data = event.data || {};
-    if (!data || typeof data !== 'object' || data.type !== 'droi-chat-busy') return;
-    setShowcaseBusy(data.busy);
-});
 
 initShowcase();
