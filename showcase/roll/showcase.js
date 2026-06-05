@@ -75,6 +75,9 @@ const DEFAULT_GAMES = [
 
 let games = [...DEFAULT_GAMES];
 let catalogGames = [...games];
+const BUNDLED_SHOWCASE_IMAGE_FILES = new Set(
+    DEFAULT_GAMES.map(game => String(game.image || '').split('/').pop()).filter(Boolean)
+);
 
 const elements = {
     rollView: document.getElementById('rollView'),
@@ -165,9 +168,27 @@ function apiUrl(path) {
 function resolveAssetUrl(value) {
     const url = String(value || '');
     if (!url) return '';
+    const localShowcaseAsset = resolveBundledShowcaseAssetUrl(url);
+    if (localShowcaseAsset) return localShowcaseAsset;
     if (/^https?:\/\//i.test(url)) return url;
     if (url.startsWith('/api/') && apiBase) return apiUrl(url);
     return url;
+}
+
+function resolveBundledShowcaseAssetUrl(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    let pathname = raw;
+    try {
+        pathname = new URL(raw, window.location.href).pathname;
+    } catch (error) {
+        pathname = raw;
+    }
+    const normalized = pathname.replace(/\\/g, '/');
+    const fileName = normalized.split('/').pop();
+    if (!fileName || !BUNDLED_SHOWCASE_IMAGE_FILES.has(fileName)) return '';
+    if (!/(^|\/)assets\/showcase\//.test(normalized)) return '';
+    return `assets/showcase/${fileName}`;
 }
 
 function sanitizeGame(game, index) {
@@ -695,7 +716,9 @@ function initSectionObservers() {
         });
     }, { threshold: [0.5, 0.75] });
 
-    rollObserver.observe(elements.rollView);
+    if (elements.rollView instanceof Node) {
+        rollObserver.observe(elements.rollView);
+    }
 
     const detailObserver = new IntersectionObserver((entries) => {
         const visibleEntry = entries
@@ -707,7 +730,7 @@ function initSectionObservers() {
     }, { threshold: [0.5, 0.62] });
 
     document.querySelectorAll('.detail-page').forEach((section) => {
-        detailObserver.observe(section);
+        if (section instanceof Node) detailObserver.observe(section);
     });
 }
 

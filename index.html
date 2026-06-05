@@ -6,16 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MINI-AI | AI Mini-Game Platform</title>
     <link rel="icon" href="favicon.ico.png" type="image/png">
-    <link rel="stylesheet" href="style.css?v=20260601-saturday-restore">
+    <link rel="stylesheet" href="style.css?v=20260605-visible-ai-work-v1">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 
 <body>
-    <!-- 鎺㈢収鐏晥鏋滃眰 -->
+    <!-- Spotlight effect layer -->
     <div class="spotlight-overlay"></div>
     <div class="spotlight-glow"></div>
 
-    <!-- 鐢靛奖绾ц儗鏅眰娆?-->
+    <!-- Cinematic background depth layers -->
     <div class="bg-layer bg-far"></div>
     <div class="bg-layer bg-mid"></div>
     <div class="bg-layer bg-near"></div>
@@ -178,7 +178,7 @@
     </main>
 
     <section class="roll-embed-section" id="rollEmbedSection" aria-label="Droi AI game roll showcase">
-        <iframe class="roll-embed-frame" id="rollEmbedFrame" src="./showcase/roll/showcase.html?v=20260601-saturday-restore"
+        <iframe class="roll-embed-frame" id="rollEmbedFrame" src="./showcase/roll/showcase.html?v=20260601-showcase-assets-v1"
             title="Droi AI game roll showcase" loading="lazy" allowtransparency="true" scrolling="no"></iframe>
     </section>
 
@@ -244,7 +244,7 @@
                         </svg>
                     </button>
                     <input type="file" id="chatFileInput" class="chat-file-input" multiple
-                        accept="image/*,.pdf,.txt,.md,.json,.csv,.doc,.docx,.ppt,.pptx,.xls,.xlsx">
+                        accept="image/*,.pdf,.txt,.md,.json,.csv,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.7z,.tar,.gz,.tgz,application/zip,application/x-zip-compressed,application/vnd.rar,application/x-rar-compressed,application/x-7z-compressed,application/x-tar,application/gzip,application/x-gzip">
                     <div id="chatCharCount" class="chat-char-count">0/3000</div>
                     <textarea id="chatInputField" class="chat-real-input" placeholder="Ask anything"
                         autocomplete="off" maxlength="3000" rows="1"></textarea>
@@ -286,6 +286,9 @@
                         </button>
                     </div>
                 </div>
+            </div>
+            <div class="chat-upload-limit-note" id="chatUploadLimitNote" aria-live="polite">
+                ZIP/RAR/7Z/TAR archives are supported. Folder uploads and total attachments are limited to 32MB.
             </div>
         </div>
     </div>
@@ -417,7 +420,8 @@
         </div>
     </div>
 
-    <script src="script.js?v=20260601-saturday-restore"></script>
+    <script src="script.js?v=20260605-visible-ai-work-v1"></script>
 </body>
 
 </html>
+

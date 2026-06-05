@@ -3,3 +3,13 @@
 node_modules/
 tmp/
 .vscode/
+tmp-chrome-*/
+tmp-*.log
+tmp-*.png
+*.log
+*.tmp
+Crashpad/
+GPUCache/
+ShaderCache/
+GrShaderCache/
+GraphiteDawnCache/
