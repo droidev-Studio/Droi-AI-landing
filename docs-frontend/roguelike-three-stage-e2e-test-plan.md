@@ -80,7 +80,7 @@ generationRuleDecision: not found
 
 Implication:
 
-- Stage 1 is expected to be runnable because `roguelike_survival` exists in the frontend routing/template list.
+- Stage 1 is expected to be runnable only when the backend Templates registry has a published and `compileReady` `roguelike_survival` template.
 - Stage 2 is expected to be partially runnable because `animal_island_ui` exists in the workspace/demo state, but the test must still verify whether a real generated Roguelike project can receive the style patch broadly.
 - Stage 3 is intentionally a gap-revealing test. The current frontend does not expose explicit `magic_tower_elements`, `hybridModifiers`, or `generationRuleDecision` code paths yet. Passing Stage 3 requires either:
   - the backend already returns equivalent patch metadata that the frontend can record/export, or

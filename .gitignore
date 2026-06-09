@@ -9,6 +9,13 @@ tmp-*.log
 tmp-*.png
 *.log
 *.tmp
+knowledge-base-private/
+product-rules-internal/
+**/api-keys/
+**/*api-key*
+**/*secret*
+**/*credential*
+!docs-backend/api-key-support-contract.md
 Crashpad/
 GPUCache/
 ShaderCache/

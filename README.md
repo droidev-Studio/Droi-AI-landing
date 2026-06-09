@@ -115,7 +115,7 @@ Bullet Hell / Flying Shooter
 - shouldNotMatchWhen: 用户想做 roguelike survival、tower defense、card game、business simulation。
 ```
 
-See [DROI_TEMPLATE_AUTHORING_STANDARD.md](docs/DROI_TEMPLATE_AUTHORING_STANDARD.md) for the full authoring standard.
+See [droi-template-authoring-standard.md](docs-backend/droi-template-authoring-standard.md) for the full authoring standard.
 
 ## Generated Asset Standard
 
@@ -190,7 +190,9 @@ style.css           Frontend styling
 script.js           AI chat, routing, generation, preview workflow
 droi-config.json    Public backend URL
 showcase/           Showcase roll pages
-docs/PRD.md         Product requirements document
+docs-frontend/      Frontend E2E and regression docs
+docs-backend/       Backend API, template, and workspace runtime contracts
+ui-design/          UI design reviews and exported visual assets
 ```
 
 ## Verification
